@@ -1,6 +1,6 @@
-namespace Thespian.Flow
+namespace Nessos.Thespian.Flow
 
-    open Thespian
+    open Nessos.Thespian
 
     //Flow is a continuation monad
     

@@ -1,7 +1,7 @@
-namespace Thespian
+namespace Nessos.Thespian
 
     open System
-    open Thespian.Utils
+    open Nessos.Thespian.Utils
 
     [<AbstractClass>]
     type ActorBase() =
@@ -225,7 +225,7 @@ namespace Thespian
                 
 
     module Actor =
-        open Thespian.Utils
+        open Nessos.Thespian.Utils
 
         let bind (body: Actor<'T> -> Async<unit>) =
             new Actor<'T>("", body)

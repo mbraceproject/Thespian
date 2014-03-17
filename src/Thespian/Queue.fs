@@ -1,7 +1,7 @@
-namespace Thespian.PowerPack
+namespace Nessos.Thespian.PowerPack
 
     open System
-    open Thespian
+    open Nessos.Thespian
 
     [<AutoOpen>]
     module Messages =

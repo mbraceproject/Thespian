@@ -1,4 +1,4 @@
-﻿module Thespian.Debug
+﻿module Nessos.Thespian.Debug
 
 open System
 open System.Diagnostics

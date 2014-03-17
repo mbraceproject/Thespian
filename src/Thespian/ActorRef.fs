@@ -1,4 +1,4 @@
-namespace Thespian
+namespace Nessos.Thespian
     
     open System
     open System.Runtime.Serialization
@@ -333,16 +333,16 @@ namespace Thespian
         abstract Reply: Reply<'T> -> unit
         abstract WithTimeout: int -> IReplyChannel<'T>
 
-namespace Thespian.Serialization
+namespace Nessos.Thespian.Serialization
     type IMessageSerializer =
         abstract Name: string
         abstract Serialize : context:obj * obj -> byte []
         abstract Deserialize : context:obj * byte [] -> obj
 
-namespace Thespian
+namespace Nessos.Thespian
     open System
     open System.Runtime.Serialization
-    open Thespian.Serialization
+    open Nessos.Thespian.Serialization
 
     type IReplyChannelFactory =
         abstract Protocol: string

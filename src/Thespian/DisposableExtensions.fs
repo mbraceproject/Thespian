@@ -1,10 +1,10 @@
-﻿namespace Thespian
+﻿namespace Nessos.Thespian
 
 
     module DisposableExtensions = 
         open System
     
-        open Thespian.Agents
+        open Nessos.Thespian.Agents
 
         //let private counter = Agent.start Map.empty<IComparable, int>
 

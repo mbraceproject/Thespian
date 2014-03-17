@@ -1,9 +1,9 @@
-﻿namespace Thespian.Remote.TcpProtocol
+﻿namespace Nessos.Thespian.Remote.TcpProtocol
     
     open System
-    open Thespian
-    open Thespian.Utils
-    open Thespian.Remote.TcpProtocol
+    open Nessos.Thespian
+    open Nessos.Thespian.Utils
+    open Nessos.Thespian.Remote.TcpProtocol
 
     [<AutoOpen>]
     module Constants =
@@ -54,8 +54,8 @@
     module ActorRef =
         open System
         open System.Net
-        open Thespian
-        open Thespian.Utils
+        open Nessos.Thespian
+        open Nessos.Thespian.Utils
 
         let toUris (actorRef: ActorRef<'T>): string list =
             actorRef.Configurations |> List.collect (function :? TcpProtocolConfiguration as conf -> conf.GetUris(actorRef.UUId, actorRef.Name) | _ -> [])

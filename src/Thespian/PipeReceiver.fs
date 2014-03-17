@@ -1,14 +1,14 @@
-﻿namespace Thespian.Remote.PipeProtocol
+﻿namespace Nessos.Thespian.Remote.PipeProtocol
 
     open System
     open System.IO
     open System.IO.Pipes
     open System.Threading
     
-    open Thespian
-    open Thespian.AsyncExtensions
-    open Thespian.Serialization
-    open Thespian.Utils
+    open Nessos.Thespian
+    open Nessos.Thespian.AsyncExtensions
+    open Nessos.Thespian.Serialization
+    open Nessos.Thespian.Utils
 
     module internal Utils =
         // option types don't play well with binary formatter

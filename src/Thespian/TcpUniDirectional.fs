@@ -1,4 +1,4 @@
-﻿namespace Thespian.Remote.TcpProtocol
+﻿namespace Nessos.Thespian.Remote.TcpProtocol
 
     open System
     open System.IO
@@ -8,17 +8,17 @@
     open System.Threading.Tasks
     open System.Runtime.Serialization
 
-    open Thespian
-    open Thespian.AsyncExtensions
-    open Thespian.Serialization
-    open Thespian.Utils
-    open Thespian.DisposableExtensions
-    open Thespian.Remote
-    open Thespian.Remote.SocketExtensions
-    open Thespian.Remote.ConnectionPool
+    open Nessos.Thespian
+    open Nessos.Thespian.AsyncExtensions
+    open Nessos.Thespian.Serialization
+    open Nessos.Thespian.Utils
+    open Nessos.Thespian.DisposableExtensions
+    open Nessos.Thespian.Remote
+    open Nessos.Thespian.Remote.SocketExtensions
+    open Nessos.Thespian.Remote.ConnectionPool
 
     module Unidirectional =
-        open Thespian.Remote.TcpProtocol
+        open Nessos.Thespian.Remote.TcpProtocol
 
         let ProtocolName = "utcp"
 
@@ -250,7 +250,7 @@
             static member TryGet(actorId: TcpActorId): IActorProtocol option = pool.Value.TryFind actorId
         
         and internal ListenerRegistrationResource(clientOnly: bool, actorId: ActorId, listener: TcpProtocolListener, recepientProcessor: Actor<RecepientProcessor>, processorF: RecepientProcessor -> Async<unit>, onDisposeF: unit -> unit) =
-            static let counter = Thespian.Agents.Agent.start Map.empty<ActorId, int>
+            static let counter = Nessos.Thespian.Agents.Agent.start Map.empty<ActorId, int>
 
             let start () =
                 if clientOnly then
@@ -274,12 +274,12 @@
                 | Some count -> Map.add actorId (count - 1) counterMap
                 | None -> counterMap
 
-            do if clientOnly then Thespian.Agents.Agent.sendSafe inc counter
+            do if clientOnly then Nessos.Thespian.Agents.Agent.sendSafe inc counter
 
             interface IDisposable with
                 member d.Dispose() = 
                     onDisposeF()
-                    if clientOnly then Thespian.Agents.Agent.sendSafe dec counter                    
+                    if clientOnly then Nessos.Thespian.Agents.Agent.sendSafe dec counter                    
 
         //if actorRef is Some then the protocol instance is used in server+client mode
         //if None it is in client only mode

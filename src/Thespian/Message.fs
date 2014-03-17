@@ -1,4 +1,4 @@
-﻿namespace Thespian.Remote.TcpProtocol
+﻿namespace Nessos.Thespian.Remote.TcpProtocol
 
     open System
     open System.IO
@@ -7,13 +7,13 @@
     open System.Threading
     open System.Runtime.Serialization
 
-    open Thespian
-    open Thespian.Utils
-    open Thespian.Serialization
-    open Thespian.DisposableExtensions
-    open Thespian.Remote
-    open Thespian.Remote.SocketExtensions
-    open Thespian.Remote.TcpProtocol.BinarySerializationExtensions
+    open Nessos.Thespian
+    open Nessos.Thespian.Utils
+    open Nessos.Thespian.Serialization
+    open Nessos.Thespian.DisposableExtensions
+    open Nessos.Thespian.Remote
+    open Nessos.Thespian.Remote.SocketExtensions
+    open Nessos.Thespian.Remote.TcpProtocol.BinarySerializationExtensions
 
     type MsgId = Guid
 

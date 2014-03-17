@@ -1,7 +1,7 @@
-namespace Thespian.Agents
+namespace Nessos.Thespian.Agents
 
     open System
-    open Thespian
+    open Nessos.Thespian
 
     type AgentMessage<'T> =
     | Swap of ('T -> 'T)

@@ -1,9 +1,9 @@
-﻿namespace Thespian.Tests
+﻿namespace Nessos.Thespian.Tests
 
     open System
-    open Thespian
-    open Thespian.Remote
-    open Thespian.Remote.ConnectionPool
+    open Nessos.Thespian
+    open Nessos.Thespian.Remote
+    open Nessos.Thespian.Remote.ConnectionPool
 
     [<AutoOpen>]
     module TestActors =
@@ -174,7 +174,7 @@
         open System
         open System.Net
         open System.Runtime.Serialization
-        open Thespian.Remote.TcpProtocol
+        open Nessos.Thespian.Remote.TcpProtocol
 
         [<Serializable>]
         type NonDeserializable(fail: bool) =

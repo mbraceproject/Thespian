@@ -1,11 +1,11 @@
-namespace Thespian.Flow
+namespace Nessos.Thespian.Flow
     
     open System
 
-    open Thespian
+    open Nessos.Thespian
 
     type Actor<'T> private (id: ActorUUID, name: string, protocols: IActorProtocol<'T>[], body: Actor<'T> -> Async<unit>) =
-        inherit Thespian.Actor<'T>(id, name, protocols, fun actor -> body (actor :?> Actor<_>))
+        inherit Nessos.Thespian.Actor<'T>(id, name, protocols, fun actor -> body (actor :?> Actor<_>))
 
         let innerActor = (protocols.[0] :?> FlowMailboxActorProtocol<'T>).InnerActor
         let innerActorRef = innerActor.Ref
@@ -17,7 +17,7 @@ namespace Thespian.Flow
         new(body: Actor<'T> -> Async<unit>) = new Actor<'T>(System.Guid.NewGuid().ToString(), body)
 
         override actor.Publish(protocols': IActorProtocol<'T>[]) = 
-            new Actor<'T>(id, name, protocols' |> Array.append protocols, body) :> Thespian.Actor<'T>
+            new Actor<'T>(id, name, protocols' |> Array.append protocols, body) :> Nessos.Thespian.Actor<'T>
 
         override actor.Receive() = async {
                 let! res = innerActor.Receive()

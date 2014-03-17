@@ -1,4 +1,4 @@
-namespace Thespian.Tests
+namespace Nessos.Thespian.Tests
 
     module FsUnit =
         open NUnit.Framework

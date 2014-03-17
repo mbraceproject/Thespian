@@ -1,4 +1,4 @@
-﻿namespace Thespian.Remote.PipeProtocol
+﻿namespace Nessos.Thespian.Remote.PipeProtocol
 
     open System
     open System.Diagnostics
@@ -6,9 +6,9 @@
 
     open System.Runtime.Serialization
     
-    open Thespian
-    open Thespian.Serialization
-    open Thespian.AsyncExtensions
+    open Nessos.Thespian
+    open Nessos.Thespian.Serialization
+    open Nessos.Thespian.AsyncExtensions
 
     //
     //  This is a *very* rudimentary implementation of an actor protocol for named pipes

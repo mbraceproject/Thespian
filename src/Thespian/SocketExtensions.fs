@@ -1,4 +1,4 @@
-namespace Thespian.Remote
+namespace Nessos.Thespian.Remote
 
     module SocketExtensions =
         open System

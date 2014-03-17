@@ -1,4 +1,4 @@
-namespace Thespian
+namespace Nessos.Thespian
 
     module AsyncExtensions = 
     

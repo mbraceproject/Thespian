@@ -1,4 +1,4 @@
-namespace Thespian.Utils
+namespace Nessos.Thespian.Utils
 
     open System
     open System.Threading
@@ -6,7 +6,7 @@ namespace Thespian.Utils
     [<AutoOpen>]
     module Utils =
         
-        open Thespian
+        open Nessos.Thespian
 
         let memoize f =
             let cache = Atom Map.empty

@@ -1,15 +1,15 @@
-﻿namespace Thespian.Tests
+﻿namespace Nessos.Thespian.Tests
 
     open System
     open System.Net
     open System.Diagnostics
-    open Thespian
-    open Thespian.Serialization
-    open Thespian.Remote
-    open Thespian.Remote.TcpProtocol
-    open Thespian.Remote.TcpProtocol.Bidirectional
-    open Thespian.Tests.FsUnit
-    open Thespian.Tests.RemoteTesting
+    open Nessos.Thespian
+    open Nessos.Thespian.Serialization
+    open Nessos.Thespian.Remote
+    open Nessos.Thespian.Remote.TcpProtocol
+    open Nessos.Thespian.Remote.TcpProtocol.Bidirectional
+    open Nessos.Thespian.Tests.FsUnit
+    open Nessos.Thespian.Tests.RemoteTesting
     open NUnit.Framework
 
     [<TestFixture>]

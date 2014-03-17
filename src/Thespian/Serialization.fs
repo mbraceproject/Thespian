@@ -1,4 +1,4 @@
-﻿namespace Thespian.Serialization
+﻿namespace Nessos.Thespian.Serialization
 
     open System
     open System.IO
@@ -7,7 +7,7 @@
     open System.Runtime.Serialization.Formatters.Binary
     open System.Collections.Generic
     
-    open Thespian
+    open Nessos.Thespian
 
     type BinaryFormatterMessageSerializer(?compressSerialization : bool) =
         let compress = defaultArg compressSerialization true

@@ -1,4 +1,4 @@
-﻿namespace Thespian.Remote.TcpProtocol
+﻿namespace Nessos.Thespian.Remote.TcpProtocol
 
     open System
     open System.IO
@@ -8,14 +8,14 @@
     open System.Threading.Tasks
     open System.Runtime.Serialization
 
-    open Thespian
-    open Thespian.AsyncExtensions
-    open Thespian.Serialization
-    open Thespian.Utils
-    open Thespian.DisposableExtensions
-    open Thespian.Remote
-    open Thespian.Remote.SocketExtensions
-    open Thespian.Remote.ConnectionPool
+    open Nessos.Thespian
+    open Nessos.Thespian.AsyncExtensions
+    open Nessos.Thespian.Serialization
+    open Nessos.Thespian.Utils
+    open Nessos.Thespian.DisposableExtensions
+    open Nessos.Thespian.Remote
+    open Nessos.Thespian.Remote.SocketExtensions
+    open Nessos.Thespian.Remote.ConnectionPool
 
     module Bidirectional =
         let ProtocolName = "btcp"

@@ -1,12 +1,12 @@
-﻿namespace Thespian.Remote.TcpProtocol
+﻿namespace Nessos.Thespian.Remote.TcpProtocol
 
     open System
     open System.IO
     open System.Net
     open System.Runtime.Serialization
-    open Thespian
-    open Thespian.Utils
-    open Thespian.Serialization
+    open Nessos.Thespian
+    open Nessos.Thespian.Utils
+    open Nessos.Thespian.Serialization
 
     type PublishMode =
         | Client of Address list

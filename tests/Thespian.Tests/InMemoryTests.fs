@@ -1,14 +1,14 @@
-﻿namespace Thespian.Tests
+﻿namespace Nessos.Thespian.Tests
 
     open System
     open NUnit.Framework
 
-    open Thespian
-    open Thespian.AsyncExtensions
-    open Thespian.Serialization
-    open Thespian.Remote
-    open Thespian.Remote.TcpProtocol
-    open Thespian.Tests.FsUnit
+    open Nessos.Thespian
+    open Nessos.Thespian.AsyncExtensions
+    open Nessos.Thespian.Serialization
+    open Nessos.Thespian.Remote
+    open Nessos.Thespian.Remote.TcpProtocol
+    open Nessos.Thespian.Tests.FsUnit
 
     [<TestFixture>]
     type ``In Mempory Tests``() =

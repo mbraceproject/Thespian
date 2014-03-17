@@ -1,4 +1,4 @@
-﻿namespace Thespian.Remote.TcpProtocol
+﻿namespace Nessos.Thespian.Remote.TcpProtocol
 
     open System
     open System.IO
@@ -8,12 +8,12 @@
     open System.Threading.Tasks
     open System.Runtime.Serialization
 
-    open Thespian
-    open Thespian.AsyncExtensions
-    open Thespian.Serialization
-    open Thespian.Utils
-    open Thespian.Remote
-    open Thespian.Remote.SocketExtensions
+    open Nessos.Thespian
+    open Nessos.Thespian.AsyncExtensions
+    open Nessos.Thespian.Serialization
+    open Nessos.Thespian.Utils
+    open Nessos.Thespian.Remote
+    open Nessos.Thespian.Remote.SocketExtensions
 
 
     type RecepientProcessor = MsgId * byte[] * ProtocolStream

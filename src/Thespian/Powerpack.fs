@@ -1,10 +1,10 @@
-namespace Thespian.PowerPack
+namespace Nessos.Thespian.PowerPack
 
     open System
     open System.Net
     open System.Runtime.Serialization
-    open Thespian
-    open Thespian.Serialization
+    open Nessos.Thespian
+    open Nessos.Thespian.Serialization
 
     type Rely<'T> = IReplyChannel<unit> * 'T
 

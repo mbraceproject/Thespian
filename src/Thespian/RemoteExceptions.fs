@@ -1,9 +1,9 @@
-﻿namespace Thespian.Remote
+﻿namespace Nessos.Thespian.Remote
 
     open System
     open System.Net
     open System.Runtime.Serialization
-    open Thespian
+    open Nessos.Thespian
 
     [<AutoOpen>]
     module Utils = 

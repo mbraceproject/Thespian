@@ -1,4 +1,4 @@
-namespace Thespian
+namespace Nessos.Thespian
 
     open System
     open System.Runtime.Serialization

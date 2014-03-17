@@ -1,6 +1,6 @@
-namespace Thespian.Flow
+namespace Nessos.Thespian.Flow
 
-    open Thespian
+    open Nessos.Thespian
 
     type FlowMailboxActorProtocol<'T>(id: ActorUUID, name: string) =
         inherit MailboxActorProtocol<'T>(id, name)

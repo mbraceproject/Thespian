@@ -1,4 +1,4 @@
-﻿module Thespian.Remote.ConnectionPool
+﻿module Nessos.Thespian.Remote.ConnectionPool
 
 open System
 open System.Threading
@@ -7,9 +7,9 @@ open System.Net.Sockets
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Diagnostics
-open Thespian
-open Thespian.AsyncExtensions
-open Thespian.Remote.SocketExtensions
+open Nessos.Thespian
+open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Remote.SocketExtensions
 
 type CountdownLatch() =
     let mutable counter = 0
