@@ -329,7 +329,7 @@
             manager.PublishActor("simpleState")
             manager.StartActor()
 
-            let actorRef = ActorRef.fromUri "btcp://127.0.0.1:4243/*/simpleState/format.binary"
+            let actorRef = ActorRef.fromUri "btcp://127.0.0.1:4243/*/simpleState/FsPickler"
 
             actorRef <-- SimpleStateSet 42
 
@@ -346,7 +346,7 @@
 
             let actorUUId = manager.ActorRef.UUId
 
-            let actorRef = ActorRef.fromUri <| sprintf "btcp://127.0.0.1:4243/%A/*/format.binary" actorUUId
+            let actorRef = ActorRef.fromUri <| sprintf "btcp://127.0.0.1:4243/%A/*/FsPickler" actorUUId
 
             actorRef <-- SimpleStateSet 42
 
@@ -436,13 +436,13 @@
         [<Test>]
         [<ExpectedException(typeof<CommunicationException>)>]
         member t.``Post to non-existing actor.``() =
-            let actorRef = ActorRef.fromUri "btcp://localhost:9999/*/notExists/format.binary"
+            let actorRef = ActorRef.fromUri "btcp://localhost:9999/*/notExists/FsPickler"
 
             actorRef <-- SimpleStateSet 42
 
         [<Test>]
         [<ExpectedException(typeof<CommunicationException>)>]
         member t.``Post with reply to non-existing actor.``() =
-            let actorRef = ActorRef.fromUri "btcp://localhost:9999/*/notExists/format.binary"
+            let actorRef = ActorRef.fromUri "btcp://localhost:9999/*/notExists/FsPickler"
 
             actorRef <!= SimpleStateGet |> ignore

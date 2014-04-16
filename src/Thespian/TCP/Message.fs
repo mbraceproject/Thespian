@@ -13,7 +13,6 @@
     open Nessos.Thespian.DisposableExtensions
     open Nessos.Thespian.Remote
     open Nessos.Thespian.Remote.SocketExtensions
-    open Nessos.Thespian.Remote.TcpProtocol.BinarySerializationExtensions
 
     type MsgId = Guid
 
@@ -58,7 +57,7 @@
                     //binary formatter serialization
                     //byte array serialization
                     let eBinary = reader.ReadByteArray()
-                    let serializer = new BinaryFormatterMessageSerializer(false) :> IMessageSerializer
+                    let serializer = SerializerRegistry.GetDefaultSerializer()
                     let e = serializer.Deserialize(obj(), eBinary)
                     Failure(msgId, unbox e)
                 | _ -> //invalid
@@ -87,7 +86,7 @@
                     //e: exn
                     //binary formatter serialization
                     //byte array serialization
-                    let serializer = new BinaryFormatterMessageSerializer(false) :> IMessageSerializer
+                    let serializer = SerializerRegistry.GetDefaultSerializer()
                     let eBinary = serializer.Serialize(obj(), e)
                     writer.WriteByteArray(eBinary)
 

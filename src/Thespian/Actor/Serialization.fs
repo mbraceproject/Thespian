@@ -7,13 +7,21 @@
     open System.Runtime.Serialization.Formatters.Binary
     open System.Collections.Generic
     
+    open Nessos.FsPickler
+
     open Nessos.Thespian
+
+    type IMessageSerializer =
+        abstract Name: string
+        abstract Serialize : context:obj * obj -> byte []
+        abstract Deserialize : context:obj * byte [] -> obj
+
 
     type BinaryFormatterMessageSerializer(?compressSerialization : bool) =
         let compress = defaultArg compressSerialization true
 
         interface IMessageSerializer with
-            member __.Name = "format.binary"
+            member __.Name = "FsPickler"
 
             member __.Serialize (context: obj, graph : obj) : byte[] =
                 let formatter = new BinaryFormatter(null, StreamingContext(StreamingContextStates.All, context))
@@ -39,11 +47,28 @@
                     formatter.Deserialize(zipStream)
                 else
                     formatter.Deserialize(memoryStream)
+
+
+    type FsPicklerSerializer(?pickler : FsPickler) =
+        
+        let pickler = 
+            match pickler with 
+            | None -> new FsPickler()
+            | Some p -> p
+
+        static let getStreamingContext(ctx:obj) = 
+            new StreamingContext(StreamingContextStates.All, ctx)
+
+        interface IMessageSerializer with
+            member __.Name = "FsPickler"
+
+            member __.Serialize (context:obj, graph:obj) = pickler.Pickle<obj>(graph, getStreamingContext context)
+            member __.Deserialize (context:obj, data:byte[]) = pickler.UnPickle<obj>(data, getStreamingContext context)
         
 
     type SerializerRegistry private () =
         static let defaultSerializerName = String.Empty
-        static let originalDefaultSerializer = new BinaryFormatterMessageSerializer() :> IMessageSerializer
+        static let originalDefaultSerializer = new FsPicklerSerializer() :> IMessageSerializer
         static let serializerMap = 
             let map = new Dictionary<string, IMessageSerializer>()
             map.Add(defaultSerializerName, originalDefaultSerializer)

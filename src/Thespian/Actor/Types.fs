@@ -3,8 +3,7 @@
     open System
 
     type ActorUUID = Guid
-    
-    //type ActorId = string
+
     [<AbstractClass>]
     [<Serializable>]
     type ActorId() =
@@ -25,3 +24,29 @@
                 match other with
                 | :? ActorId as otherId -> actorId.CompareTo(otherId)
                 | _ -> invalidArg "other" "Cannot compare objects of incompatible types."
+
+
+    type Reply<'T> = 
+        | Value of 'T
+        | Exception of exn
+    with
+        member r.GetValue(?keepOriginalStackTrace : bool) =
+            match r with
+            | Value t -> t
+            | Exception e ->
+                if defaultArg keepOriginalStackTrace false then
+                    reraise' e
+                else
+                    raise e
+
+    type LogLevel =
+        | Info
+        | Warning
+        | Error
+
+    type LogSource =
+        | Actor of string * ActorUUID
+        | Protocol of string
+    
+    type Log<'T> = LogLevel * LogSource * 'T
+    type Log = Log<obj>

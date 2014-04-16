@@ -492,7 +492,7 @@
             manager.PublishActor("simpleState")
             manager.StartActor()
 
-            let actorRef = ActorRef.fromUri "utcp://localhost:4253/*/simpleState/format.binary"
+            let actorRef = ActorRef.fromUri "utcp://localhost:4253/*/simpleState/FsPickler"
 
             actorRef <-- SimpleStateSet 42
 
@@ -509,7 +509,7 @@
 
             let actorUUId = manager.ActorRef.UUId
 
-            let actorRef = ActorRef.fromUri <| sprintf "utcp://localhost:4253/%A/*/format.binary" actorUUId
+            let actorRef = ActorRef.fromUri <| sprintf "utcp://localhost:4253/%A/*/FsPickler" actorUUId
 
             actorRef <-- SimpleStateSet 42
 
@@ -667,7 +667,7 @@
 
             let awaitResult = receiver |> Receiver.toObservable |> Async.AwaitObservable
 
-            let actorRef = ActorRef.fromUri "utcp://localhost:4243/*/receiver/format.binary"
+            let actorRef = ActorRef.fromUri "utcp://localhost:4243/*/receiver/FsPickler"
 
             actorRef <-- 42
             awaitResult |> Async.RunSynchronously |> should equal 42
@@ -697,7 +697,7 @@
 
             let actorUUId = manager.ActorRef.UUId
 
-            let actorRef = ActorRef.fromUri <| sprintf "utcp://localhost:4253/%A/*/format.binary" actorUUId
+            let actorRef = ActorRef.fromUri <| sprintf "utcp://localhost:4253/%A/*/FsPickler" actorUUId
 
             actorRef <-- SimpleStateSet 42
 
@@ -707,13 +707,13 @@
         [<Test>]
         [<ExpectedException(typeof<CommunicationException>)>]
         member t.``Post to non-existing actor.``() =
-            let actorRef = ActorRef.fromUri "utcp://localhost:9999/*/notExists/format.binary"
+            let actorRef = ActorRef.fromUri "utcp://localhost:9999/*/notExists/FsPickler"
 
             actorRef <-- SimpleStateSet 42
 
         [<Test>]
         [<ExpectedException(typeof<CommunicationException>)>]
         member t.``Post with reply to non-existing actor.``() =
-            let actorRef = ActorRef.fromUri "utcp://localhost:9999/*/notExists/format.binary"
+            let actorRef = ActorRef.fromUri "utcp://localhost:9999/*/notExists/FsPickler"
 
             actorRef <!= SimpleStateGet |> ignore

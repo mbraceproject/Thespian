@@ -35,7 +35,7 @@
         new (publishMode: PublishMode, ?serializerName: string) =
             match serializerName with
             | Some name when not <| SerializerRegistry.IsRegistered name ->
-                invalidArg "serializerName" "Unknown serializer."
+                invalidArg name "Unknown serializer."
             | _ -> ()
             {
                 publishMode = publishMode

@@ -10,7 +10,7 @@
     <RootNamespace>Nessos.Thespian</RootNamespace>
     <AssemblyName>Thespian</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <TargetFSharpCoreVersion>4.3.1.0</TargetFSharpCoreVersion>
+    <TargetFSharpCoreVersion>4.3.0.0</TargetFSharpCoreVersion>
     <Name>Thespian</Name>
     <TargetFrameworkProfile />
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
@@ -63,26 +63,25 @@
     <Compile Include="Utils\Atom.fs" />
     <Compile Include="Utils\Utils.fs" />
     <Compile Include="Utils\AsyncExtensions.fs" />
-    <Compile Include="Actor\ActorId.fs" />
+    <Compile Include="Actor\Types.fs" />
     <Compile Include="Actor\Exceptions.fs" />
-    <Compile Include="Actor\ActorRef.fs" />
     <Compile Include="Actor\Serialization.fs" />
+    <Compile Include="Actor\ActorRef.fs" />
     <Compile Include="Actor\MailboxActorProtocol.fs" />
     <Compile Include="Actor\Actor.fs" />
-    <Compile Include="Extensions\Flow.fs" />
-    <Compile Include="Extensions\FlowMailboxActorProtocol.fs" />
-    <Compile Include="Extensions\FlowActor.fs" />
     <Compile Include="Extensions\Agents.fs" />
     <Compile Include="Extensions\Receiver.fs" />
     <Compile Include="Extensions\Queue.fs" />
-    <Compile Include="Extensions\Powerpack.fs" />
     <Compile Include="Extensions\DisposableExtensions.fs" />
+    <Compile Include="Extensions\Flow.fs" />
+    <Compile Include="Extensions\FlowMailboxActorProtocol.fs" />
+    <Compile Include="Extensions\FlowActor.fs" />
+    <Compile Include="Extensions\Powerpack.fs" />
     <Compile Include="TCP\RemoteExceptions.fs" />
     <Compile Include="TCP\SocketExtensions.fs" />
     <Compile Include="TCP\ConnectionPool.fs" />
     <Compile Include="TCP\Address.fs" />
     <Compile Include="TCP\TcpActorId.fs" />
-    <Compile Include="TCP\BinarySerializationExtensions.fs" />
     <Compile Include="TCP\Message.fs" />
     <Compile Include="TCP\TcpListener.fs" />
     <Compile Include="TCP\TcpProtocol.fs" />

@@ -3,28 +3,7 @@ namespace Nessos.Thespian
     open System
     open System.Runtime.Serialization
 
-    [<Serializable>]
-    type Reply<'T> = 
-        | Value of 'T
-        | Exception of exn
-
-    type LogLevel =
-        | Info
-        | Warning
-        | Error
-
-    type LogSource =
-        | Actor of string * ActorUUID
-        | Protocol of string
-    
-    type Log<'T> = LogLevel * LogSource * 'T
-    type Log = Log<obj>
-
-    // temporary relocation
-    type IMessageSerializer =
-        abstract Name: string
-        abstract Serialize : context:obj * obj -> byte []
-        abstract Deserialize : context:obj * byte [] -> obj
+    open Nessos.Thespian.Serialization
 
     [<Serializable>]
     type IProtocolConfiguration =
