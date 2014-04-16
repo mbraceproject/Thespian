@@ -22,8 +22,6 @@
 
         let ProtocolName = "utcp"
 
-        let NullSerializationContext = obj()
-
         exception private ReplyResult of Reply<obj> option
 
         type ProtocolMessage<'T> =
@@ -55,23 +53,24 @@
                 | Response r -> Response r
 
         type ProtocolMessageStream(tracePrefix: string, protocolStream: ProtocolStream, serializer: IMessageSerializer) =
-            let write(msgId, actorId, protocolMessage, context) =
-                let serializedProtocolMessage = serializer.Serialize(context, protocolMessage)
-                let protocolRequest = msgId, actorId, serializedProtocolMessage : ProtocolRequest
-                protocolStream.AsyncWriteRequest(protocolRequest)
 
             new (protocolStream: ProtocolStream, serializer: IMessageSerializer) =
                 new ProtocolMessageStream(String.Empty, protocolStream, serializer)
 
             member s.ProtocolStream = protocolStream
 
-            member s.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: ProtocolMessage<'T>, serializationContext: MessageSerializationContext): Async<unit> =
+            member s.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: ProtocolMessage<'T>, ?serializationContext: MessageSerializationContext): Async<unit> =
                 //Debug.writelfc "ProtocolMessageStream" "%s - WRITING (%A, %A, %A)" tracePrefix msgId actorId protocolMessage
-                write(msgId, actorId, protocolMessage, serializationContext)
+                async {
+                    let ctx = serializationContext |> Option.map (fun mc -> mc.GetStreamingContext())
+                    let serializedProtocolMessage = serializer.Serialize<ProtocolMessage<'T>>(protocolMessage, ?context = ctx)
+                    let protocolRequest = msgId, actorId, serializedProtocolMessage : ProtocolRequest
+                    return! protocolStream.AsyncWriteRequest(protocolRequest)
+                }
 
-            member s.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: ProtocolMessage<'T>): Async<unit> =
-                //Debug.writelfc "ProtocolMessageStream" "%s - WRITING (%A, %A, %A)" tracePrefix msgId actorId protocolMessage
-                write(msgId, actorId, protocolMessage, NullSerializationContext) 
+//            member s.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: ProtocolMessage<'T>): Async<unit> =
+//                //Debug.writelfc "ProtocolMessageStream" "%s - WRITING (%A, %A, %A)" tracePrefix msgId actorId protocolMessage
+//                write msgId actorId protocolMessage None
 
             member s.Dispose() = 
                 //Debug.writelfc "ProtocolMessageStream" "%s - DISPOSING" tracePrefix
@@ -385,7 +384,7 @@
                                 new ReplyChannelProxy<'R>(
                                     new ReplyChannel<'R>(address, actorId, newMsgId, serializerName)
                                 )
-                    }, NullSerializationContext)
+                    })
 
             let handleResponseMsg (protocolStream: ProtocolStream) msgId (responseMsg: obj) = 
                 //let debug x = debug msgId x
@@ -494,9 +493,7 @@
                 try
                     //debug msgId "MESSAGE PROCESS START"
                     //second stage deserialization
-                    let msg = serializer.Deserialize(NullSerializationContext, payload) 
-                              |> unbox<ProtocolMessage<obj>>
-                              |> ProtocolMessage.unbox //throws SerializationException, InvalidCastException
+                    let msg = serializer.Deserialize<ProtocolMessage<obj>>(payload) |> ProtocolMessage.unbox //throws SerializationException, InvalidCastException
 
                     //debug msgId "MESSAGE DESERIALIZED: %A" msg
 
@@ -529,7 +526,7 @@
                         use protocolStream = new ProtocolStream(msgId, stream)
                         //serialize message with the reply patching serialization context
                         let context = serializationContext listenerAddress
-                        let protocolMessage = serializer.Serialize(context, Request msg |> ProtocolMessage.box)
+                        let protocolMessage = serializer.Serialize(Request msg |> ProtocolMessage.box, context.GetStreamingContext())
 
                         //handle foreign reply channels provided in the context
                         let foreignReplyChannelHandlers, foreignReplyChannelsMsgids =

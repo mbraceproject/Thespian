@@ -73,7 +73,7 @@ namespace Nessos.Thespian.PowerPack
             {
                 rawValue = RawMessage raw
                 serializer = serializer
-                memoizedValue = lazy (serializer.Deserialize(obj(), raw) :?> 'T)
+                memoizedValue = lazy (serializer.Deserialize<'T>(raw))
             }
 
 #if LOG_RAW_MSG_PAYLOAD_SIZE
@@ -90,7 +90,7 @@ namespace Nessos.Thespian.PowerPack
             member r.GetObjectData(info: SerializationInfo, context: StreamingContext) =
                 match r.rawValue, context.Context with
                 | NormalMessage value, (:? MessageSerializationContext as messageSerializationContext) ->
-                    let raw = messageSerializationContext.Serializer.Serialize(context.Context, value)
+                    let raw = messageSerializationContext.Serializer.Serialize(value, context)
 #if LOG_RAW_MSG_PAYLOAD_SIZE
                     Raw<_>.Logger.LogInfo <| sprintf "SERIALIZED RAW MSG. Length = %d" raw.Length
 #endif
@@ -100,7 +100,7 @@ namespace Nessos.Thespian.PowerPack
                     info.AddValue("rawValue", raw)
                     info.AddValue("serializerName", messageSerializationContext.Serializer.Name)
                 | NormalMessage value, _ -> 
-                    let raw = SerializerRegistry.GetDefaultSerializer().Serialize(context.Context, value)
+                    let raw = SerializerRegistry.GetDefaultSerializer().Serialize(value, context)
 
                     info.AddValue("rawValue", raw)
                     info.AddValue("serializerName", SerializerRegistry.GetDefaultSerializer().Name)

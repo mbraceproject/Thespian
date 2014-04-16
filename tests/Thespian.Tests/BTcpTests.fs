@@ -97,8 +97,8 @@
             simpleStateActor.Ref.[BTCP] <-- SimpleStateSet 42
 
             let serializer = SerializerRegistry.GetDefaultSerializer()
-            let serializedRef = serializer.Serialize(obj(), simpleStateActor.Ref)
-            let deserializedRef = serializer.Deserialize(obj(), serializedRef) :?> ActorRef<SimpleStateActor<int>>
+            let serializedRef = serializer.Serialize(simpleStateActor.Ref)
+            let deserializedRef = serializer.Deserialize<ActorRef<SimpleStateActor<int>>>(serializedRef)
 
             let result = deserializedRef <!= SimpleStateGet
             result |> should equal 42

@@ -58,7 +58,7 @@
                     //byte array serialization
                     let eBinary = reader.ReadByteArray()
                     let serializer = SerializerRegistry.GetDefaultSerializer()
-                    let e = serializer.Deserialize(obj(), eBinary)
+                    let e = serializer.Deserialize<exn> eBinary
                     Failure(msgId, unbox e)
                 | _ -> //invalid
                     raise <| new SerializationException("TcpProtocol: Invalid ProtocolResponse binary format.")
@@ -87,7 +87,7 @@
                     //binary formatter serialization
                     //byte array serialization
                     let serializer = SerializerRegistry.GetDefaultSerializer()
-                    let eBinary = serializer.Serialize(obj(), e)
+                    let eBinary = serializer.Serialize<exn>(e)
                     writer.WriteByteArray(eBinary)
 
     module Message = 

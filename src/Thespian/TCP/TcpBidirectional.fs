@@ -42,18 +42,15 @@
             let disposeCont = ref (None : (unit -> unit) option)
             let cancelCont = ref (None: (OperationCanceledException -> unit) option)
 
-            let write(msgId, actorId, protocolMessage, context) =
-                let serializedProtocolMessage = serializer.Serialize(context, protocolMessage)
-                let protocolRequest = msgId, actorId, serializedProtocolMessage : ProtocolRequest
-                protocolStream.AsyncWriteRequest(protocolRequest)
-
             member __.ProtocolStream = protocolStream
 
-            member __.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: 'T, serializationContext: MessageSerializationContext): Async<unit> =
-                write(msgId, actorId, protocolMessage, serializationContext)
-
-            member __.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: 'T): Async<unit> =
-                write(msgId, actorId, protocolMessage, NullSerializationContext)
+            member __.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: 'T, ?serializationContext: MessageSerializationContext) =
+                async {
+                    let context = serializationContext |> Option.map (fun c -> c.GetStreamingContext())
+                    let serializedProtocolMessage = serializer.Serialize<obj>(protocolMessage, ?context = context)
+                    let protocolRequest = msgId, actorId, serializedProtocolMessage : ProtocolRequest
+                    return! protocolStream.AsyncWriteRequest(protocolRequest)
+                }
 
             member __.Dispose() = 
                 lock sync (fun () ->
@@ -109,6 +106,7 @@
         type DeserializationContext(stream: ProtocolMessageStream) =
             member c.ProtocolMessageStream = stream
             member c.ReplyWriter: Actor<AsyncExecutor> = Actor.bind asyncExecutorBehavior |> Actor.start
+            member c.GetStreamingContext() = new StreamingContext(StreamingContextStates.All, c)
 
 
         type internal AsyncCountdownLatch(initialCount: int) =
@@ -337,9 +335,9 @@
                             //if during the deserialization we encounter a reply channel, then the ProtocolMessageStream
                             //is going to be useNested, preventing its disposal until all reply channels have been replied to
                             //throws SerializationException
-                            serializer.Deserialize(new DeserializationContext(protocolMessageStream), payload) 
-                            |> unbox<'T>
-                            |> Choice1Of2
+                            let context = new DeserializationContext(protocolMessageStream)
+                            let msg = serializer.Deserialize<obj>(payload, context.GetStreamingContext()) :?> 'T
+                            Choice1Of2 msg
                         with e -> Choice2Of2 e
 
                     try
@@ -401,7 +399,7 @@
                                 new ReplyChannelProxy<'R>(
                                     new ReplyChannel<'R>(actorId, newMsgId, serializerName)
                                 )
-                    }, NullSerializationContext)
+                    })
 
             let processReply (protocolStream: ProtocolStream) = async {
                 //debug 0 "WAITING FOR REPLY"
@@ -410,7 +408,8 @@
                 let deserializationResult =
                     try
                         //can fail
-                        serializer.Deserialize(NullSerializationContext, serializedReply) |> unbox<Reply<obj>> |> Choice1Of2
+                        let reply = serializer.Deserialize<obj>(serializedReply) :?> Reply<obj>
+                        Choice1Of2 reply
                     with e -> Choice2Of2 e
 
                 match deserializationResult, registeredResponseAsyncWaits.Value.TryFind replyMsgId with
@@ -450,7 +449,7 @@
                 use _ = useNested protocolStream
 
                 let serializationContext = newSerializationContext()
-                let serializedMessage = serializer.Serialize(serializationContext, msg)
+                let serializedMessage = serializer.Serialize<obj>(msg, serializationContext.GetStreamingContext())
 
                 //handle foreign reply channels provided in the context
                 //We will async start one computation waiting for a reply for each reply channel override

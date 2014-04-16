@@ -116,7 +116,7 @@
 
             let simpleActor = simpleStateActor()
 
-            serializer.Serialize(obj(), !simpleActor) |> ignore
+            serializer.Serialize(!simpleActor) |> ignore
 
 
         [<Test>]

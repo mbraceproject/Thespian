@@ -322,7 +322,7 @@ namespace Nessos.Thespian
         abstract Protocol: string
         abstract Create: unit -> ReplyChannelProxy<'T>
 
-    and MessageSerializationContext(serializer: IMessageSerializer, replyChannelFactory: IReplyChannelFactory, furtherContext: obj) =
+    and MessageSerializationContext(serializer: IMessageSerializer, replyChannelFactory: IReplyChannelFactory) = //, furtherContext: obj) =
         //list of foreign reply channel information gathered by the context
         //list of (foreignReplyChannel, nativeOverrideReplyChannel)
         let replyChannels = Atom.atom List.empty<IReplyChannel * IReplyChannel>
@@ -332,7 +332,9 @@ namespace Nessos.Thespian
         member c.ReplyChannelOverrides with get() = replyChannels.Value
         member c.AddReplyChannelOverride(foreignReplyChannel: IReplyChannel, nativeReplyChannel: IReplyChannel) =
             Atom.swap replyChannels (fun rcs -> (foreignReplyChannel, nativeReplyChannel)::rcs)
-        member c.FurtherContext = furtherContext
+//        member c.FurtherContext = furtherContext
+
+        member c.GetStreamingContext() = new StreamingContext(StreamingContextStates.All, c)
 
     and ReplyChannelProxy<'T> =
         val realReplyChannel: IReplyChannel<'T>

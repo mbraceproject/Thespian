@@ -13,40 +13,43 @@
 
     type IMessageSerializer =
         abstract Name: string
-        abstract Serialize : context:obj * obj -> byte []
-        abstract Deserialize : context:obj * byte [] -> obj
 
+        abstract Serialize<'T> : 'T * ?context:StreamingContext -> byte []
+        abstract Deserialize<'T> : data:byte[] * ?context:StreamingContext -> 'T
 
     type BinaryFormatterMessageSerializer(?compressSerialization : bool) =
         let compress = defaultArg compressSerialization true
 
+        static let getFormatter (context : StreamingContext option) =
+            match context with
+            | None -> new BinaryFormatter()
+            | Some ctx -> new BinaryFormatter(null, ctx)
+
         interface IMessageSerializer with
             member __.Name = "FsPickler"
 
-            member __.Serialize (context: obj, graph : obj) : byte[] =
-                let formatter = new BinaryFormatter(null, StreamingContext(StreamingContextStates.All, context))
-
+            member __.Serialize<'T> (value : 'T, ?context:StreamingContext) : byte[] =
                 use memoryStream = new MemoryStream()
+                let formatter = getFormatter context
 
                 if compress then
                     use zipStream = new GZipStream(memoryStream, CompressionMode.Compress)
-                    formatter.Serialize(zipStream, graph)
+                    formatter.Serialize(zipStream, value)
                     zipStream.Close()
                 else
-                    formatter.Serialize(memoryStream, graph)
+                    formatter.Serialize(memoryStream, value)
                 
                 memoryStream.GetBuffer()
 
-            member __.Deserialize (context: obj, bytes : byte[]) : obj =
-                let formatter = new BinaryFormatter(null, StreamingContext(StreamingContextStates.All, context))
-
+            member __.Deserialize<'T> (bytes : byte[], ?context:StreamingContext) : 'T =
                 use memoryStream = new MemoryStream(bytes)
+                let formatter = getFormatter context
                 
                 if compress then
                     use zipStream = new GZipStream(memoryStream, CompressionMode.Decompress)
-                    formatter.Deserialize(zipStream)
+                    formatter.Deserialize(zipStream) :?> 'T
                 else
-                    formatter.Deserialize(memoryStream)
+                    formatter.Deserialize(memoryStream) :?> 'T
 
 
     type FsPicklerSerializer(?pickler : FsPickler) =
@@ -56,50 +59,45 @@
             | None -> new FsPickler()
             | Some p -> p
 
-        static let getStreamingContext(ctx:obj) = 
-            new StreamingContext(StreamingContextStates.All, ctx)
-
         interface IMessageSerializer with
             member __.Name = "FsPickler"
 
-            member __.Serialize (context:obj, graph:obj) = pickler.Pickle<obj>(graph, getStreamingContext context)
-            member __.Deserialize (context:obj, data:byte[]) = pickler.UnPickle<obj>(data, getStreamingContext context)
+            member __.Serialize<'T> (value:'T, ?context) = pickler.Pickle<'T>(value, ?streamingContext = context)
+            member __.Deserialize<'T> (data:byte[], ?context) = pickler.UnPickle<'T>(data, ?streamingContext = context)
         
 
     type SerializerRegistry private () =
         static let defaultSerializerName = String.Empty
         static let originalDefaultSerializer = new FsPicklerSerializer() :> IMessageSerializer
-        static let serializerMap = 
-            let map = new Dictionary<string, IMessageSerializer>()
-            map.Add(defaultSerializerName, originalDefaultSerializer)
-            map.Add(originalDefaultSerializer.Name, originalDefaultSerializer)
-            map
+        static let serializerMap = Atom.atom Map.empty<string, IMessageSerializer>
+        static let init () =
+            serializerMap.Swap(fun _ -> 
+                let map = Map.empty
+                let map = Map.add defaultSerializerName originalDefaultSerializer map
+                let map = Map.add originalDefaultSerializer.Name originalDefaultSerializer map
+                map)
+
+        static do init ()
 
         static member Register(serializer: IMessageSerializer, ?setAsDefault: bool) =
-            serializerMap.[serializer.Name] <- serializer
-            if defaultArg setAsDefault false then
-                serializerMap.[defaultSerializerName] <- serializer
+            serializerMap.Swap(fun m ->
+                let m = Map.add serializer.Name serializer m
+                if defaultArg setAsDefault false then
+                    Map.add defaultSerializerName serializer m
+                else m)
 
-        static member DefaultName = serializerMap.[defaultSerializerName].Name
-        
-        static member GetDefaultSerializer() =
-            serializerMap.[defaultSerializerName]
+        static member DefaultName = serializerMap.Value.[defaultSerializerName].Name
+        static member GetDefaultSerializer() = serializerMap.Value.[defaultSerializerName]
 
         static member SetDefault(name: string) =
-            if serializerMap.ContainsKey name then
-                serializerMap.[defaultSerializerName] <- serializerMap.[name]
-            else invalidArg "name" "No such serializer registered."
+            serializerMap.Swap(fun m ->
+                match m.TryFind name with
+                | Some serializer -> Map.add defaultSerializerName serializer m
+                | None -> invalidArg "name" "No such serializer registered.")
 
-        static member Resolve(name: string) =
-            serializerMap.[name]
-
-        static member IsRegistered(name: string) =
-            serializerMap.ContainsKey name
-
-        static member Clear() =
-            serializerMap.Clear()
-            serializerMap.Add(defaultSerializerName, originalDefaultSerializer)
-            serializerMap.Add(originalDefaultSerializer.Name, originalDefaultSerializer)
+        static member Resolve(name: string) = serializerMap.Value.[name]
+        static member IsRegistered(name: string) = serializerMap.Value.ContainsKey name
+        static member Clear() = init ()
 
     [<AutoOpen>]
     module Default =
