@@ -26,11 +26,11 @@
 
         [<Test>]
         member t.``Mailbox to BTcp to UTcp foreign reply channel``() =
-            use remoteStateDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4242, 0, "stateDomain")
+            use remoteStateDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4245, 0, "stateDomain")
             let stateManager = remoteStateDomain.RemoteActorManager
             stateManager.PublishActor()
             stateManager.StartActor()
-            use remoteForwarderDomain = new RemoteDomainManager<IntermediateActorBTcpManager<SimpleStateActor<int>>, unit>(4243, (), "forwarderDomain")
+            use remoteForwarderDomain = new RemoteDomainManager<IntermediateActorBTcpManager<SimpleStateActor<int>>, unit>(4246, (), "forwarderDomain")
             let forwarderManager = remoteForwarderDomain.RemoteActorManager
             forwarderManager.Init(stateManager.ActorRef)
             forwarderManager.PublishActor()
@@ -46,9 +46,9 @@
         [<Test>]
         member t.``Exclusive listener``() =
             try
-                TcpListenerPool.RegisterListener(4245, concurrentAccepts = 10, exclusive = true)
+                TcpListenerPool.RegisterListener(4246, concurrentAccepts = 10, exclusive = true)
 
-                let exclusiveActor = simpleStateActor() |> Actor.publish [Bidirectional.BTcp(port = 4245)]
+                let exclusiveActor = simpleStateActor() |> Actor.publish [Bidirectional.BTcp(port = 4246)]
 
                 let otherActors = [ for i in 1..10 -> simpleStateActor() |> Actor.publish [Unidirectional.UTcp()] ]
 

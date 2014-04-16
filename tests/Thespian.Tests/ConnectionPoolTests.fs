@@ -17,7 +17,7 @@
         [<TestFixtureSetUp>]
         member t.TestInit() =
             TcpListenerPool.DefaultHostname <- "localhost"
-            TcpListenerPool.RegisterListener(4242, concurrentAccepts = 10)
+            TcpListenerPool.RegisterListener(4248, concurrentAccepts = 10)
             ConnectionPool.TcpConnectionPool.Init(0, 1, 500)
 
         [<TestFixtureTearDown>]
@@ -27,18 +27,18 @@
 
         [<Test>]
         member __.``Connectivity after Connection Refused``() =
-            let remoteDomain = new RemoteDomainManager<AppDomainFailingActorUTcpManager, unit>(4243, ())
+            let remoteDomain = new RemoteDomainManager<AppDomainFailingActorUTcpManager, unit>(4249, ())
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor("appDomainFailingActor")
             manager.StartActor()
 
-            let remoteDomain2 = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4244, 0)
+            let remoteDomain2 = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4250, 0)
             let manager2 = remoteDomain2.RemoteActorManager
             manager2.PublishActor("simpleStateActor")
             manager2.StartActor()
 
-            let actorRef = new ActorRef<SimpleStateActor<int>>(ActorUUID.Empty, "appDomainFailingActor", [| new Protocol<SimpleStateActor<int>>(ActorUUID.Empty, "appDomainFailingActor", ClientAddress <| Address.Parse("127.0.0.1:4243")) |])
-            let actorRef2 = new ActorRef<SimpleStateActor<int>>(ActorUUID.Empty, "simpleStateActor", [| new Protocol<SimpleStateActor<int>>(ActorUUID.Empty, "simpleStateActor", ClientAddress <| Address.Parse("127.0.0.1:4244")) |])
+            let actorRef = new ActorRef<SimpleStateActor<int>>(ActorUUID.Empty, "appDomainFailingActor", [| new Protocol<SimpleStateActor<int>>(ActorUUID.Empty, "appDomainFailingActor", ClientAddress <| Address.Parse("127.0.0.1:4249")) |])
+            let actorRef2 = new ActorRef<SimpleStateActor<int>>(ActorUUID.Empty, "simpleStateActor", [| new Protocol<SimpleStateActor<int>>(ActorUUID.Empty, "simpleStateActor", ClientAddress <| Address.Parse("127.0.0.1:4250")) |])
 
             printfn "actorRef2 <-- SimpleStateSet 42"
             actorRef2 <-- SimpleStateSet 42
@@ -58,11 +58,6 @@
             let result = actorRef2 <!= SimpleStateGet
 
             result |> should equal 42
-
-//
-//        [<Test>]
-//        member __.``Connection Pool Exhaustion bug``() =
-//            
 
 
 

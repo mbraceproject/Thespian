@@ -20,7 +20,7 @@
             Debug.Listeners.Add(new TextWriterTraceListener(Console.Out)) |> ignore
             TcpListenerPool.DefaultHostname <- "localhost"
             //TcpListenerPool.RegisterListener(4242, concurrentAccepts = 10)
-            TcpListenerPool.RegisterListener(new IPEndPoint(IPAddress.Any, 4242), concurrentAccepts = 10)
+            TcpListenerPool.RegisterListener(new IPEndPoint(IPAddress.Any, 4243), concurrentAccepts = 10)
             TcpListenerPool.RegisterListener(4040, concurrentAccepts = 10)
             ConnectionPool.TcpConnectionPool.Init()
 
@@ -134,7 +134,7 @@
 
         [<Test>]
         member t.``Parallel post with reply with multiple deserialized refs from different appdomains``() =
-            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4243, 0)
+            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4253, 0)
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor("simpleState")
             manager.StartActor()
@@ -157,11 +157,11 @@
         [<Test>]
         member t.``Parallel post with reply on collocated and non-collocated refs``() =
             use collocated = simpleStateActor() |> Actor.publish [UTcp()] |> Actor.start
-            use remoteDomain1 = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4243, 0)
+            use remoteDomain1 = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4253, 0)
             let manager1 = remoteDomain1.RemoteActorManager
             manager1.PublishActor("foo")
             manager1.StartActor()
-            use remoteDomain2 = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4244, 0)
+            use remoteDomain2 = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4254, 0)
             let manager2 = remoteDomain2.RemoteActorManager
             manager2.PublishActor("bar")
             manager2.StartActor()
@@ -446,9 +446,9 @@
         //[<Test; Repeat 50>]
         [<Test; Repeat 5>]
         member t.``Post to renamed actor with separately constructed ActorRef in same appdomain``() =
-            use actor = simpleStateActor() |> Actor.publish [UTcp(port = 4242)] |> Actor.rename "actorName" |> Actor.start
+            use actor = simpleStateActor() |> Actor.publish [UTcp(port = 4243)] |> Actor.rename "actorName" |> Actor.start
 
-            let actorRef = new ActorRef<SimpleStateActor<int>>(ActorUUID.Empty, "actorName", [| new Protocol<SimpleStateActor<int>>(ActorUUID.Empty, "actorName", ClientAddress <| Address.Parse("localhost:4242")) |])
+            let actorRef = new ActorRef<SimpleStateActor<int>>(ActorUUID.Empty, "actorName", [| new Protocol<SimpleStateActor<int>>(ActorUUID.Empty, "actorName", ClientAddress <| Address.Parse("localhost:4243")) |])
 
             actorRef <-- SimpleStateSet 42
 
@@ -456,13 +456,13 @@
 
         [<Test>]
         member t.``Post to actor in different appdomain via name id``() =
-            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4243, 0)
+            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4253, 0)
             let manager = remoteDomain.RemoteActorManager
             printfn "TEEEST %A" manager
             manager.PublishActor("simpleStateActor")
             manager.StartActor()
 
-            let actorRef = new ActorRef<SimpleStateActor<int>>(ActorUUID.Empty, "simpleStateActor", [| new Protocol<SimpleStateActor<int>>(ActorUUID.Empty, "simpleStateActor", ClientAddress <| Address.Parse("localhost:4243")) |])
+            let actorRef = new ActorRef<SimpleStateActor<int>>(ActorUUID.Empty, "simpleStateActor", [| new Protocol<SimpleStateActor<int>>(ActorUUID.Empty, "simpleStateActor", ClientAddress <| Address.Parse("localhost:4253")) |])
 
             actorRef <-- SimpleStateSet 42
 
@@ -472,7 +472,7 @@
 
         [<Test>]
         member t.``Post to actor in different appdomain via ref with uuid``() =
-            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4243, 0)
+            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4253, 0)
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor()
             manager.StartActor()
@@ -487,12 +487,12 @@
 
         [<Test>]
         member t.``Post to actor in different appdomain via ref from uri with name``() =
-            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4243, 0)
+            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4253, 0)
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor("simpleState")
             manager.StartActor()
 
-            let actorRef = ActorRef.fromUri "utcp://localhost:4243/*/simpleState/format.binary"
+            let actorRef = ActorRef.fromUri "utcp://localhost:4253/*/simpleState/format.binary"
 
             actorRef <-- SimpleStateSet 42
 
@@ -502,14 +502,14 @@
 
         [<Test>]
         member t.``Post to actor in different appdomain via ref from uri with uuid``() =
-            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4243, 0)
+            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4253, 0)
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor()
             manager.StartActor()
 
             let actorUUId = manager.ActorRef.UUId
 
-            let actorRef = ActorRef.fromUri <| sprintf "utcp://localhost:4243/%A/*/format.binary" actorUUId
+            let actorRef = ActorRef.fromUri <| sprintf "utcp://localhost:4253/%A/*/format.binary" actorUUId
 
             actorRef <-- SimpleStateSet 42
 
@@ -520,7 +520,7 @@
         [<Test>]
         [<ExpectedException(typeof<UnknownRecipientException>)>]
         member t.``Post to different appdomain not started actor (UnknownRecipient)``() =
-            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4243, 0)
+            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4253, 0)
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor()
 
@@ -530,14 +530,14 @@
 
         [<Test>]
         member t.``Post to different appdomain / with wrong types (protocol Failure ack with InvalidCastException)``() =
-            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4243, 0)
+            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4253, 0)
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor("simpleStateActor")
             manager.StartActor()
             //the actor is of type SimpleStateActor<int>
             //we will make an actorRef for SimpleStateActor<string>
 
-            let actorRef = new ActorRef<SimpleStateActor<string>>(ActorUUID.Empty, "simpleStateActor", [| new Protocol<SimpleStateActor<string>>(ActorUUID.Empty, "simpleStateActor", ClientAddress <| Address.Parse("127.0.0.1:4243")) |])
+            let actorRef = new ActorRef<SimpleStateActor<string>>(ActorUUID.Empty, "simpleStateActor", [| new Protocol<SimpleStateActor<string>>(ActorUUID.Empty, "simpleStateActor", ClientAddress <| Address.Parse("127.0.0.1:4253")) |])
             
             try
                 actorRef <-- SimpleStateSet "Foobar"
@@ -548,7 +548,7 @@
         [<Test>]
         [<ExpectedException(typeof<CommunicationException>)>]
         member t.``Post to different appdomain / with deserialization failure``() =
-            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<NonDeserializable>, NonDeserializable>(4243, new NonDeserializable(false))
+            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<NonDeserializable>, NonDeserializable>(4253, new NonDeserializable(false))
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor()
             manager.StartActor()
@@ -559,7 +559,7 @@
 
         [<Test>]
         member t.``Post with mailbox foreign reply channel``() =
-            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4243, 0)
+            use remoteDomain = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4253, 0)
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor()
             manager.StartActor()
@@ -578,7 +578,7 @@
 
         [<Test>]
         member t.``Post with 2 mailbox foreign reply channels``() =
-            use remoteDomain = new RemoteDomainManager<MultipleRepliesStateUTcpManager<int>, int>(4243, 0)
+            use remoteDomain = new RemoteDomainManager<MultipleRepliesStateUTcpManager<int>, int>(4253, 0)
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor()
             manager.StartActor()
@@ -598,8 +598,8 @@
 
         [<Test>]
         member t.``Post with reply to different remote actors with same name``() =
-            use remoteDomain1 = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4243, 0)
-            use remoteDomain2 = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4244, 0)
+            use remoteDomain1 = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4253, 0)
+            use remoteDomain2 = new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4254, 0)
 
             let manager1 = remoteDomain1.RemoteActorManager
             manager1.PublishActor("simpleStateActor")
@@ -624,7 +624,7 @@
         member t.``Parallel post with reply to different appdomains``() =
             let parallelCount = 5
             
-            let remoteDomains = [for i in 1..parallelCount -> new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4243+i, 0)]
+            let remoteDomains = [for i in 1..parallelCount -> new RemoteDomainManager<SimpleStateActorUTcpManager<int>, int>(4253+i, 0)]
             let actorRefs = remoteDomains |> List.map (fun remoteDomain -> 
                 let manager = remoteDomain.RemoteActorManager in manager.PublishActor(); manager.StartActor(); manager.ActorRef
             )
@@ -667,7 +667,7 @@
 
             let awaitResult = receiver |> Receiver.toObservable |> Async.AwaitObservable
 
-            let actorRef = ActorRef.fromUri "utcp://localhost:4242/*/receiver/format.binary"
+            let actorRef = ActorRef.fromUri "utcp://localhost:4243/*/receiver/format.binary"
 
             actorRef <-- 42
             awaitResult |> Async.RunSynchronously |> should equal 42
@@ -675,7 +675,7 @@
         [<Test>]
         [<ExpectedException(typeof<UnknownRecipientException>)>]
         member t.``Remote actor that fails``() =
-            use remoteDomain = new RemoteDomainManager<FailingActorUTcpManager, unit>(4243, ())
+            use remoteDomain = new RemoteDomainManager<FailingActorUTcpManager, unit>(4253, ())
 
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor()
@@ -689,7 +689,7 @@
         [<Test>]
         [<ExpectedException(typeof<CommunicationException>)>]
         member t.``Post with reply fail on waiting for reply``() =
-            let remoteDomain = new RemoteDomainManager<AppDomainFailingActorUTcpManager2, unit>(4243, ())
+            let remoteDomain = new RemoteDomainManager<AppDomainFailingActorUTcpManager2, unit>(4253, ())
             
             let manager = remoteDomain.RemoteActorManager
             manager.PublishActor()
@@ -697,7 +697,7 @@
 
             let actorUUId = manager.ActorRef.UUId
 
-            let actorRef = ActorRef.fromUri <| sprintf "utcp://localhost:4243/%A/*/format.binary" actorUUId
+            let actorRef = ActorRef.fromUri <| sprintf "utcp://localhost:4253/%A/*/format.binary" actorUUId
 
             actorRef <-- SimpleStateSet 42
 
