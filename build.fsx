@@ -26,17 +26,16 @@ let project = "Thespian"
 
 // Short summary of the project
 // (used as description in AssemblyInfo and as a short summary for NuGet package)
-let summary = "A short summary of your project."
+let summary = "An F# Actor Framework"
 
 // Longer description of the project
 // (used as a description for NuGet package; line breaks are automatically cleaned up)
 let description = """
-  A lengthy description of your project. 
-  This can have multiple lines and will be cleaned up. """
+  An F# Actor Framework """
 // List of author names (for NuGet package)
-let authors = [ "Your Name" ]
+let authors = [ "Jan Dzik"; "Eirik Tsarpalis" ]
 // Tags for your project (for NuGet package)
-let tags = "F# fsharp tags which describe your project"
+let tags = "actors, agents, message-passing, distributed"
 
 // File system information 
 // (<solutionFile>.sln is built during the building process)
