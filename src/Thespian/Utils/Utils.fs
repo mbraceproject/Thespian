@@ -2,22 +2,23 @@ namespace Nessos.Thespian.Utils
 
     open System
     open System.Threading
+    open System.Collections.Concurrent
+
+    open Nessos.Thespian
 
     [<AutoOpen>]
     module Utils =
-        
-        open Nessos.Thespian
 
         let memoize f =
-            let cache = Atom Map.empty
+            let cache = new ConcurrentDictionary<_,_>()
 
-            fun id ->
-                match cache.Value.TryFind id with
-                | None ->
-                    let result = f id
-                    cache.Swap (fun c -> c.Add(id, result))
-                    result
-                | Some result -> result
+            fun x ->
+                let found, y = cache.TryGetValue x
+                if found then y
+                else
+                    let y = f x
+                    let _ = cache.TryAdd(x, y)
+                    y
 
         let compareOn (f: 'T -> 'U when 'U : comparison) (x: 'T) (other: obj): int =
             match other with
@@ -37,14 +38,11 @@ namespace Nessos.Thespian.Utils
             | _ -> false
 
     module RegExp =
-        
-        //BASED ON http://blogs.msdn.com/b/chrsmith/archive/2008/02/22/regular-expressions-via-active-patterns.aspx
 
         open System
         open System.Text.RegularExpressions
 
         let (|Match|_|) =
-            // eirik : greatly improve performance by memoizing compiled regex objects
             let regex = memoize(fun pattern -> Regex(pattern))
             
             fun (pat : string) (inp : string) ->

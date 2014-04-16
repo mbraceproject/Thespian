@@ -42,8 +42,8 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Utils\Atom.fs" />
     <Compile Include="Utils\Debug.fs" />
+    <Compile Include="Utils\Atom.fs" />
     <Compile Include="Utils\Utils.fs" />
     <Compile Include="Utils\AsyncExtensions.fs" />
     <Compile Include="Actor\Exceptions.fs" />
