@@ -96,7 +96,7 @@
 
             new (actorId: TcpActorId, msgId: MsgId, ?serializer: string) = 
                 {
-                    timeout = Timeout.Infinite
+                    timeout = 30000
                     actorId = actorId
                     msgId = msgId
                     serializerName = serializerNameDefaultArg serializer
@@ -368,10 +368,8 @@
                             if attempts = 0 then
                                 return None
                             else
-                                try
-                                    do! pingAsync
-                                    return! waitForReply (attempts - 1)
-                                with _ -> return None
+                                do! pingAsync
+                                return! waitForReply (attempts - 1)
                                             
                     }
                 waitForReply 3
@@ -659,9 +657,12 @@
                         match r' with
                         | Choice1Of2 _ ->
                             //debug "WAITING FOR REPLY"
-                            let! response = awaitResponse
-                            //debug "REPLY RETURNED"
-                            return Choice1Of2 response
+                            let! response = Async.Catch awaitResponse
+                            match response with
+                            | Choice1Of2 r ->
+                                //debug "REPLY RETURNED"
+                                return Choice1Of2 r
+                            | Choice2Of2 e -> return Choice2Of2 e
                         | Choice2Of2 e ->
                             unregisterResponseAsyncWait msgId
                             return Choice2Of2 e
@@ -676,7 +677,7 @@
                     let! r = postMessageWithReplyOnEndPoint endPoint msgId msg timeout
                     match r with
                     | Choice1Of2 reply -> return reply
-                    | Choice2Of2(CommunicationException(_, _, _, InnerException e)) -> return! raisex e
+                    //| Choice2Of2(CommunicationException(_, _, _, InnerException e)) -> return! raisex e
                     | Choice2Of2((CommunicationException _) as e) -> return! raisex e
                     | Choice2Of2 e -> return! raisex <| new CommunicationException("A communication error occurred.", e)
                 | endPoint::rest ->
