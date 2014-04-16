@@ -1,4 +1,4 @@
-namespace Nessos.Thespian.Utils
+module Nessos.Thespian.Utils
 
     open System
     open System.Threading
@@ -6,36 +6,34 @@ namespace Nessos.Thespian.Utils
 
     open Nessos.Thespian
 
-    [<AutoOpen>]
-    module Utils =
+    let memoize f =
+        let cache = new ConcurrentDictionary<_,_>()
 
-        let memoize f =
-            let cache = new ConcurrentDictionary<_,_>()
+        fun x ->
+            let found, y = cache.TryGetValue x
+            if found then y
+            else
+                let y = f x
+                let _ = cache.TryAdd(x, y)
+                y
 
-            fun x ->
-                let found, y = cache.TryGetValue x
-                if found then y
-                else
-                    let y = f x
-                    let _ = cache.TryAdd(x, y)
-                    y
+    let compareOn (f: 'T -> 'U when 'U : comparison) (x: 'T) (other: obj): int =
+        match other with
+        | :? 'T as y -> compare (f x) (f y)
+        | _ -> invalidArg "other" "Unable to compare values of incompatible types."
 
-        let compareOn (f: 'T -> 'U when 'U : comparison) (x: 'T) (other: obj): int =
-            match other with
-            | :? 'T as y -> compare (f x) (f y)
-            | _ -> invalidArg "other" "Unable to compare values of incompatible types."
+    let hashOn (f: 'T -> 'U when 'U : equality) (x: 'T): int = hash (f x)
 
-        let hashOn (f: 'T -> 'U when 'U : equality) (x: 'T): int = hash (f x)
+    let equalsOn (f: 'T -> 'U when 'U : equality) (x: 'T) (other: obj): bool =
+        match other with
+        | :? 'T as y -> (f x = f y)
+        | _ -> false
 
-        let equalsOn (f: 'T -> 'U when 'U : equality) (x: 'T) (other: obj): bool =
-            match other with
-            | :? 'T as y -> (f x = f y)
-            | _ -> false
+    let equalsOnComparison (f: 'T -> 'U when 'U : comparison) (x: 'T) (other: obj): bool =
+        match other with
+        | :? 'T as y -> compareOn f x y = 0
+        | _ -> false
 
-        let equalsOnComparison (f: 'T -> 'U when 'U : comparison) (x: 'T) (other: obj): bool =
-            match other with
-            | :? 'T as y -> compareOn f x y = 0
-            | _ -> false
 
     module RegExp =
 
