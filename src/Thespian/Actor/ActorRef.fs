@@ -20,6 +20,12 @@ namespace Nessos.Thespian
     type Log<'T> = LogLevel * LogSource * 'T
     type Log = Log<obj>
 
+    // temporary relocation
+    type IMessageSerializer =
+        abstract Name: string
+        abstract Serialize : context:obj * obj -> byte []
+        abstract Deserialize : context:obj * byte [] -> obj
+
     [<Serializable>]
     type IProtocolConfiguration =
         inherit IComparable<IProtocolConfiguration>
@@ -333,18 +339,7 @@ namespace Nessos.Thespian
         abstract Reply: Reply<'T> -> unit
         abstract WithTimeout: int -> IReplyChannel<'T>
 
-namespace Nessos.Thespian.Serialization
-    type IMessageSerializer =
-        abstract Name: string
-        abstract Serialize : context:obj * obj -> byte []
-        abstract Deserialize : context:obj * byte [] -> obj
-
-namespace Nessos.Thespian
-    open System
-    open System.Runtime.Serialization
-    open Nessos.Thespian.Serialization
-
-    type IReplyChannelFactory =
+    and IReplyChannelFactory =
         abstract Protocol: string
         abstract Create: unit -> ReplyChannelProxy<'T>
 

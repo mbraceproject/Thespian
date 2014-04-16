@@ -1,6 +1,7 @@
 namespace Nessos.Thespian
 
     open System
+
     open Nessos.Thespian.Utils
 
     [<AbstractClass>]

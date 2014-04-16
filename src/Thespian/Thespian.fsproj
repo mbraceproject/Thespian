@@ -46,6 +46,7 @@
     <Compile Include="Utils\Atom.fs" />
     <Compile Include="Utils\Utils.fs" />
     <Compile Include="Utils\AsyncExtensions.fs" />
+    <Compile Include="Actor\ActorId.fs" />
     <Compile Include="Actor\Exceptions.fs" />
     <Compile Include="Actor\ActorRef.fs" />
     <Compile Include="Actor\Serialization.fs" />
