@@ -118,7 +118,7 @@ Target "NuGet" (fun _ ->
             OutputPath = "bin"
             AccessKey = getBuildParamOrDefault "nugetkey" ""
             Publish = hasBuildParam "nugetkey"
-            Dependencies = [] })
+            Dependencies = [("FsPickler", "")] })
         ("nuget/" + project + ".nuspec")
 )
 
@@ -160,9 +160,10 @@ Target "All" DoNothing
 
 "All" 
   ==> "CleanDocs"
-  ==> "GenerateDocs"
-  ==> "ReleaseDocs"
+//  ==> "GenerateDocs"
+//  ==> "ReleaseDocs"
   ==> "NuGet"
   ==> "Release"
 
+//RunTargetOrDefault "Release"
 RunTargetOrDefault "All"
