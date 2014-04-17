@@ -104,7 +104,7 @@
             let rec behaviour (self : Actor<'T * IReplyChannel * bool>) =
                 let reportError e = try forwarderErrors.Trigger e with _ -> ()
                 async {
-                    let! msg, r, withReply = self.Receive ()
+                    let! msg, (r : IReplyChannel), withReply = self.Receive ()
 
                     let! response = actorRef.PostAsync msg |> Async.Catch
 

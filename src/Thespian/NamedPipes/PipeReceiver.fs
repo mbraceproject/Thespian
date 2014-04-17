@@ -75,7 +75,7 @@
 
         // avoid getting ObjectDisposedException in callback if server has already been disposed
         let awaitConnectionAsync (s : NamedPipeServerStream) = async {
-            let! ct = Async.CancellationToken
+            let! (ct : CancellationToken) = Async.CancellationToken
             return!
                 Async.FromBeginEnd(s.BeginWaitForConnection,
                     fun r -> 
