@@ -13,7 +13,7 @@
     <releaseNotes>@releaseNotes@</releaseNotes>
     <copyright>Copyright 2014</copyright>
     <tags>@tags@</tags>
-    <dependencies />
+    @dependencies@
   </metadata>
   <files>
     <file src="..\bin\Thespian.dll" target="lib/net40" />
