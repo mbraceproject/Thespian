@@ -69,17 +69,17 @@
             | Some l -> l
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-    module internal Log =
+    module Log =
         
-        let internal log time lvl msg = Logger.DefaultLogger.Log(msg, lvl, time)
+        let log time lvl msg = Logger.DefaultLogger.Log(msg, lvl, time)
 
-        let internal logNow lvl msg = Logger.DefaultLogger.Log(msg, lvl, DateTime.Now)
+        let logNow lvl msg = Logger.DefaultLogger.Log(msg, lvl, DateTime.Now)
 
-        let internal logInfo msg = Logger.DefaultLogger.Log(msg, Info, DateTime.Now)
+        let logInfo msg = Logger.DefaultLogger.Log(msg, Info, DateTime.Now)
 
-        let internal logWarning msg = Logger.DefaultLogger.Log(msg, Warning, DateTime.Now)
+        let logWarning msg = Logger.DefaultLogger.Log(msg, Warning, DateTime.Now)
 
-        let internal logError msg = Logger.DefaultLogger.Log(msg, Error, DateTime.Now)
+        let logError msg = Logger.DefaultLogger.Log(msg, Error, DateTime.Now)
 
         let logException (e : exn) msg =
             let message = sprintf "%s\n    Exception=%O" msg e

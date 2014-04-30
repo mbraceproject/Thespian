@@ -10,6 +10,8 @@ open Microsoft.FSharp.Quotations.ExprShape
 open Microsoft.FSharp.Reflection
 
 
+// TODO : make ImemDb a separate project, perhaps part of LinqOptimizer?
+
 [<CustomEquality>][<CustomComparison>]
 type Attribute = {
     RelationName: string
