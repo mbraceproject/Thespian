@@ -20,5 +20,8 @@
     <file src="..\bin\Thespian.dll" target="lib/net45" />
     <file src="..\bin\Thespian.pdb" target="lib/net45" />
     <file src="..\bin\Thespian.xml" target="lib/net45" />
+    <file src="..\bin\Thespian.Cluster.dll" target="lib/net45" />
+    <file src="..\bin\Thespian.Cluster.pdb" target="lib/net45" />
+    <file src="..\bin\Thespian.Cluster.xml" target="lib/net45" />
   </files>
 </package>
