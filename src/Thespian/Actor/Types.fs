@@ -50,3 +50,37 @@
     
     type Log<'T> = LogLevel * LogSource * 'T
     type Log = Log<obj>
+
+
+    // in-place replacement for MBrace's logger interface: temporary solution
+
+    type ILogger =
+        abstract Log : msg:string * lvl:LogLevel * time:DateTime -> unit     
+        
+    type Logger private () =
+        static let loggerContainer = ref None  
+
+        static member Register(logger : ILogger) =
+            lock logger (fun () -> loggerContainer := Some logger)
+
+        static member DefaultLogger =
+            match loggerContainer.Value with
+            | None -> invalidOp "Thespian: no logger has been registered."
+            | Some l -> l
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module internal Log =
+        
+        let internal log time lvl msg = Logger.DefaultLogger.Log(msg, lvl, time)
+
+        let internal logNow lvl msg = Logger.DefaultLogger.Log(msg, lvl, DateTime.Now)
+
+        let internal logInfo msg = Logger.DefaultLogger.Log(msg, Info, DateTime.Now)
+
+        let internal logWarning msg = Logger.DefaultLogger.Log(msg, Warning, DateTime.Now)
+
+        let internal logError msg = Logger.DefaultLogger.Log(msg, Error, DateTime.Now)
+
+        let logException (e : exn) msg =
+            let message = sprintf "%s\n    Exception=%O" msg e
+            Logger.DefaultLogger.Log(message, Error, DateTime.Now)

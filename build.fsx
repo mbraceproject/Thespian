@@ -65,6 +65,7 @@ Target "AssemblyInfo" (fun _ ->
       [ Attribute.Title project
         Attribute.Product project
         Attribute.Description summary
+        Attribute.InternalsVisibleTo "Thespian.Cluster" // TODO : remove string literal
         Attribute.Version release.AssemblyVersion
         Attribute.FileVersion release.AssemblyVersion ] 
 )

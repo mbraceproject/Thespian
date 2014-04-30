@@ -12,6 +12,10 @@ namespace Nessos.Thespian
             let mutable switch = 0
             member __.Trigger() = Interlocked.CompareExchange(&switch, 1, 0) = 0
 
+        type private SuccessException<'T> (value : 'T) = 
+            inherit Exception()
+            member __.Value = value
+
         type Microsoft.FSharp.Control.Async with
             static member Raise (e : #exn) = Async.FromContinuations(fun (_,econt,_) -> econt e)
 
@@ -169,6 +173,60 @@ namespace Nessos.Thespian
                         | None -> continuation := Some cont
                     )
                 ))
+
+            static member IsolateCancellation (computationF : CancellationToken -> Async<'T>, ?cancellationToken : CancellationToken) : Async<'T> =
+                async {
+                    let! ct = 
+                        match cancellationToken with
+                        | None -> Async.CancellationToken
+                        | Some ct -> async.Return ct
+
+                    try
+                        return! Async.AwaitTask <| Async.StartAsTask(computationF ct)
+                    with :? AggregateException as e when e.InnerExceptions.Count = 1 ->
+                        return! Async.Raise <| e.InnerExceptions.[0]
+                }
+
+            //correct sleep implementation
+            static member SleepSafe (timeout: int) = async {
+                let! ct = Async.CancellationToken
+                let tmr = ref (null : System.Threading.Timer)
+                let cancellationCont = ref (ignore : System.OperationCanceledException -> unit)
+                use! cancelHandler = Async.OnCancel(fun () -> (if tmr.Value <> null then tmr.Value.Dispose()); cancellationCont.Value (new System.OperationCanceledException()))
+                do! Async.FromContinuations(fun (success, error, cancel) ->
+                    cancellationCont := cancel
+                    tmr := 
+                        new System.Threading.Timer(
+                            new System.Threading.TimerCallback(fun _ -> if not ct.IsCancellationRequested then success()), 
+                            null, 
+                            timeout, 
+                            System.Threading.Timeout.Infinite
+                        )
+                )
+            }
+
+            /// nondeterministic choice
+            static member Choice<'T>(tasks : Async<'T option> seq) : Async<'T option> =
+                let wrap task =
+                    async {
+                        let! res = task
+                        match res with
+                        | None -> return ()
+                        | Some r -> return! Async.Raise <| SuccessException r
+                    }
+
+                async {
+                    try
+                        do!
+                            tasks
+                            |> Seq.map wrap
+                            |> Async.Parallel
+                            |> Async.Ignore
+
+                        return None
+                    with 
+                    | :? SuccessException<'T> as ex -> return Some ex.Value
+                }
         
         //Based on
         //http://moiraesoftware.com/blog/2012/01/30/FSharp-Dataflow-agents-II/
@@ -337,3 +395,43 @@ namespace Nessos.Thespian
                     and remover2 : IDisposable  = ev2.Subscribe(callback2) 
                     and remover3 : IDisposable  = ev3.Subscribe(callback3) 
                     () ))
+
+
+    [<RequireQualifiedAccess>]
+    module List =
+        let rec foldAsync (foldF: 'U -> 'T -> Async<'U>) (state: 'U) (items: 'T list): Async<'U> =
+            async {
+                match items with
+                | [] -> return state
+                | item::rest ->
+                    let! nextState = foldF state item
+                    return! foldAsync foldF nextState rest
+            }
+
+        let foldBackAsync (foldF: 'T -> 'U -> Async<'U>) (items: 'T list) (state: 'U): Async<'U> =
+            let rec loop is k = async {
+                match is with
+                | [] -> return! k state
+                | h::t -> return! loop t (fun acc -> async { let! acc' = foldF h acc in return! k acc' })
+            }
+
+            loop items async.Return
+
+        let mapAsync (mapF: 'T -> Async<'U>) (items: 'T list): Async<'U list> =
+            foldBackAsync (fun i is -> async { let! i' = mapF i in return i'::is }) items []
+
+        let chooseAsync (choiceF: 'T -> Async<'U option>) (items: 'T list): Async<'U list> =
+            foldBackAsync (fun i is -> async { let! r = choiceF i in return match r with Some i' -> i'::is | _ -> is }) items []
+         
+    [<RequireQualifiedAccess>]   
+    module Array =
+        let foldAsync (foldF: 'U -> 'T -> Async<'U>) (state: 'U) (items: 'T []): Async<'U> =
+            let rec foldArrayAsync foldF state' index =
+                async {
+                    if index = items.Length then
+                        return state'
+                    else
+                        let! nextState = foldF state' items.[index]
+                        return! foldArrayAsync foldF nextState (index + 1)
+                }
+            foldArrayAsync foldF state 0
