@@ -27,6 +27,114 @@ namespace Nessos.Thespian
             member rc.WithTimeout(timeout: int) = rc.WithTimeout(timeout) :> IReplyChannel<'T>
             member rc.Reply(reply: Reply<'T>) = asyncRc.Value.Reply(reply)
 
+
+    type MailboxProtocolServer<'T>(actorName: string) =
+      let mutable cancellationTokenSource: CancellationTokenSource option = None
+      let mutable mailboxProcessor: MailboxProcessor<'T> option = None
+      let logEvent = new Event<Log>()
+      let mutable errorRemover: IDisposable option = None
+      let newNotStartedException () =
+        new ActorInactiveException("Protocol is stopped. Start actor by calling Actor<'T>.Start()")
+
+      let protocolName = "mailbox"
+      //TODO!!! Remove uuid from actorid
+      let actorId = new MailboxActorId(Guid.NewGuid(), actorName) :> ActorId
+
+      member __.Mailbox = mailboxProcessor
+
+      abstract Start: (unit -> Async<unit>) -> unit
+      default __.Start(body: unit -> Async<unit>) =
+        match cancellationTokenSource with
+        | Some _ -> ()
+        | None ->
+          let tokenSource = new CancellationTokenSource()
+          cancellationTokenSource <- Some(tokenSource)
+          let mailbox = new MailboxProcessor<'T>((fun _ -> body()), tokenSource.Token)
+          errorRemover <- Some( mailbox.Error.Subscribe(fun msg -> logEvent.Trigger(Error, Protocol protocolName, new ActorFailedException("Actor behavior unhandled exception.", msg) :> obj)) )
+          mailboxProcessor <- Some mailbox
+          mailbox.Start()
+
+      member __.Stop() =
+        match cancellationTokenSource with
+        | Some tokenSource ->
+          tokenSource.Cancel()
+          match mailboxProcessor with
+          | Some mailboxProcessor ->
+            (mailboxProcessor :> IDisposable).Dispose()
+          | None _ -> ()
+          cancellationTokenSource <- None
+          mailboxProcessor <- None
+          match errorRemover with
+          | Some remover -> remover.Dispose(); errorRemover <- None
+          | _ -> ()
+        | None -> ()
+
+      override __.ToString() = sprintf "%s://%O.%s" protocolName actorId typeof<'T>.Name
+
+      interface IPrimaryProtocolServer<'T> with
+        override __.ProtocolName = protocolName
+        override __.ActorId = actorId
+        override __.Log = logEvent.Publish
+        override __.PendingMessages
+          with get () =
+            match mailboxProcessor with
+            | Some mailbox -> mailbox.CurrentQueueLength
+            | None -> 0
+        override __.Start() = invalidOp "Principal protocol; Use the overload that requires the actor body."
+        override self.Stop() = self.Stop()
+
+        override __.Receive(timeout: int) =
+          match mailboxProcessor with
+          | Some mailbox -> mailbox.Receive(timeout)
+          | None -> raise <| newNotStartedException()
+
+        override __.TryReceive(timeout: int) =
+          match mailboxProcessor with
+          | Some mailbox -> mailbox.TryReceive(timeout)
+          | None -> raise <| newNotStartedException()
+
+        override self.Start(body: unit -> Async<unit>) = self.Start(body)
+        override self.Dispose() = self.Stop()
+
+    type MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
+      let srv = server :> IProtocolServer<'T>
+
+      let protectMailbox f =
+        match server.Mailbox with
+        | Some mailbox -> f mailbox
+        | None ->
+          //TODO!! Change this to a communication exception (DeliveryExcpetion)
+          //with inner exception ActorInactiveException
+          invalidOp "Not started"
+
+      let mailboxPost message (mailbox: MailboxProcessor<_>) = mailbox.Post message
+      let post = protectMailbox << mailboxPost
+
+      interface IProtocolClient<'T> with
+        override __.ProtocolName = srv.ProtocolName
+        override __.ActorId = srv.ActorId
+        override __.Post(message: 'T) = post message
+        override __.PostAsync(message: 'T) = async { return post message }
+        override __.PostWithReply(messageF: IReplyChannel<'R> -> 'T, timeout: int) =
+          protectMailbox (fun mailbox ->
+            async {
+              let! reply = mailbox.PostAndAsyncReply<Reply<'R>>((fun asyncReplyChannel -> messageF <| ReplyChannelProxy<_>(MailboxReplyChannel<_>(Some asyncReplyChannel).WithTimeout(timeout))), timeout)
+                    
+              return match reply with
+                     | Value value -> value
+                     | Exception ex -> raise (new MessageHandlingException("Actor threw exception while handling message.", ex))
+            })
+        override __.TryPostWithReply(messageF: IReplyChannel<'R> -> 'T, timeout: int) =
+          protectMailbox (fun mailbox ->
+            async {
+              let! reply = mailbox.PostAndTryAsyncReply<Reply<'R>>((fun asyncReplyChannel -> messageF(ReplyChannelProxy<_>(MailboxReplyChannel<_>(Some asyncReplyChannel).WithTimeout(timeout)))), timeout)
+
+              return match reply with
+                     | Some(Value value) -> Some value
+                     | Some(Exception e) -> raise <| new MessageHandlingException("Actor threw exception while handling message.", e)
+                     | None -> None
+            })
+
     type MailboxActorProtocol<'T>(actorUUId: ActorUUID, actorName: string) as self =
         let mutable cancellationTokenSource: CancellationTokenSource option = None
 

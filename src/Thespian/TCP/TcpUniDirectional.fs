@@ -1,210 +1,211 @@
-﻿namespace Nessos.Thespian.Remote.TcpProtocol
+﻿module Nessos.Thespian.Remote.TcpProtocol.Uniderctional
 
-    open System
-    open System.IO
-    open System.Net
-    open System.Net.Sockets
-    open System.Threading
-    open System.Threading.Tasks
-    open System.Runtime.Serialization
+open System
+open System.IO
+open System.Net
+open System.Net.Sockets
+open System.Threading
+open System.Threading.Tasks
+open System.Runtime.Serialization
 
-    open Nessos.Thespian
-    open Nessos.Thespian.AsyncExtensions
-    open Nessos.Thespian.Serialization
-    open Nessos.Thespian.Utils
-    open Nessos.Thespian.DisposableExtensions
-    open Nessos.Thespian.Remote
-    open Nessos.Thespian.Remote.SocketExtensions
-    open Nessos.Thespian.Remote.ConnectionPool
+open Nessos.Thespian
+open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Serialization
+open Nessos.Thespian.Utils
+open Nessos.Thespian.DisposableExtensions
+open Nessos.Thespian.Remote
+open Nessos.Thespian.Remote.SocketExtensions
+open Nessos.Thespian.Remote.ConnectionPool
+open Nessos.Thespian.Remote.TcpProtocol
+open Nessos.Thespian.Serialization
 
-    module Unidirectional =
-        open Nessos.Thespian.Remote.TcpProtocol
+let ProtocolName = "utcp"
 
-        let ProtocolName = "utcp"
+exception private ReplyResult of Reply<obj> option
 
-        exception private ReplyResult of Reply<obj> option
+type ProtocolMessage<'T> =
+  | Request of 'T
+  | Response of Reply<obj>
 
-        type ProtocolMessage<'T> =
-            | Request of 'T
-            | Response of Reply<obj>
+let rec private attempt f =
+  async {
+    try return! f
+    with :? SocketException as e when e.SocketErrorCode = SocketError.ConnectionReset || e.SocketErrorCode = SocketError.ConnectionAborted -> return! attempt f
+        | :? EndOfStreamException -> return! attempt f
+        | :? IOException as e -> match e.InnerException with
+                                 | :? SocketException as e' when e'.SocketErrorCode = SocketError.ConnectionReset || e'.SocketErrorCode = SocketError.ConnectionAborted -> return! attempt f
+                                 | _ -> return raise e
+  }
 
+module ProtocolMessage =
+  let box (protocolMessage: ProtocolMessage<'T>): ProtocolMessage<obj> =
+    match protocolMessage with
+    | Request r -> Request(box r)
+    | Response r -> Response r
 
-        let rec private attempt f = async {
-            try
-                return! f
-            with :? SocketException as e when e.SocketErrorCode = SocketError.ConnectionReset || e.SocketErrorCode = SocketError.ConnectionAborted ->
-                    return! attempt f
-                | :? EndOfStreamException -> return! attempt f
-                | :? IOException as e -> match e.InnerException with
-                                         | :? SocketException as e' when e'.SocketErrorCode = SocketError.ConnectionReset || e'.SocketErrorCode = SocketError.ConnectionAborted ->
-                                                return! attempt f
-                                         | _ -> return raise e
+  let unbox (protocolMessage: ProtocolMessage<obj>): ProtocolMessage<'T> =
+    match protocolMessage with
+    | Request r -> Request(unbox r)
+    | Response r -> Response r
+
+type ProtocolMessageStream(tracePrefix: string, protocolStream: ProtocolStream) =
+  new (protocolStream: ProtocolStream) = new ProtocolMessageStream(String.Empty, protocolStream)
+
+  member __.ProtocolStream = protocolStream
+
+  member __.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: ProtocolMessage<'T>, ?serializationContext: MessageSerializationContext): Async<unit> =
+    //Debug.writelfc "ProtocolMessageStream" "%s - WRITING (%A, %A, %A)" tracePrefix msgId actorId protocolMessage
+    async {
+      let ctx = serializationContext |> Option.map (fun mc -> mc.GetStreamingContext())
+      let serializedProtocolMessage = defaultSerializer.Serialize<ProtocolMessage<'T>>(protocolMessage, ?context = ctx)
+      let protocolRequest = msgId, actorId, serializedProtocolMessage : ProtocolRequest
+      return! protocolStream.AsyncWriteRequest(protocolRequest)
+    }
+
+  member __.Dispose() =
+    //Debug.writelfc "ProtocolMessageStream" "%s - DISPOSING" tracePrefix
+    protocolStream.Dispose()
+
+  override __.GetHashCode() = protocolStream.GetHashCode()
+  override __.Equals(other: obj) =
+    match other with
+    | :? ProtocolMessageStream as otherStream -> protocolStream.Equals(otherStream.ProtocolStream)
+    | _ -> false
+
+  interface IDisposable with
+    override self.Dispose() = self.Dispose()
+        
+
+[<AbstractClass>][<Serializable>]
+type ReplyChannel =
+  val mutable private timeout: int
+  val private msgId: MsgId
+  val private actorId: TcpActorId
+
+  new (actorId: TcpActorId, msgId: MsgId) =
+    {
+      timeout = 30000
+      actorId = actorId
+      msgId = msgId
+    }
+
+  internal new (info: SerializationInfo, context: StreamingContext) =
+    {
+      timeout = info.GetInt32("timeout")
+      actorId = info.GetValue("actorId", typeof<TcpActorId>) :?> TcpActorId
+      msgId = info.GetValue("msgId", typeof<MsgId>) :?> MsgId
+    }
+  
+  member r.ActorId = r.actorId
+  member r.MessageId = r.msgId
+  member r.Timeout with get() = r.timeout and set(timeout': int) = r.timeout <- timeout'
+            
+  member r.GetObjectData(info: SerializationInfo, context: StreamingContext) =
+    info.AddValue("timeout", r.timeout)
+    info.AddValue("actorId", r.actorId)
+    info.AddValue("msgId", r.msgId)
+
+  interface ISerializable with
+    override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
+      self.GetObjectData(info, context)
+
+[<Serializable>]
+type ReplyChannel<'T> =
+  inherit ReplyChannel
+        
+  val private replyAddress: Address
+
+  new (replyAddress: Address, actorId: TcpActorId, msgId: MsgId) = {
+    inherit ReplyChannel(actorId, msgId)            
+    replyAddress = replyAddress
+  }
+
+  internal new (info: SerializationInfo, context: StreamingContext) = {
+    inherit ReplyChannel(info, context)
+    replyAddress = info.GetValue("replyAddress", typeof<Address>) :?> Address
+  }
+
+  member self.ReplyAddress = self.replyAddress
+
+  interface IReplyChannel with
+    member __.Protocol = ProtocolName
+    member self.Timeout with get() = self.Timeout and set(timeout': int) = self.Timeout <- timeout'    
+    member self.ReplyUntyped(reply: Reply<obj>) =
+      (self :> IReplyChannel<'T>).Reply(match reply with Value v -> Value(v :?> 'T) | Exception e -> Exception(e) : Reply<'T>)
+
+  interface IReplyChannel<'T> with
+    member self.WithTimeout(timeout: int) = self.Timeout <- timeout; self :> IReplyChannel<'T>
+      
+    member self.Reply(reply: Reply<'T>) = 
+      //let debug x = Debug.writelfc (sprintf "utcp.ReplyChannel::%s::" (ch.MessageId.ToString())) x
+      let replyLoop =
+        async {
+          let! replyEndPoints = self.ReplyAddress.ToEndPointsAsync()
+          let replyEndPoint = List.head replyEndPoints
+
+          //debug "REPLY CONNECTING"
+          use! connection = TcpConnectionPool.AsyncAcquireConnection(self.MessageId.ToString(), replyEndPoint)
+
+          use protocolMessageStream = new ProtocolMessageStream(new ProtocolStream(self.MessageId, connection.GetStream()))
+
+          //write response to client
+          do! protocolMessageStream.AsyncWriteProtocolMessage<obj>(self.MessageId, self.ActorId, Response(Reply.box reply))
+
+          //debug "REPLY SENT"
+          return! protocolMessageStream.ProtocolStream.AsyncReadResponse()
         }
 
-        module ProtocolMessage =
-            let box (protocolMessage: ProtocolMessage<'T>): ProtocolMessage<obj> =
-                match protocolMessage with
-                | Request r -> Request(box r)
-                | Response r -> Response r
+      async {
+        try
+          let! protocolResponse = attempt replyLoop
+          match protocolResponse with
+          | Acknowledge _ ->
+            //debug "REPLY ACKNOWLEDGED"
+            () //reply sent ok
+          | UnknownRecipient(msgId, actorId) -> 
+            //debug "REPLY UNKNOWN RECIPIENT"
+            raise <| new UnknownRecipientException("Remote host could not find recipient.")
+          | Failure(msgId, e) -> 
+            //debug "REPLY FAILURE: %A" e
+            raise e
+        with ex -> raise <| new CommunicationException("Unable to send reply to sender.", ex)
+      } |> Async.RunSynchronously
 
-            let unbox (protocolMessage: ProtocolMessage<obj>): ProtocolMessage<'T> =
-                match protocolMessage with
-                | Request r -> Request(unbox r)
-                | Response r -> Response r
+  interface ISerializable with
+    member self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
+      info.AddValue("replyAddress", self.replyAddress)
+      base.GetObjectData(info, context)
 
-        type ProtocolMessageStream(tracePrefix: string, protocolStream: ProtocolStream, serializer: IMessageSerializer) =
 
-            new (protocolStream: ProtocolStream, serializer: IMessageSerializer) =
-                new ProtocolMessageStream(String.Empty, protocolStream, serializer)
+type ProtocolClient<'T>(actorId: TcpActorId) =
+  let address = actorId.Address
 
-            member s.ProtocolStream = protocolStream
+  let postOnEndpoint endPoint msg =
+    async {
+      return ()
+    }
 
-            member s.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: ProtocolMessage<'T>, ?serializationContext: MessageSerializationContext): Async<unit> =
-                //Debug.writelfc "ProtocolMessageStream" "%s - WRITING (%A, %A, %A)" tracePrefix msgId actorId protocolMessage
-                async {
-                    let ctx = serializationContext |> Option.map (fun mc -> mc.GetStreamingContext())
-                    let serializedProtocolMessage = serializer.Serialize<ProtocolMessage<'T>>(protocolMessage, ?context = ctx)
-                    let protocolRequest = msgId, actorId, serializedProtocolMessage : ProtocolRequest
-                    return! protocolStream.AsyncWriteRequest(protocolRequest)
-                }
+  let postMessage msg =
+    async {
+      //this is memoized
+      let! endPoints = address.ToEndPointsAsync()
 
-//            member s.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: ProtocolMessage<'T>): Async<unit> =
-//                //Debug.writelfc "ProtocolMessageStream" "%s - WRITING (%A, %A, %A)" tracePrefix msgId actorId protocolMessage
-//                write msgId actorId protocolMessage None
+      //fold on endpoints
 
-            member s.Dispose() = 
-                //Debug.writelfc "ProtocolMessageStream" "%s - DISPOSING" tracePrefix
-                protocolStream.Dispose()
+      return ()
+    }
+  
+  interface IProtocolClient<'T> with
+    override __.ProtocolName = ProtocolName
+    override __.ActorId = actorId :> ActorId
 
-            override s.GetHashCode() = protocolStream.GetHashCode()
-            override s.Equals(other: obj) =
-                match other with
-                | :? ProtocolMessageStream as otherStream -> protocolStream.Equals(otherStream.ProtocolStream)
-                | _ -> false
+[<Serializable>]
+type UTcp =
+  inherit TcpProtocolConfiguration 
 
-            interface IDisposable with
-                member s.Dispose() = s.Dispose()
-        
-
-        [<AbstractClass>][<Serializable>]
-        type ReplyChannel =
-            val mutable private timeout: int
-            val private msgId: MsgId
-            val private actorId: TcpActorId
-            val private serializerName: string
-
-            new (actorId: TcpActorId, msgId: MsgId, ?serializer: string) = 
-                {
-                    timeout = 30000
-                    actorId = actorId
-                    msgId = msgId
-                    serializerName = serializerNameDefaultArg serializer
-                }
-
-            internal new (info: SerializationInfo, context: StreamingContext) = 
-                {
-                    timeout = info.GetInt32("timeout")
-                    actorId = info.GetValue("actorId", typeof<TcpActorId>) :?> TcpActorId
-                    msgId = info.GetValue("msgId", typeof<MsgId>) :?> MsgId
-                    serializerName = info.GetString("serializerName")
-                }
-        
-            member r.SerializerName = r.serializerName
-            member r.ActorId = r.actorId
-            member r.MessageId = r.msgId
-            member r.Timeout with get() = r.timeout and set(timeout': int) = r.timeout <- timeout'
-            
-            member r.GetObjectData(info: SerializationInfo, context: StreamingContext) = 
-                info.AddValue("timeout", r.timeout)
-                info.AddValue("actorId", r.actorId)
-                info.AddValue("msgId", r.msgId)
-                info.AddValue("serializerName", r.serializerName)
-
-            interface ISerializable with
-                member r.GetObjectData(info: SerializationInfo, context: StreamingContext) = 
-                    r.GetObjectData(info, context)
-
-        [<Serializable>]
-        type ReplyChannel<'T> =
-            inherit ReplyChannel
-        
-            val private replyAddress: Address
-
-            new (replyAddress: Address, actorId: TcpActorId, msgId: MsgId, ?serializer: string) = {
-                inherit ReplyChannel(actorId, msgId, ?serializer = serializer)
-            
-                replyAddress = replyAddress
-            }
-
-            internal new (info: SerializationInfo, context: StreamingContext) = {
-                inherit ReplyChannel(info, context)
-            
-                replyAddress = info.GetValue("replyAddress", typeof<Address>) :?> Address
-            }
-
-            member r.ReplyAddress = r.replyAddress
-
-            interface IReplyChannel with
-                member ch.Protocol = ProtocolName
-                member ch.Timeout with get() = ch.Timeout and set(timeout': int) = ch.Timeout <- timeout'    
-                member ch.ReplyUntyped(reply: Reply<obj>) =
-                    (ch :> IReplyChannel<'T>).Reply(match reply with Value v -> Value(v :?> 'T) | Exception e -> Exception(e) : Reply<'T>)
-
-            interface IReplyChannel<'T> with
-                member ch.WithTimeout(timeout: int) = ch.Timeout <- timeout; ch :> IReplyChannel<'T>
-
-                member ch.Reply(reply: Reply<'T>) = 
-                    //let debug x = Debug.writelfc (sprintf "utcp.ReplyChannel::%s::" (ch.MessageId.ToString())) x
-                    let replyLoop =
-                        async {
-                            let! replyEndPoints = ch.ReplyAddress.ToEndPointsAsync()
-                            let replyEndPoint = List.head replyEndPoints
-
-                            //debug "REPLY CONNECTING"
-
-                            use! connection = TcpConnectionPool.AsyncAcquireConnection(ch.MessageId.ToString(), replyEndPoint)
-
-                            let serializer = SerializerRegistry.Resolve ch.SerializerName
-                            let protocolMessageStream = new ProtocolMessageStream(new ProtocolStream(ch.MessageId, connection.GetStream()), serializer)
-//                            let protocolStream = new ProtocolStream(ch.MessageId, connection.GetStream(), fun () -> connection.Return())
-//                            let protocolMessageStream = new ProtocolMessageStream(protocolStream, serializer)
-
-                            //write response to client
-                            do! protocolMessageStream.AsyncWriteProtocolMessage<obj>(ch.MessageId, ch.ActorId, Response(Reply.box reply))
-                            
-                            //debug "REPLY SENT"
-
-                            return! protocolMessageStream.ProtocolStream.AsyncReadResponse()
-                        }
-
-                    async {
-                        try
-                            let! protocolResponse = attempt replyLoop
-                            match protocolResponse with
-                            | Acknowledge _ -> 
-                                //debug "REPLY ACKNOWLEDGED"
-                                () //reply sent ok
-                            | UnknownRecipient(msgId, actorId) -> 
-                                //debug "REPLY UNKNOWN RECIPIENT"
-                                raise <| new UnknownRecipientException("Remote host could not find recipient.")
-                            | Failure(msgId, e) -> 
-                                //debug "REPLY FAILURE: %A" e
-                                raise e
-                        with ex -> raise <| new CommunicationException("Unable to send reply to sender.", ex)
-                    } |> Async.RunSynchronously
-
-            interface ISerializable with
-                member ch.GetObjectData(info: SerializationInfo, context: StreamingContext) = 
-                    info.AddValue("replyAddress", ch.replyAddress)
-                    base.GetObjectData(info, context)
-
-        [<Serializable>]
-        type UTcp = 
-            inherit TcpProtocolConfiguration 
-
-            new (publishMode: PublishMode, ?serializerName: string) = {
-                inherit TcpProtocolConfiguration(publishMode, ?serializerName = serializerName)
-            }
+  new (publishMode: PublishMode, ?serializerName: string) = {
+    inherit TcpProtocolConfiguration(publishMode, ?serializerName = serializerName)
+  }
             
             //server side constructor
             //auto-select address; the addess selected will be detrmined by TcpListenerPool.Hostname

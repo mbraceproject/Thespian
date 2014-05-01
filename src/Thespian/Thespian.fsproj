@@ -70,6 +70,7 @@
     <Compile Include="Actor\ActorRef.fs" />
     <Compile Include="Actor\MailboxActorProtocol.fs" />
     <Compile Include="Actor\Actor.fs" />
+    <None Include="Actor\ConcurrentQueue.fsx" />
     <Compile Include="Extensions\Agents.fs" />
     <Compile Include="Extensions\Receiver.fs" />
     <Compile Include="Extensions\Queue.fs" />

@@ -6,7 +6,37 @@ namespace Nessos.Thespian
     open Nessos.Thespian.Serialization
 
     [<Serializable>]
-    type IProtocolConfiguration =
+    type IProtocolFactory =
+      inherit IComparable<IProtocolFactory>
+      inherit IComparable
+      abstract ProtocolName: string
+      abstract CreateServerInstance: ActorRef<'T> -> IProtocolServer<'T>
+      abstract CreateClientInstance: string -> IProtocolClient<'T>
+
+    and IProtocolServer<'T> =
+      inherit IDisposable
+      abstract ProtocolName: string
+      abstract ActorId: ActorId
+      abstract Log: IEvent<Log>
+      abstract Start: unit -> unit
+      abstract Stop: unit -> unit
+      
+    and IProtocolClient<'T> =
+      abstract ProtocolName: string
+      abstract ActorId: ActorId
+      abstract Post: 'T -> unit
+      abstract PostAsync: 'T -> Async<unit>
+      abstract PostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R>
+      abstract TryPostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R option>
+
+    and IPrimaryProtocolServer<'T> =
+      inherit IProtocolServer<'T>
+      abstract PendingMessages: int
+      abstract Receive: int -> Async<'T>
+      abstract TryReceive: int -> Async<'T option>
+      abstract Start: (unit -> Async<unit>) -> unit
+
+    and [<Serializable>] IProtocolConfiguration =
         inherit IComparable<IProtocolConfiguration>
         inherit IComparable
         abstract ProtocolName: string
