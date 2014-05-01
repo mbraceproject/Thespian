@@ -1,3 +1,0 @@
-#!/bin/bash
-libdir=$PWD/packages/FAKE/tools/
-$FSHARPI --lib:$libdir $@

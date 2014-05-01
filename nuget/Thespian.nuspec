@@ -6,16 +6,22 @@
     <authors>@authors@</authors>
     <owners>@authors@</owners>
     <licenseUrl>http://github.com/nessos/Thespian/blob/master/LICENSE.txt</licenseUrl>
-    <projectUrl>http://github.com/Thespian</projectUrl>
+    <projectUrl>http://github.com/nessos/Thespian</projectUrl>
+    <iconUrl>https://avatars1.githubusercontent.com/u/5538081</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <summary>@summary@</summary>
     <description>@description@</description>
     <releaseNotes>@releaseNotes@</releaseNotes>
     <copyright>Copyright 2014</copyright>
     <tags>@tags@</tags>
-    <dependencies />
+    @dependencies@
   </metadata>
   <files>
-    <file src="..\bin\Thespian.dll" target="lib/net40" />
+    <file src="..\bin\Thespian.dll" target="lib/net45" />
+    <file src="..\bin\Thespian.pdb" target="lib/net45" />
+    <file src="..\bin\Thespian.xml" target="lib/net45" />
+    <file src="..\bin\Thespian.Cluster.dll" target="lib/net45" />
+    <file src="..\bin\Thespian.Cluster.pdb" target="lib/net45" />
+    <file src="..\bin\Thespian.Cluster.xml" target="lib/net45" />
   </files>
 </package>

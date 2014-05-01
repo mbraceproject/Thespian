@@ -60,10 +60,17 @@ let release = parseReleaseNotes (IO.File.ReadAllLines "RELEASE_NOTES.md")
 
 // Generate assembly info files with the right version & up-to-date information
 Target "AssemblyInfo" (fun _ ->
-  let fileName = "src/" + project + "/AssemblyInfo.fs"
-  CreateFSharpAssemblyInfo fileName
+  CreateFSharpAssemblyInfo "src/Thespian/AssemblyInfo.fs"
       [ Attribute.Title project
         Attribute.Product project
+        Attribute.Description summary
+        Attribute.InternalsVisibleTo "Thespian.Cluster"
+        Attribute.Version release.AssemblyVersion
+        Attribute.FileVersion release.AssemblyVersion ] 
+
+  CreateFSharpAssemblyInfo "src/Thespian.Cluster/AssemblyInfo.fs"
+      [ Attribute.Title "Thespian.Cluster"
+        Attribute.Product "Thespian.Cluster"
         Attribute.Description summary
         Attribute.Version release.AssemblyVersion
         Attribute.FileVersion release.AssemblyVersion ] 
@@ -119,7 +126,7 @@ Target "NuGet" (fun _ ->
             OutputPath = "bin"
             AccessKey = getBuildParamOrDefault "nugetkey" ""
             Publish = hasBuildParam "nugetkey"
-            Dependencies = [("FsPickler", "")] })
+            Dependencies = [("FsPickler", "0.8.6.2")] })
         ("nuget/" + project + ".nuspec")
 )
 

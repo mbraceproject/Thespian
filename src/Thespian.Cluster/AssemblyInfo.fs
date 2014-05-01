@@ -1,11 +1,9 @@
 ﻿namespace System
 open System.Reflection
-open System.Runtime.CompilerServices
 
-[<assembly: AssemblyTitleAttribute("Thespian")>]
-[<assembly: AssemblyProductAttribute("Thespian")>]
+[<assembly: AssemblyTitleAttribute("Thespian.Cluster")>]
+[<assembly: AssemblyProductAttribute("Thespian.Cluster")>]
 [<assembly: AssemblyDescriptionAttribute("An F# Actor Framework")>]
-[<assembly: InternalsVisibleToAttribute("Thespian.Cluster")>]
 [<assembly: AssemblyVersionAttribute("0.0.2")>]
 [<assembly: AssemblyFileVersionAttribute("0.0.2")>]
 do ()
