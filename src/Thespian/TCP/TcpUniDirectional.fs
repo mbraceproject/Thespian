@@ -77,7 +77,16 @@ type ProtocolMessageStream(msgId: MsgId, stream: ProtocolNetworkStream, timeout:
   interface IDisposable with
     override self.Dispose() = self.Dispose()
 
+
 let mutable defaultReplyReceiveTimeout = 10000
+
+
+//currently used as base for btcp deserialization contexts
+type DeserializationContext() =
+  let mutable maxReplyChannelTimeout = 0
+  member __.MaxReplyChannelTimeout with get() = maxReplyChannelTimeout
+  member __.TrySetMaxReplyChannelTimeout(timeout: int) = if timeout > maxReplyChannelTimeout then maxReplyChannelTimeout <- timeout
+                                    
 
 [<AbstractClass>][<Serializable>]
 type ReplyChannel =
@@ -93,8 +102,12 @@ type ReplyChannel =
     }
 
   internal new (info: SerializationInfo, context: StreamingContext) =
+    let timeout = info.GetInt32("timeout")
+    match context.Context with
+    | :? DeserializationContext as deserializationContext -> deserializationContext.TrySetMaxReplyChannelTimeout(timeout)
+    | _ -> invalidArg "context" "Invalid deserialization context given."
     {
-      timeout = info.GetInt32("timeout")
+      timeout = timeout
       actorId = info.GetValue("actorId", typeof<TcpActorId>) :?> TcpActorId
       msgId = info.GetValue("msgId", typeof<MsgId>) :?> MsgId
     }
@@ -369,7 +382,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
 
       if r.Length = endPoints.Length then
         //TODO:: Change to CommunicationException
-        return! Async.Raise (new SystemException("utcp :: postMessageLoop :: Invalid State :: target endpoints exhausted"))
+        return! Async.Raise (new SystemException("utcp :: postMessage :: Invalid State :: target endpoints exhausted"))
       else return ()
     }
 
@@ -488,8 +501,7 @@ type UTcpFactory =
     override self.CreateServerInstance(actorName: string, primary: ActorRef<'T>): IProtocolServer<'T> = self.CreateServerInstance(actorName, primary)
     override self.CreateClientInstance(actorName: string): IProtocolClient<'T> = self.CreateClientInstance(actorName)
 
-  interface ISerializable with
-    override self.GetObjectData(info: SerializationInfo, context: StreamingContext) = info.AddValue("protocolMode", self.protocolMode)
+  interface ISerializable with override self.GetObjectData(info: SerializationInfo, context: StreamingContext) = info.AddValue("protocolMode", self.protocolMode)
 
 
 // [<Serializable>]

@@ -254,6 +254,7 @@ type ProtocolStream(msgId: MsgId, stream: ProtocolNetworkStream, ?readTimeout: i
     }
 
   member __.Id = msgId
+  member __.NetworkStream = stream
 
   member __.AsyncReadRequest(): Async<ProtocolRequest> = Message.ProtocolRequest.read stream
   member __.AsyncWriteRequest(protocolRequest: ProtocolRequest): Async<unit> = Message.ProtocolRequest.write stream protocolRequest
