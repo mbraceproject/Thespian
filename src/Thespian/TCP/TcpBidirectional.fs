@@ -1,229 +1,363 @@
-﻿namespace Nessos.Thespian.Remote.TcpProtocol
+﻿module Nessos.Thespian.Remote.TcpProtocol.Bidirectional
 
-    open System
-    open System.IO
-    open System.Net
-    open System.Net.Sockets
-    open System.Threading
-    open System.Threading.Tasks
-    open System.Runtime.Serialization
+open System
+open System.IO
+open System.Net
+open System.Net.Sockets
+open System.Threading
+open System.Threading.Tasks
+open System.Runtime.Serialization
+open System.Collections.Concurrent
 
-    open Nessos.Thespian
-    open Nessos.Thespian.AsyncExtensions
-    open Nessos.Thespian.Serialization
-    open Nessos.Thespian.Utils
-    open Nessos.Thespian.DisposableExtensions
-    open Nessos.Thespian.Remote
-    open Nessos.Thespian.Remote.SocketExtensions
-    open Nessos.Thespian.Remote.ConnectionPool
+open Nessos.Thespian
+open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Serialization
+open Nessos.Thespian.Utils
+open Nessos.Thespian.DisposableExtensions
+open Nessos.Thespian.Remote
+open Nessos.Thespian.Remote.SocketExtensions
+open Nessos.Thespian.Remote.TcpProtocol.ConnectionPool
 
-    module Bidirectional =
-        let ProtocolName = "btcp"
 
-        let private NullSerializationContext = obj()
+let ProtocolName = "btcp"
 
-        let rec private attempt f = async {
-            try
-                return! f
-            with :? SocketException as e when e.SocketErrorCode = SocketError.ConnectionReset || e.SocketErrorCode = SocketError.ConnectionAborted ->
-                    return! attempt f
-                | :? EndOfStreamException -> return! attempt f
-                | :? IOException as e -> match e.InnerException with
-                                         | :? SocketException as e' when e'.SocketErrorCode = SocketError.ConnectionReset || e'.SocketErrorCode = SocketError.ConnectionAborted ->
-                                                return! attempt f
-                                         | _ -> 
-                                            //Debug.writelf "IOException %A" e
-                                            return! Async.Raise e
-        }
+let private NullSerializationContext = obj()
+
+let rec private attempt f =
+  async {
+    try return! f
+    with :? SocketException as e when e.SocketErrorCode = SocketError.ConnectionReset || e.SocketErrorCode = SocketError.ConnectionAborted -> return! attempt f
+        | :? EndOfStreamException -> return! attempt f
+        | :? IOException as e -> match e.InnerException with
+                                 | :? SocketException as e' when e'.SocketErrorCode = SocketError.ConnectionReset || e'.SocketErrorCode = SocketError.ConnectionAborted -> return! attempt f
+                                 | _ -> return! Async.Raise e
+  }
         
-        type ProtocolMessageStream(protocolStream: ProtocolStream, serializer: IMessageSerializer) =
-            let sync = obj()
-            let isDisposed = ref true
-            let disposeCont = ref (None : (unit -> unit) option)
-            let cancelCont = ref (None: (OperationCanceledException -> unit) option)
+type ProtocolMessageStream(protocolStream: ProtocolStream, serializer: IMessageSerializer) =
+  let sync = obj()
+  let isDisposed = ref true
+  let disposeCont = ref (None : (unit -> unit) option)
+  let cancelCont = ref (None: (OperationCanceledException -> unit) option)
 
-            member __.ProtocolStream = protocolStream
+  member __.ProtocolStream = protocolStream
 
-            member __.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: 'T, ?serializationContext: MessageSerializationContext) =
-                async {
-                    let context = serializationContext |> Option.map (fun c -> c.GetStreamingContext())
-                    let serializedProtocolMessage = serializer.Serialize<obj>(protocolMessage, ?context = context)
-                    let protocolRequest = msgId, actorId, serializedProtocolMessage : ProtocolRequest
-                    return! protocolStream.AsyncWriteRequest(protocolRequest)
-                }
+  member __.AsyncWriteProtocolMessage(msgId: MsgId, actorId: TcpActorId, protocolMessage: 'T, ?serializationContext: MessageSerializationContext) =
+    async {
+      let context = serializationContext |> Option.map (fun c -> c.GetStreamingContext())
+      let serializedProtocolMessage = serializer.Serialize<obj>(protocolMessage, ?context = context)
+      let protocolRequest = msgId, actorId, serializedProtocolMessage : ProtocolRequest
+      return! protocolStream.AsyncWriteRequest(protocolRequest)
+    }
 
-            member __.Dispose() = 
+  member __.Dispose() = 
+    lock sync (fun () ->
+      match disposeCont.Value with
+      | Some cont -> cont()
+      | None -> isDisposed := true)
+
+  member __.Acquire() = isDisposed := false
+
+  member __.AsyncWaitForDisposal() =
+    async {
+      use! d = Async.OnCancel (fun () -> lock sync (fun () -> match cancelCont.Value with Some cancel -> cancel (new OperationCanceledException()) | _ -> ()))
+      return! Async.FromContinuations(fun (success, _, cancel) ->
                 lock sync (fun () ->
-                    match disposeCont.Value with
-                    | Some cont -> 
-                            cont()
-                    | None -> isDisposed := true
-                )
+                  if isDisposed.Value then success()
+                  else disposeCont := Some success; cancelCont := Some cancel))
+    }
 
-            member __.Acquire() = isDisposed := false
+  override __.GetHashCode() = protocolStream.GetHashCode()
+  override __.Equals(other: obj) =
+    match other with
+    | :? ProtocolMessageStream as otherStream -> protocolStream.Equals(otherStream.ProtocolStream)
+    | _ -> false
 
-            member __.AsyncWaitForDisposal() = async {
-                use! d = Async.OnCancel (fun () -> lock sync (fun () -> match cancelCont.Value with Some cancel -> cancel (new OperationCanceledException()) | _ -> ()))
-                return! Async.FromContinuations(fun (success, _, cancel) ->
-                    lock sync (fun () ->
-                        if isDisposed.Value then
-                            success()
-                        else 
-                            disposeCont := Some success
-                            cancelCont := Some cancel
-                    )
-                )
-            }
+  interface IComparable with
+    override __.CompareTo(other: obj) =
+      match other with
+      | :? ProtocolMessageStream as pms -> compare protocolStream pms.ProtocolStream
+      | :? ProtocolStream as ps -> compare protocolStream ps
+      | _ -> invalidArg "other" "Cannot compare values of incompatible types."
 
-            override __.GetHashCode() = protocolStream.GetHashCode()
-            override __.Equals(other: obj) =
-                match other with
-                | :? ProtocolMessageStream as otherStream -> protocolStream.Equals(otherStream.ProtocolStream)
-                | _ -> false
-
-            interface IComparable with
-                member __.CompareTo(other: obj) =
-                    match other with
-                    | :? ProtocolMessageStream as pms -> compare protocolStream pms.ProtocolStream
-                    | :? ProtocolStream as ps -> compare protocolStream ps
-                    | _ -> invalidArg "other" "Cannot compare values of incompatible types."
-
-            interface IDisposable with
-                member s.Dispose() = s.Dispose()
+  interface IDisposable with
+    override self.Dispose() = self.Dispose()
 
 
-        type AsyncExecutor = IReplyChannel<unit> * Async<unit>
+type AsyncExecutor = IReplyChannel<unit> * Async<unit>
 
-        let private asyncExecutorBehavior = 
-            Behavior.stateless (fun (R(reply), computation) -> async {
-                try
-                    do! computation //perform computation
-                    reply nothing //say when finished
-                with e -> //something went wrong with the reply
-                    reply <| Exception e
-            })
+let private asyncExecutorBehavior =
+  Behavior.stateless (fun (R(reply), computation) ->
+    async {
+      try
+        do! computation //perform computation
+        reply nothing //say when finished
+      with e -> //something went wrong with the reply
+        reply <| Exception e
+    })
 
-        type DeserializationContext(stream: ProtocolMessageStream) =
-            member c.ProtocolMessageStream = stream
-            member c.ReplyWriter: Actor<AsyncExecutor> = Actor.bind asyncExecutorBehavior |> Actor.start
-            member c.GetStreamingContext() = new StreamingContext(StreamingContextStates.All, c)
+type DeserializationContext(stream: ProtocolMessageStream) =
+  member c.ProtocolMessageStream = stream
+  member c.ReplyWriter: Actor<AsyncExecutor> = Actor.bind asyncExecutorBehavior |> Actor.start
+  member c.GetStreamingContext() = new StreamingContext(StreamingContextStates.All, c)
 
 
-        type internal AsyncCountdownLatch(initialCount: int) =
-            let mutable count = initialCount
-            let continuation: (unit -> unit) option ref = ref None
+type internal AsyncCountdownLatch(initialCount: int) =
+  let mutable count = initialCount
+  let continuation: (unit -> unit) option ref = ref None
             
-            member __.Set(initialCount: int) = count <- initialCount
+  member __.Set(initialCount: int) = count <- initialCount
 
-            member __.Decrement() =
-                if Interlocked.Decrement(&count) = 0 then
-                    match continuation.Value with
-                    | Some success -> success()
-                    | _ -> ()
+  member __.Decrement() =
+    if Interlocked.Decrement(&count) = 0 then
+      match continuation.Value with
+      | Some success -> success()
+      | _ -> ()
 
-            member __.AsyncWaitToZero() =
-                Async.FromContinuations(fun (success, _, _) -> 
-                    if Interlocked.CompareExchange(&count, 0, 0) <> 0 then continuation := Some success else success())
+  member __.AsyncWaitToZero() =
+    Async.FromContinuations(fun (success, _, _) -> 
+      if Interlocked.CompareExchange(&count, 0, 0) <> 0 then continuation := Some success else success())
                 
 
 
-        type ReplyChannel = Unidirectional.ReplyChannel
+type ReplyChannel = TcpProtocol.Unidirectional.ReplyChannel
 
-        [<Serializable>]
-        type ReplyChannel<'T> =
-            inherit ReplyChannel
+[<Serializable>]
+type ReplyChannel<'T> =
+  inherit ReplyChannel
         
-            //val private streamResource: NestedDisposable<ProtocolStream>
-            val private stream: NestedDisposable<ProtocolMessageStream>
-            val private replyWriterResource: NestedDisposable<Actor<AsyncExecutor>>
+  //val private streamResource: NestedDisposable<ProtocolStream>
+  val private stream: NestedDisposable<ProtocolMessageStream>
+  val private replyWriterResource: NestedDisposable<Actor<AsyncExecutor>>
             
-            new (actorId: TcpActorId, msgId: MsgId, ?serializer: string) = {
-                inherit ReplyChannel(actorId, msgId, ?serializer = serializer)
-                //stream is set to null because this constructor is only used at client side
-                //streamResource = Unchecked.defaultof<NestedDisposable<ProtocolStream>>
-                stream = Unchecked.defaultof<NestedDisposable<ProtocolMessageStream>>
-                replyWriterResource = Unchecked.defaultof<NestedDisposable<Actor<AsyncExecutor>>>
-            }
+  new (actorId: TcpActorId, msgId: MsgId) =
+    {
+      inherit ReplyChannel(actorId, msgId)
+      //stream is set to null because this constructor is only used at client side
+      //streamResource = Unchecked.defaultof<NestedDisposable<ProtocolStream>>
+      stream = Unchecked.defaultof<NestedDisposable<ProtocolMessageStream>>
+      replyWriterResource = Unchecked.defaultof<NestedDisposable<Actor<AsyncExecutor>>>
+    }
 
-            internal new (info: SerializationInfo, context: StreamingContext) = 
-                let stream, replyWriter = match context.Context with
-                                          | :? DeserializationContext as deserializationContext -> 
-                                            deserializationContext.ProtocolMessageStream.Acquire()
-                                            deserializationContext.ProtocolMessageStream, deserializationContext.ReplyWriter
-                                          | _ -> invalidArg "Invalid deserialization context given." "context"
-                {
-                    inherit ReplyChannel(info, context)
-                    //streamResource = useNested stream.ProtocolStream //useNested to increase ref count on the disposable
-                    stream = useNested stream
-                    replyWriterResource = useNested replyWriter
-                }
+  internal new (info: SerializationInfo, context: StreamingContext) =
+    let stream, replyWriter = match context.Context with
+                              | :? DeserializationContext as deserializationContext -> 
+                                deserializationContext.ProtocolMessageStream.Acquire()
+                                deserializationContext.ProtocolMessageStream, deserializationContext.ReplyWriter
+                              | _ -> invalidArg "Invalid deserialization context given." "context"
+    {
+      inherit ReplyChannel(info, context)
+      //streamResource = useNested stream.ProtocolStream //useNested to increase ref count on the disposable
+      stream = useNested stream
+      replyWriterResource = useNested replyWriter
+    }
 
-            member r.ProtocolMessageStream = 
-                //if r.streamResource <> Unchecked.defaultof<NestedDisposable<ProtocolStream>> then r.streamResource.Resource
-                if r.stream <> Unchecked.defaultof<NestedDisposable<ProtocolMessageStream>> then r.stream.Resource.ProtocolStream
-                else invalidOp "ProtocolMessageStream is not accessible from client side code."
-                //r.stream
+  member r.ProtocolMessageStream =
+    //if r.streamResource <> Unchecked.defaultof<NestedDisposable<ProtocolStream>> then r.streamResource.Resource
+    if r.stream <> Unchecked.defaultof<NestedDisposable<ProtocolMessageStream>> then r.stream.Resource.ProtocolStream
+    else invalidOp "ProtocolMessageStream is not accessible from client side code."
+    //r.stream
 
-            member r.ReplyWriter = 
-                if r.replyWriterResource <> Unchecked.defaultof<NestedDisposable<Actor<AsyncExecutor>>> then r.replyWriterResource.Resource
-                else invalidOp "ReplyWriter is not accessible from client side code."
+  member r.ReplyWriter = 
+    if r.replyWriterResource <> Unchecked.defaultof<NestedDisposable<Actor<AsyncExecutor>>> then r.replyWriterResource.Resource
+    else invalidOp "ReplyWriter is not accessible from client side code."
 
-            interface IReplyChannel with
-                member ch.Protocol = ProtocolName
-                member ch.Timeout with get() = ch.Timeout and set(timeout': int) = ch.Timeout <- timeout'    
-                member ch.ReplyUntyped(reply: Reply<obj>) =
-                    (ch :> IReplyChannel<'T>).Reply(match reply with Value v -> Value(v :?> 'T) | Exception e -> Exception(e) : Reply<'T>)
+  interface IReplyChannel with
+    member ch.Protocol = ProtocolName
+    member ch.Timeout with get() = ch.Timeout and set(timeout': int) = ch.Timeout <- timeout'    
+    member ch.ReplyUntyped(reply: Reply<obj>) =
+      (ch :> IReplyChannel<'T>).Reply(match reply with Value v -> Value(v :?> 'T) | Exception e -> Exception(e) : Reply<'T>)
 
-            member private r.AsyncReply(reply: Reply<'T>) = async {
-                use _ = r.stream //we use this so that the ref count on the disposable is decreased
-                //use _ = r.streamResource
+    member private r.AsyncReply(reply: Reply<'T>) =
+      async {
+        use _ = r.stream //we use this so that the ref count on the disposable is decreased
+        //use _ = r.streamResource
 
-                let! protocolResponse = async {
-                    try
-                        //sprintfn "RPL %A" r.MessageId
-                        //we box the reply; the client may be expecting more than one reply in varied orders
-                        //see foreign vs native reply channels
-                        do! r.stream.Resource.AsyncWriteProtocolMessage(r.MessageId, r.ActorId, Reply.box reply)
+        let! protocolResponse =
+          async {
+            try
+              //sprintfn "RPL %A" r.MessageId
+              //we box the reply; the client may be expecting more than one reply in varied orders
+              //see foreign vs native reply channels
+              do! r.stream.Resource.AsyncWriteProtocolMessage(r.MessageId, r.ActorId, Reply.box reply)
 
-                        //sprintfn "RPLWRT %A" r.MessageId
+              //sprintfn "RPLWRT %A" r.MessageId
 
-                        let! response = r.stream.Resource.ProtocolStream.AsyncReadResponse()
+              let! response = r.stream.Resource.ProtocolStream.AsyncReadResponse()
 
-                        //sprintfn "RPLRSP %A" r.MessageId
-                        return response
-                    with e ->
-                        //sprintfn "RPLRSPEXN %A %A" r.MessageId e
-                        return raise <| new CommunicationException("Unable to send reply to sender.", e)
-                }
-                match protocolResponse with
-                | Acknowledge _ -> () //sprintfn "RPL OK %A" r.MessageId; () //all went ok
-                | UnknownRecipient(msgId, actorId) -> raise <| new UnknownRecipientException("Recipient of reply not found on remote host.")
-                | Failure(_, e) -> raise <| new CommunicationException("Delivery of reply failed on remote host.", e)
-            }
+              //sprintfn "RPLRSP %A" r.MessageId
+              return response
+            with e ->
+              //sprintfn "RPLRSPEXN %A %A" r.MessageId e
+              return raise <| new CommunicationException("Unable to send reply to sender.", e)
+          }
+        match protocolResponse with
+        | Acknowledge _ -> () //sprintfn "RPL OK %A" r.MessageId; () //all went ok
+        | UnknownRecipient(msgId, actorId) -> raise <| new UnknownRecipientException("Recipient of reply not found on remote host.")
+        | Failure(_, e) -> raise <| new CommunicationException("Delivery of reply failed on remote host.", e)
+      }
 
-            interface IReplyChannel<'T> with
-                member r.WithTimeout(timeout: int) = r.Timeout <- timeout; r :> IReplyChannel<'T>
+  interface IReplyChannel<'T> with
+    member r.WithTimeout(timeout: int) = r.Timeout <- timeout; r :> IReplyChannel<'T>
 
-                member r.Reply(reply: Reply<'T>) = 
-                    //there may be many concurrent replies, all using the same connection
-                    //one reply is not an atomic operation;
-                    //it consists of two operations: send reply, receive acknowledgement
-                    //we use a reply writer, an actor that executes async computations
-                    //thus the replies will be serialized
-                    //the reply writer is used in a NestedDisposable, so that when all
-                    //the replies are finished, the actor is disposed
-                    use rw = r.replyWriterResource
-                    try
-                        r.ReplyWriter.Ref <!= fun ch -> ch, r.AsyncReply(reply)
-                    //as the reply computation is executed in the actor,
-                    //any exception will be carried inside a MessageHandlingException
-                    //so we unwrap
-                    with MessageHandlingException(_, _, _, e) -> raise e
-                         | :? ActorInactiveException -> raise <| new CommunicationException("Attempting to reply a second time on a closed channel.")
+    member r.Reply(reply: Reply<'T>) = 
+      //there may be many concurrent replies, all using the same connection
+      //one reply is not an atomic operation;
+      //it consists of two operations: send reply, receive acknowledgement
+      //we use a reply writer, an actor that executes async computations
+      //thus the replies will be serialized
+      //the reply writer is used in a NestedDisposable, so that when all
+      //the replies are finished, the actor is disposed
+      use rw = r.replyWriterResource
+      try
+        r.ReplyWriter.Ref <!= fun ch -> ch, r.AsyncReply(reply)
+        //as the reply computation is executed in the actor,
+        //any exception will be carried inside a MessageHandlingException
+        //so we unwrap
+      with MessageHandlingException(_, _, _, e) -> raise e
+           | :? ActorInactiveException -> raise <| new CommunicationException("Attempting to reply a second time on a closed channel.")
 
-            interface ISerializable with
-                member r.GetObjectData(info: SerializationInfo, context: StreamingContext) = 
-                    base.GetObjectData(info, context)
+  interface ISerializable with
+    member r.GetObjectData(info: SerializationInfo, context: StreamingContext) = 
+      base.GetObjectData(info, context)
+
+
+type ReplyResultsRegistry() =
+  let results = new ConcurrentDictionary<MsgId, TaskCompletionSource<Choice<Reply<obj>, exn>>>()
+
+  member self.RegisterAndWaitForResponse(msgId: MsgId, timeout: int) =
+    let tcs = new TaskCompletionSource<_>()
+    results.TryAdd(msgId, tcs) |> ignore
+    async {
+      try return! Async.AwaitTask(tcs.Task, timeout)
+      with _ -> return None
+    }
+
+  member __.Unregister(msgId: MsgId) =
+    let isValid, tcs = results.TryRemove(msgId)
+    if isValid then tcs.SetCanceled()
+
+  member __.TrySetResult(msgId: MsgId, value: Choice<Reply<obj>, exn>) =
+    let isValid, tcs = results.TryRemove(msgId)
+    if isValid then tcs.SetResult(value)
+    isValid
+
+
+type ProtocolClient<'T>(actorId: TcpActorId) =
+  let address = actorId.Address
+  let serializer = Serialization.defaultSerializer
+  let serializationContext() =
+    new MessageSerializationContext(serializer,
+      {
+        new IReplyChannelFactory with 
+          override __.Protocol = ProtocolName
+          override __.Create<'R>() = 
+            let newMsgId = MsgId.NewGuid()
+            new ReplyChannelProxy<'R>(new ReplyChannel<'R>(actorId, newMsgId))
+      })
+  let replyRegistry = new ReplyResultsRegistry()
+  let logEvent = new Event<Log>()
+
+  let processReply (protocolStream: ProtocolStream) =
+    async {
+      let! r = protocolStream.TryAsyncReadRequest()
+      match r with
+      | Some(replyMsgId, actorId, payload) ->
+        try
+          let reply = serializer.Deserialize<obj>(payload) :?> Reply<obj>
+          if not <| replyRegistry.TrySetResult(replyMsgId, Choice1Of2 reply) then
+            let! r' = protocolStream.TryAsyncWriteResponse(UnknownRecipient(replyMsgId, actorId))
+            match r' with
+            | Some() ->
+              let! r'' = protocolStream.TryAsyncWriteResponse(Acknowledge(replyMsgId))
+              match r'' with
+              | Some() -> return ()
+              | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while trying to write a response for received reply.")
+            | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while trying to write a response for received reply.")
+            else return ()
+        with e ->
+          let! r''' = protocolStream.TryAsyncWriteResponse(Failure(replyMsgId, e))
+          match r''' with
+          | Some() -> return ()
+          | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while trying to write a response for received reply.")
+    }
+
+  let handleForeignReplyChannel (foreignRc: IReplyChannel, nativeRc: IReplyChannel) =
+    //register async wait handle for the nativeRc
+    let nativeRcImpl = nativeRc :?> ReplyChannel
+    let awaitResponse = replyRegistry.RegisterAndWaitForResponse(nativeRcImpl.MessageId, foreignRc.Timeout)
+    async {
+      //wait for the native rc result
+      let! response = awaitResponse
+      match response with
+      | Some reply ->
+        //forward to foreign rc
+        try do! foreignRc.AsyncReplyUntyped <| match reply with Choice1Of2 r -> r | Choice2Of2 e -> Exception(new CommunicationException("A communication failure occurred while waiting for a reply.", e))
+        with e -> logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, new CommunicationException("Failed to forward a reply.", e) |> box)
+      | None -> ()
+    }
+
+  let setupForeignReplyChannelHandler (context: MessageSerializationContext) =
+    if context.ReplyChannelOverrides.Length = 0 then async.Zero()
+    else
+    context.ReplyChannelOverrides
+    |> List.map handleForeignReplyChannel
+    |> Async.Parallel
+    |> Async.Ignore
+
+  let cancelForeignReplyChannels (context: MessageSerializationContext) =
+    context.ReplyChannelOverrides
+    |> List.iter (fun (_, nrc) -> let msgId = (nrc :?> ReplyChannel).MessageId in replyRegistry.Unregister(msgId))
+
+  let failForeignReplyChannels (context: MessageSerializationContext) (e: exn) =
+    context.ReplyChannelOverrides
+    |> List.iter (fun (_, nrc) -> let msgId = (nrc :?> ReplyChannel).MessageId in replyRegistry.TrySetResult(msgId, Choice2Of2 e) |> ignore)
+
+  let postOnEndPoint targetEndPoint msgId msg withReply =
+    async {
+      let! connection = TcpConnectionPool.AsyncAcquireConnection targetEndPoint
+      let protocolStream = new ProtocolStream(msgId, connection.GetStream())
+
+      //serialize message with the reply patching serialization context
+      let context = serializationContext()
+      let serializedMessage = serializer.Serialize<obj>(msg, context.GetStreamingContext())
+
+      let foreignRcHandle = setupForeignReplyChannelHandler context
+
+      let protocolRequest = msgId, actorId, serializedMessage : ProtocolRequest
+      try
+        let! r = protocolStream.TryAsyncWriteRequest(protocolRequest)
+        match r with
+        | Some() ->
+          Async.Start foreignRcHandle
+
+          let! r'' = protocolStream.TryAsyncReadResponse()
+          match r'' with
+          | Some(Acknowledge _) ->
+            //start reply processing
+            let expectedReplies = context.ReplyChannelOverrides.Length + if withReply then 1 else 0
+            async {
+              use _ = protocolStream
+              try
+                for _ in 1..expectedReplies do
+                  do! processReply protocolStream
+              with e ->
+                logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, new CommunicationException("Communication failure while waiting for reply.", e) |> box)
+                failForeignReplyChannels context e
+                if withReply then replyRegistry.TrySetResult(msgId, Choice2Of2 e) |> ignore
+            } |> Async.Start
+          | Some(UnknownRecipient _) -> return! Async.Raise <| new UnknownRecipientException("Remote host could not find the message recipient.")
+          | Some(Failure(_, e)) -> return! Async.Raise <| new CommunicationException("Message delivery failed on the remote host.", e)
+          | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while waiting for response on message send.")
+        | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while trying to send message.")
+      with e ->
+        cancelForeignReplyChannels context
+        protocolStream.Dispose()
+        return! Async.Raise e
+    }
+
+  interface IProtocolClient<'T> with
+    override __.ProtocolName = ProtocolName
+    override __.ActorId = actorId :> ActorId
 
         
         [<Serializable>]

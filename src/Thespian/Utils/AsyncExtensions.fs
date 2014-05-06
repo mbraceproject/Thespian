@@ -6,6 +6,8 @@ namespace Nessos.Thespian
         open System.Threading
         open System.Threading.Tasks
 
+        open Nessos.Thespian.TaskExtensions
+
         exception ResultException of obj
 
         type internal Latch() =
@@ -93,11 +95,16 @@ namespace Nessos.Thespian
             }
 
             static member WithTimeout (timeout: int) (computation: Async<'T>): Async<'T option> =
-                let cancelCondition = async {
-                    do! Async.Sleep timeout
-                    return true
-                }
-                Async.ConditionalCancel cancelCondition computation
+              if timeout = Timeout.Infinite then async { let! r = computation in return Some r }
+              elif timeout = 0 then async.Return None
+              else async { let t = Async.StartAsTask computation in return! Async.AwaitTask <| t.TimeoutAfter(timeout) }
+
+            // static member WithTimeout (timeout: int) (computation: Async<'T>): Async<'T option> =
+            //     let cancelCondition = async {
+            //         do! Async.Sleep timeout
+            //         return true
+            //     }
+            //     Async.ConditionalCancel cancelCondition computation
 
 //                let timeout = async {
 //                    do! Async.Sleepx timeout
@@ -115,26 +122,77 @@ namespace Nessos.Thespian
 //            }
 
             // untyped awaitTask
-            static member AwaitTask (t : Task) = t.ContinueWith ignore |> Async.AwaitTask
-            // non-blocking awaitTask with timeout
-            static member AwaitTask (t : Task<'T>, timeout : int) =
-                async {
-                    let! ct = Async.CancellationToken
-                    use cts = CancellationTokenSource.CreateLinkedTokenSource(ct)
-                    use timer = Task.Delay (timeout, cts.Token)
-                    let tcs = new TaskCompletionSource<bool>()
-                    use _ = ct.Register(new Action<obj>(fun s -> (s :?> TaskCompletionSource<bool>).TrySetResult(true) |> ignore), tcs)
-                    try
-                        let! completed = Async.AwaitTask <| Task.WhenAny(t, tcs.Task, timer)
-                        if completed = (t :> Task) then
-                            let! result = Async.AwaitTask t
-                            return Some result
-                        else if completed = (tcs.Task :> Task) then
-                            return raise (new OperationCanceledException(ct))
-                        else return None
+            // static member AwaitTask (t : Task) = t.ContinueWith ignore |> Async.AwaitTask
+            // // non-blocking awaitTask with timeout
+            // static member AwaitTask (t : Task<'T>, timeout : int) =
+            //     async {
+            //         let! ct = Async.CancellationToken
+            //         use cts = CancellationTokenSource.CreateLinkedTokenSource(ct)
+            //         use timer = Task.Delay (timeout, cts.Token)
+            //         let tcs = new TaskCompletionSource<bool>()
+            //         use _ = ct.Register(new Action<obj>(fun s -> (s :?> TaskCompletionSource<bool>).TrySetResult(true) |> ignore), tcs)
+            //         try
+            //             let! completed = Async.AwaitTask <| Task.WhenAny(t, tcs.Task, timer)
+            //             if completed = (t :> Task) then
+            //                 let! result = Async.AwaitTask t
+            //                 return Some result
+            //             else if completed = (tcs.Task :> Task) then
+            //                 return raise (new OperationCanceledException(ct))
+            //             else return None
 
-                    finally cts.Cancel()
-                }
+            //         finally cts.Cancel()
+            //     }
+
+            static member AwaitTask(task: Task<'T>, timeout: int) =
+              if timeout = Timeout.Infinite then async { let! r = Async.AwaitTask task in return Some r }
+              elif timeout = 0 then async.Return None
+              else Async.AwaitTask <| task.TimeoutAfter timeout
+              
+            //a version of Async.FromBeginEnd with a timeout parameter
+            //the async workflow returns a Some value when the operation completes in time
+            //otherwise returns a None value
+            //On timeout, the async operation needs to be cancelled. This depends on the
+            //particular resource the async operation is acting on. In the case of a Socket
+            //the socket instance would have to be disposed.
+            static member TryFromBeginEnd(beginF: AsyncCallback * obj -> IAsyncResult, endF: IAsyncResult -> 'T, timeout: int, timeoutDisposeF: unit -> unit): Async<'T option> =
+              if timeout = 0 then async.Return None
+              else
+                //Use a Timer to dispose the stream on the timeout
+                //at which point EndRead raises an ObjectDisposed exception
+                //if the operation completed immediately then timer is not set
+                let timer = ref Unchecked.defaultof<Timer>
+                //Use the latch to determin whether timeout has occured in the async callback
+                let latch = ref 0
+                Async.FromBeginEnd(
+                  (fun (callback, state) ->
+                     let iar: IAsyncResult = beginF(callback, state)
+                     if not iar.IsCompleted && not (timeout = Timeout.Infinite) then
+                       //only create the timer if the operation has not already completed
+                       timer := new Timer(
+                         //set the latch in the timer callback
+                         //latch may have been set by the async callback, meaning operation has just completed,
+                         //and so, nothing is disposed
+                         (fun _ -> if Interlocked.CompareExchange(latch, 1, 0) = 0 then timer.Value.Dispose(); timeoutDisposeF()),
+                         null, timeout, Timeout.Infinite)
+                     iar),
+                  (fun iar ->
+                     //timer no longer needed
+                     timer.Value.Dispose()
+                     //if the current thread sets the latch, then no timeout will occur
+                     //if latch has been already set, timeout occurs,
+                     //that is: the resource is a) already disposed or, b) will be disposed
+                     //if (a) then endF raises the exception, otherwise
+                     //if (b) there is a result, but the result must be discarded
+                     //since the stream will be disposed shortly
+                     if Interlocked.CompareExchange(latch, 1, 0) = 0 then let r = endF(iar) in Some r
+                     else try let _ = endF(iar) in None with :? ObjectDisposedException -> None))
+
+            static member TryFromBeginEnd(arg: 'U, beginF: 'U * AsyncCallback * obj -> IAsyncResult, endF: IAsyncResult -> 'T, timeout: int, timeoutDisposeF: unit -> unit): Async<'T option> =
+              Async.TryFromBeginEnd((fun (callback, state) -> beginF(arg, callback, state)), endF, timeout, timeoutDisposeF)
+            static member TryFromBeginEnd(arg1: 'U1, arg2: 'U2, beginF: 'U1 * 'U2 * AsyncCallback * obj -> IAsyncResult, endF: IAsyncResult -> 'T, timeout: int, timeoutDisposeF: unit -> unit): Async<'T option> =
+              Async.TryFromBeginEnd((fun (callback, state) -> beginF(arg1, arg2, callback, state)), endF, timeout, timeoutDisposeF)
+            static member TryFromBeginEnd(arg1: 'U1, arg2: 'U2, arg3: 'U3, beginF: 'U1 * 'U2 * 'U3 * AsyncCallback * obj -> IAsyncResult, endF: IAsyncResult -> 'T, timeout: int, timeoutDisposeF: unit -> unit): Async<'T option> =
+              Async.TryFromBeginEnd((fun (callback, state) -> beginF(arg1, arg2, arg3, callback, state)), endF, timeout, timeoutDisposeF)
 
             static member AwaitObservableCorrect(source: IObservable<'T>) =
                 let value : 'T option ref = ref None
@@ -227,24 +285,14 @@ namespace Nessos.Thespian
                     with 
                     | :? SuccessException<'T> as ex -> return Some ex.Value
                 }
+
+        open Nessos.Thespian.TaskExtensions
         
-        //Based on
-        //http://moiraesoftware.com/blog/2012/01/30/FSharp-Dataflow-agents-II/
-        //but it is simplified
         type AsyncResultCell<'T>() =
             let completionSource = new TaskCompletionSource<'T>()
-
-            let t = completionSource.Task
-
             member c.RegisterResult(result: 'T) = completionSource.SetResult(result)
-            member c.AsyncWaitResult(millisecondsTimeout: int): Async<'T option> =
-                Async.AwaitTask(completionSource.Task, millisecondsTimeout)
-
-            // use default AwaitTask when no timeout overload is given
-            member c.AsyncWaitResult(): Async<'T> = async {
-                let! r = Async.AwaitTask(completionSource.Task, Timeout.Infinite)
-                return Option.get r
-            }
+            member c.AsyncWaitResult(millisecondsTimeout: int): Async<'T option> = Async.AwaitTask <| completionSource.Task.TimeoutAfter(millisecondsTimeout)
+            member c.AsyncWaitResult(): Async<'T> = Async.AwaitTask(completionSource.Task)
 
 
         type AsyncResultCell2<'T>() =
@@ -407,6 +455,15 @@ namespace Nessos.Thespian
                     let! nextState = foldF state item
                     return! foldAsync foldF nextState rest
             }
+
+        let rec conditionalFoldAsync (foldF: 'U -> 'T -> Async<'U * bool>) (state: 'U) (items: 'T list): Async<'U> =
+          async {
+            match items with
+            | [] -> return state
+            | item::rest ->
+              let! nextState, proceed = foldF state item
+              if proceed then return! conditionalFoldAsync foldF nextState rest else return nextState
+          }
 
         let foldBackAsync (foldF: 'T -> 'U -> Async<'U>) (items: 'T list) (state: 'U): Async<'U> =
             let rec loop is k = async {

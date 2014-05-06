@@ -7,10 +7,8 @@ namespace Nessos.Thespian
 
     [<Serializable>]
     type IProtocolFactory =
-      inherit IComparable<IProtocolFactory>
-      inherit IComparable
       abstract ProtocolName: string
-      abstract CreateServerInstance: ActorRef<'T> -> IProtocolServer<'T>
+      abstract CreateServerInstance: string * ActorRef<'T> -> IProtocolServer<'T>
       abstract CreateClientInstance: string -> IProtocolClient<'T>
 
     and IProtocolServer<'T> =
@@ -25,7 +23,7 @@ namespace Nessos.Thespian
       abstract ProtocolName: string
       abstract ActorId: ActorId
       abstract Post: 'T -> unit
-      abstract PostAsync: 'T -> Async<unit>
+      abstract AsyncPost: 'T -> Async<unit>
       abstract PostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R>
       abstract TryPostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R option>
 
@@ -85,14 +83,18 @@ namespace Nessos.Thespian
         static member Map (mapF: 'U -> 'T) (replyChannel: IReplyChannel<'T>): IReplyChannel<'U> =
             {
                 new IReplyChannel<'U> with
-                    member r.Protocol = replyChannel.Protocol
-                    member r.Timeout with get() = replyChannel.Timeout
-                                     and set timeout = replyChannel.Timeout <- timeout
-                    member r.WithTimeout(timeout) = r.Timeout <- timeout; r
-                    member r.ReplyUntyped(reply) = 
+                    member __.Protocol = replyChannel.Protocol
+                    member __.Timeout with get() = replyChannel.Timeout
+                                      and set timeout = replyChannel.Timeout <- timeout
+                    member self.WithTimeout(timeout) = self.Timeout <- timeout; self
+                    member __.ReplyUntyped(reply) = 
                         replyChannel.ReplyUntyped(match reply with Value(:? 'U as value) -> Value(mapF value |> box) | Exception e -> Reply.Exception e | _ -> invalidArg "Reply object not of proper type." "reply")
-                    member r.Reply(reply) =
+                    member __.AsyncReplyUntyped(reply) = 
+                        replyChannel.AsyncReplyUntyped(match reply with Value(:? 'U as value) -> Value(mapF value |> box) | Exception e -> Reply.Exception e | _ -> invalidArg "Reply object not of proper type." "reply")
+                    member __.Reply(reply) =
                         replyChannel.Reply(match reply with Value value -> Value(mapF value) | Exception e -> Reply.Exception e)
+                    member __.AsyncReply(reply) =
+                        replyChannel.AsyncReply(match reply with Value value -> Value(mapF value) | Exception e -> Reply.Exception e)
             }
 
     and [<Serializable>] [<AbstractClass>] ActorRef = 
@@ -343,9 +345,11 @@ namespace Nessos.Thespian
         abstract Protocol: string
         abstract Timeout: int with get, set
         abstract ReplyUntyped: Reply<obj> -> unit
+        abstract AsyncReplyUntyped: Reply<obj> -> Async<unit>
     and IReplyChannel<'T> =
         inherit IReplyChannel
         abstract Reply: Reply<'T> -> unit
+        abstract AsyncReply: Reply<'T> -> Async<unit>
         abstract WithTimeout: int -> IReplyChannel<'T>
 
     and IReplyChannelFactory =

@@ -1,4 +1,4 @@
-﻿module Nessos.Thespian.Remote.ConnectionPool
+﻿module Nessos.Thespian.Remote.TcpProtocol.ConnectionPool
 
 open System
 open System.Threading
@@ -40,8 +40,6 @@ and private ConnectionPoolMsg =
     | ReleaseConnection of PooledTcpClient
 
 and SequentialClientConnectionPool(endPoint: IPEndPoint, minConnections: int, maxConnections: int, retryInterval: int) as self =
-    //let debug prefix x = debug (sprintf "%A::%A" endPoint prefix) x
-
     let available = new Queue<TcpClient>()
     let pendingReplies = new Queue<Reply<PooledTcpClient> -> unit>()
 
@@ -387,11 +385,6 @@ and PooledTcpClient(tracePrefix: string, tcpClient: TcpClient, clientPool: IClie
     let timeCreated = DateTime.Now
     let mutable latch = 0
     let triggerLatch() = Interlocked.CompareExchange(&latch, 1, 0) = 0
-    //let underlyingClient = ref tcpClient
-
-//    member internal  __.UnderlyingClient 
-//        with get() = !underlyingClient 
-//        and set client = underlyingClient := client
 
     member internal __.TracePrefix = tracePrefix
     member internal __.UnderlyingClient = tcpClient
@@ -401,24 +394,18 @@ and PooledTcpClient(tracePrefix: string, tcpClient: TcpClient, clientPool: IClie
     member self.Return() = 
         if triggerLatch() then clientPool.ReleaseConnection self
 
-    member self.GetStream() = new PooledNetworkStream(self) :> NetworkStream
+    member self.GetStream() = new PooledNetworkStream(self) :> ProtocolNetworkStream
 
     interface IDisposable with
         override self.Dispose() = self.Return()
 
 and PooledNetworkStream(client: PooledTcpClient) =
-    inherit NetworkStream(client.UnderlyingClient.Client, false)
+    inherit ProtocolNetworkStream(client.UnderlyingClient, false)
 
-    override __.Close() =
-        //debug client.TracePrefix "PooledNetworkStream CLOSE"
-        base.Close()
-        client.Return()
+    override __.Close() = base.Close(); client.Return()
+    override self.FaultDispose() = self.Dispose();
 
-    interface IDisposable with
-        override __.Dispose() = 
-            //debug client.TracePrefix "PooledNetworkStream DISPOSE"
-            base.Dispose()
-            client.Return()
+    interface IDisposable with override __.Dispose() = base.Dispose(); client.Return()
 
 
 type TcpConnectionPool() =

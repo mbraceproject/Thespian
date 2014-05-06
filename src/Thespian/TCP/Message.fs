@@ -1,252 +1,284 @@
 ﻿namespace Nessos.Thespian.Remote.TcpProtocol
 
-    open System
-    open System.IO
-    open System.Net
-    open System.Net.Sockets
-    open System.Threading
-    open System.Runtime.Serialization
+open System
+open System.IO
+open System.Net
+open System.Net.Sockets
+open System.Threading
+open System.Runtime.Serialization
 
-    open Nessos.Thespian
-    open Nessos.Thespian.Utils
-    open Nessos.Thespian.Serialization
-    open Nessos.Thespian.DisposableExtensions
-    open Nessos.Thespian.Remote
-    open Nessos.Thespian.Remote.SocketExtensions
-
-    type MsgId = Guid
-
-    //A message received by SocketProtocolListener
-    //Each has a message id, the id of the recipient actor and a binary payload
-    //The listener forwards the payload to the particular protocol object associated
-    //with the actor / actorRef
-    type ProtocolRequest = MsgId * TcpActorId * byte[]
-    //The messages sent by the listener to the client
-    type ProtocolResponse = 
-        //the message has been successfully received, forwarded to the actor's protocol, deserialization succeeded and it is ready to be processed by the receiving actor/actorRef
-        | Acknowledge of MsgId
-        //the listener was unable to find the receiving actor/actorRef
-        | UnknownRecipient of MsgId * TcpActorId
-        //message has been received, forwarded to the actor's protocol but something went wrong during further processing; probably either invalid cast
-        //(client - server type mismatch) or a deserialization exception
-        //The exception that occurs is carried in the message.
-        | Failure of MsgId * exn
-        with
-            static member BinaryDeserialize(reader: BinaryReader) =
-                //union case tag
-                let case = reader.ReadInt16()
-                match case with
-                | 1s -> //Ackgnowledge
-                    //msgId: Guid (16 bytes)
-                    let msgIdBinary = reader.ReadBytes(16)
-                    let msgId = new MsgId(msgIdBinary)
-                    Acknowledge msgId
-                | 2s -> //UnknownRecipient
-                    //msgId: Guid (16 bytes)
-                    let msgIdBinary = reader.ReadBytes(16)
-                    let msgId = new MsgId(msgIdBinary)
-                    //actorId: TcpActorId
-                    //custom serialization
-                    let actorId = TcpActorId.BinaryDeserialize(reader)
-                    UnknownRecipient(msgId, actorId)
-                | 3s -> //Failure
-                    //msgId: Guid (16 bytes)
-                    let msgIdBinary = reader.ReadBytes(16)
-                    let msgId = new MsgId(msgIdBinary)
-                    //e: exn
-                    //binary formatter serialization
-                    //byte array serialization
-                    let eBinary = reader.ReadByteArray()
-                    let serializer = SerializerRegistry.GetDefaultSerializer()
-                    let e = serializer.Deserialize<exn> eBinary
-                    Failure(msgId, unbox e)
-                | _ -> //invalid
-                    raise <| new SerializationException("TcpProtocol: Invalid ProtocolResponse binary format.")
-
-            member protocolResponse.BinarySerialize(writer: BinaryWriter) =
-                match protocolResponse with
-                | Acknowledge msgId ->
-                    //union case tag: 1
-                    writer.Write 1s
-                    //msgId: Guid (16 bytes)
-                    writer.Write(msgId.ToByteArray())
-                | UnknownRecipient(msgId, actorId) ->
-                    //union case tag: 2
-                    writer.Write 2s
-                    //msgId: Guid (16 bytes)
-                    writer.Write(msgId.ToByteArray())
-                    //actorId: TcpActorId
-                    //custom serialization
-                    actorId.BinarySerialize(writer)
-                | Failure(msgId, e) ->
-                    //union case tag: 3
-                    writer.Write 3s
-                    //msgId: Guid (16 bytes)
-                    writer.Write(msgId.ToByteArray())
-                    //e: exn
-                    //binary formatter serialization
-                    //byte array serialization
-                    let serializer = SerializerRegistry.GetDefaultSerializer()
-                    let eBinary = serializer.Serialize<exn>(e)
-                    writer.WriteByteArray(eBinary)
-
-    module Message = 
-
-        let readMessage (stream: Stream) (deserializeF: BinaryReader -> 'T): Async<'T> = async {
-            //read total length
-            let! messageLengthBinary = stream.AsyncRead(4)
-//            let messageLengthBinary = Array.zeroCreate 4 : byte[]
-//            let bytesRead = stream.Read(messageLengthBinary, 0, 4)
-
-            //setup reader and writer
-            //writer is used to write byte arrays read from
-            //the network stream
-            //reader is used to deserialize
-            use writer = new BinaryWriter(new MemoryStream())
-            use reader = new BinaryReader(writer.BaseStream)
-
-            writer.Write(messageLengthBinary)
-            writer.BaseStream.Position <- 0L
-
-            //get the message length int
-            let messageLength = reader.ReadInt32()
-            //read the message
-            let! messageBinary = stream.AsyncRead(messageLength)
-
-            //and copy to memory stream
-            writer.Write(messageBinary)
-            writer.BaseStream.Position <- 4L
-
-            //finally deserialize
-            return deserializeF reader
-        }
-
-        let writeMessage (stream: Stream) (serializeF: 'T -> byte[]) (message: 'T) = async {
-            let payloadBinary = serializeF message
-
-            use writer = new BinaryWriter(new MemoryStream())
-            writer.Write(payloadBinary.Length)
-            writer.Write(payloadBinary)
-
-            let memoryStream = writer.BaseStream :?> MemoryStream
-            let messageBinary = memoryStream.ToArray()
-
-            do! stream.AsyncWrite messageBinary
-        }
-
-        module ProtocolRequest = 
-            let serialize ((msgId, actorId, payload): ProtocolRequest) =
-                use memoryStream = new MemoryStream()
-                use writer = new BinaryWriter(memoryStream)
-
-                //msgId: GUID (16 bytes)
-                writer.Write(msgId.ToByteArray())
-                //actorId: ActorId
-                //custom binary serialization
-                actorId.BinarySerialize(writer)
-                //payload: byte[]
-                writer.WriteByteArray(payload)
-
-                memoryStream.ToArray()
+open Nessos.Thespian
+open Nessos.Thespian.Utils
+open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Serialization
+open Nessos.Thespian.DisposableExtensions
+open Nessos.Thespian.Remote
+open Nessos.Thespian.Remote.SocketExtensions
 
 
-            let deserialize (reader: BinaryReader) =
-                //msgId: GUID (16 bytes)
-                let msgIdBinary = reader.ReadBytes(16)
-                let msgId = new MsgId(msgIdBinary)
-                //actorId: ActorId
-                //custom binary serialization
-                let actorId = TcpActorId.BinaryDeserialize(reader)
-                //payload: byte[]
-                let payload = reader.ReadByteArray()
-            
-                (msgId, actorId, payload): ProtocolRequest
+type MsgId = Guid
 
-            let read (stream: Stream): Async<ProtocolRequest> = 
-                readMessage stream deserialize
+//A message received by SocketProtocolListener
+//Each has a message id, the id of the recipient actor and a binary payload
+//The listener forwards the payload to the particular protocol object associated
+//with the actor / actorRef
+type ProtocolRequest = MsgId * TcpActorId * byte[]
+//The messages sent by the listener to the client
+type ProtocolResponse =
+  //the message has been successfully received, forwarded to the actor's protocol, deserialization succeeded and it is ready to be processed by the receiving actor/actorRef
+  | Acknowledge of MsgId
+  //the listener was unable to find the receiving actor/actorRef
+  | UnknownRecipient of MsgId * TcpActorId
+  //message has been received, forwarded to the actor's protocol but something went wrong during further processing; probably either invalid cast
+  //(client - server type mismatch) or a deserialization exception
+  //The exception that occurs is carried in the message.
+  | Failure of MsgId * exn
+with
+  static member BinaryDeserialize(reader: BinaryReader) =
+    //union case tag
+    let case = reader.ReadInt16()
+    match case with
+    | 1s -> //Ackgnowledge
+      //msgId: Guid (16 bytes)
+      let msgIdBinary = reader.ReadBytes(16)
+      let msgId = new MsgId(msgIdBinary)
+      Acknowledge msgId
+    | 2s -> //UnknownRecipient
+      //msgId: Guid (16 bytes)
+      let msgIdBinary = reader.ReadBytes(16)
+      let msgId = new MsgId(msgIdBinary)
+      //actorId: TcpActorId
+      //custom serialization
+      let actorId = TcpActorId.BinaryDeserialize(reader)
+      UnknownRecipient(msgId, actorId)
+    | 3s -> //Failure
+      //msgId: Guid (16 bytes)
+      let msgIdBinary = reader.ReadBytes(16)
+      let msgId = new MsgId(msgIdBinary)
+      //e: exn
+      //binary formatter serialization
+      //byte array serialization
+      let eBinary = reader.ReadByteArray()
+      let serializer = Serialization.defaultSerializer
+      let e = serializer.Deserialize<exn> eBinary
+      Failure(msgId, unbox e)
+    | _ -> //invalid
+      raise <| new SerializationException("TcpProtocol: Invalid ProtocolResponse binary format.")
 
-            let write (stream: Stream) (protocolRequest: ProtocolRequest): Async<unit> =
-                writeMessage stream serialize protocolRequest
+  member protocolResponse.BinarySerialize(writer: BinaryWriter) =
+    match protocolResponse with
+    | Acknowledge msgId ->
+      //union case tag: 1
+      writer.Write 1s
+      //msgId: Guid (16 bytes)
+      writer.Write(msgId.ToByteArray())
+    | UnknownRecipient(msgId, actorId) ->
+      //union case tag: 2
+      writer.Write 2s
+      //msgId: Guid (16 bytes)
+      writer.Write(msgId.ToByteArray())
+      //actorId: TcpActorId
+      //custom serialization
+      actorId.BinarySerialize(writer)
+    | Failure(msgId, e) ->
+      //union case tag: 3
+      writer.Write 3s
+      //msgId: Guid (16 bytes)
+      writer.Write(msgId.ToByteArray())
+      //e: exn
+      //binary formatter serialization
+      //byte array serialization
+      let serializer = Serialization.defaultSerializer
+      let eBinary = serializer.Serialize<exn>(e)
+      writer.WriteByteArray(eBinary)
 
-        module ProtocolResponse =
-            let serialize (protocolResponse: ProtocolResponse) =
-                use memoryStream = new MemoryStream()
-                use writer = new BinaryWriter(memoryStream)
+type ProtocolNetworkStream(tcpClient: TcpClient, ?keepOpen: bool) =
+  inherit NetworkStream(tcpClient.Client, not <| defaultArg keepOpen true)
+  let keepOpen = defaultArg keepOpen true
+  let socket = tcpClient.Client
 
-                protocolResponse.BinarySerialize(writer)
+  abstract FaultDispose: unit -> unit
+  default self.FaultDispose() =
+    self.Dispose()
+    if keepOpen then
+      if tcpClient.Client <> null then tcpClient.Client.LingerState = new LingerOption(true, 0) |> ignore
+      tcpClient.Close()
 
-                memoryStream.ToArray()
+  //returns disposable that releases the socket even if keepOpen = true
+  member self.Acquire() =
+    { new IDisposable with
+        override __.Dispose() = self.Dispose(); tcpClient.Close() }
 
-            let deserialize (reader: BinaryReader) = ProtocolResponse.BinaryDeserialize(reader)
+  member self.TryAsyncRead(buffer: byte[], offset: int, size: int, timeout: int): Async<int option> =
+    if timeout = 0 then async.Return None
+    elif timeout = Timeout.Infinite then async { let! r = self.AsyncRead(buffer, offset, size) in return Some r }
+    else Async.TryFromBeginEnd(buffer, offset, size, self.BeginRead, self.EndRead, timeout, self.FaultDispose)
 
-            let read (stream: Stream): Async<ProtocolResponse> =
-                readMessage stream deserialize
+  member self.TryAsyncRead(count: int, timeout: int): Async<int option> =
+    async {
+      let buffer = Array.zeroCreate count
+      return! self.TryAsyncRead(buffer, 0, buffer.Length, timeout)
+    }
 
-            let write (stream: Stream) (protocolResponse: ProtocolResponse): Async<unit> =
-                writeMessage stream serialize protocolResponse
-            
+  member self.TryAsyncWrite(buffer: byte[], timeout: int, ?offset: int, ?count: int): Async<unit option> =
+    let offset = defaultArg offset 0
+    let count = defaultArg count buffer.Length
+    if timeout = 0 then async.Return None
+    elif timeout = Timeout.Infinite then async { let! _ = self.AsyncWrite(buffer, offset, count) in return Some() }
+    else Async.TryFromBeginEnd(buffer, offset, count, self.BeginWrite, self.EndWrite, timeout, self.FaultDispose)
 
-//    type ProtocolStream(msgId: MsgId, stream: Stream, disposeF: unit -> unit) =
-    type ProtocolStream(msgId: MsgId, stream: Stream) =
-        //let debug x = Debug.writelfc (sprintf "ProtocolStream::%s::" (msgId.ToString())) x
+module Message =
+  let mutable DefaultReadTimeout = 30000
+  let mutable DefaultWriteTimeout = 30000
+  
+  let tryReadMessage (stream: ProtocolNetworkStream) (deserializeF: BinaryReader -> 'T) (timeout: int): Async<'T option> =
+    async {
+      //read total length
+      let! r = stream.TryAsyncRead(4, timeout)
+      match r with
+      | Some messageLengthBinary ->
+        //setup reader and writer
+        //writer is used to write byte arrays read from
+        //the network stream
+        //reader is used to deserialize
+        use writer = new BinaryWriter(new MemoryStream())
+        use reader = new BinaryReader(writer.BaseStream)
 
-        let mutable retain = true
+        writer.Write(messageLengthBinary)
+        writer.BaseStream.Position <- 0L
 
-//        new (msgId: MsgId, stream: Stream) = new ProtocolStream(msgId, stream, ignore)
+        //get the message length int
+        let messageLength = reader.ReadInt32()
+        //read the message
+        let! messageBinary = stream.AsyncRead(messageLength)
 
-        static member private MsgId(ps: ProtocolStream) = ps.Id
+        //and copy to memory stream
+        writer.Write(messageBinary)
+        writer.BaseStream.Position <- 4L
 
-//        static member InitReadAsync(stream: Stream, disposeF: unit -> unit) = async {
-        static member InitReadAsync(stream: Stream) = async {
+        //finally deserialize
+        return Some (deserializeF reader)
+      | None -> return None
+    }
 
-            let! ((msgId, _, _) as protocolRequest) = Message.ProtocolRequest.read stream
+  let readMessage (stream: ProtocolNetworkStream) (deserializeF: BinaryReader -> 'T): Async<'T> =
+    async {
+      let! r = tryReadMessage stream deserializeF Timeout.Infinite
+      match r with
+      | Some r -> return r
+      | None -> return! Async.Raise (new TimeoutException()) //dead code
+    }
 
-//            return protocolRequest, new ProtocolStream(msgId, stream, disposeF)
-            return protocolRequest, new ProtocolStream(msgId, stream)
-        }
+  let tryWriteMessage (stream: ProtocolNetworkStream) (serializeF: 'T -> byte[]) (message: 'T) (timeout: int): Async<unit option> =
+    async {
+      let payloadBinary = serializeF message
 
-//        static member InitReadAsync(stream: Stream) = ProtocolStream.InitReadAsync(stream, ignore)
+      use writer = new BinaryWriter(new MemoryStream())
+      writer.Write(payloadBinary.Length)
+      writer.Write(payloadBinary)
 
-        member private __.Id = msgId
-        
-        member __.AsyncWriteRequest(protocolRequest: ProtocolRequest): Async<unit> = async {
-            //debug "WRITE REQUEST %A" protocolRequest
-            return! Message.ProtocolRequest.write stream protocolRequest
-        }
+      let memoryStream = writer.BaseStream :?> MemoryStream
+      let messageBinary = memoryStream.ToArray()
 
-        member __.AsyncReadRequest(): Async<ProtocolRequest> = async {
-            let! r = Message.ProtocolRequest.read stream
-            //debug "READ REQUEST %A" r
-            return r
-        }
-        
-        member __.AsyncWriteResponse(protocolResponse: ProtocolResponse): Async<unit> = async {
-            //debug "WRITE RESPOSNE %A" protocolResponse
-            return! Message.ProtocolResponse.write stream protocolResponse
-        }
+      return! stream.TryAsyncWrite(messageBinary, timeout)
+    }
 
-        member __.AsyncReadResponse(): Async<ProtocolResponse> = async {
-            let! r = Message.ProtocolResponse.read stream
-            //debug "READ RESPONSE %A" r
-            return r
-        }
+  let writeMessage (stream: ProtocolNetworkStream) (serializeF: 'T -> byte[]) (message: 'T) =
+    async {
+      let! r = tryWriteMessage stream serializeF message Timeout.Infinite
+      match r with
+      | Some() -> return ()
+      | None -> return! Async.Raise (new TimeoutException()) //dead code
+    }
 
-        member __.Retain with get() = retain
-                              and set(value: bool) = retain <- value
+  module ProtocolRequest =
+    let inline serialize ((msgId, actorId, payload): ProtocolRequest) =
+      use memoryStream = new MemoryStream()
+      use writer = new BinaryWriter(memoryStream)
+      //msgId: GUID (16 bytes)
+      writer.Write(msgId.ToByteArray())
+      //actorId: ActorId
+      //custom binary serialization
+      actorId.BinarySerialize(writer)
+      //payload: byte[]
+      writer.WriteByteArray(payload)
+      memoryStream.ToArray()
 
-        member __.Dispose() = 
-            //debug "DISPOSE"
-            stream.Dispose()
-            //disposeF()
+    let inline deserialize (reader: BinaryReader) =
+      //msgId: GUID (16 bytes)
+      let msgIdBinary = reader.ReadBytes(16)
+      let msgId = new MsgId(msgIdBinary)
+      //actorId: ActorId
+      //custom binary serialization
+      let actorId = TcpActorId.BinaryDeserialize(reader)
+      //payload: byte[]
+      let payload = reader.ReadByteArray()
+      (msgId, actorId, payload): ProtocolRequest
 
-        override __.GetHashCode() = hash msgId
-        override s.Equals(other: obj) = equalsOn ProtocolStream.MsgId s other
+    let inline tryRead (stream: ProtocolNetworkStream) (timeout: int): Async<ProtocolRequest option> = tryReadMessage stream deserialize timeout
+    let inline read (stream: ProtocolNetworkStream): Async<ProtocolRequest> = readMessage stream deserialize
 
-        interface IComparable with
-            member s.CompareTo(other: obj) = 
-                compareOn ProtocolStream.MsgId s other
+    let inline tryWrite (stream: ProtocolNetworkStream) (protocolRequest: ProtocolRequest) (timeout: int): Async<unit option> = tryWriteMessage stream serialize protocolRequest timeout
+    let inline write (stream: ProtocolNetworkStream) (protocolRequest: ProtocolRequest): Async<unit> = writeMessage stream serialize protocolRequest
 
-        interface IDisposable with
-            member s.Dispose() = s.Dispose()
-        
-            
+  module ProtocolResponse =
+    let inline serialize (protocolResponse: ProtocolResponse) =
+      use memoryStream = new MemoryStream()
+      use writer = new BinaryWriter(memoryStream)
+      protocolResponse.BinarySerialize(writer)      
+      memoryStream.ToArray()
+
+    let inline deserialize (reader: BinaryReader) = ProtocolResponse.BinaryDeserialize(reader)
+
+    let inline tryRead (stream: ProtocolNetworkStream) (timeout: int): Async<ProtocolResponse option> = tryReadMessage stream deserialize timeout
+    let inline read (stream: ProtocolNetworkStream): Async<ProtocolResponse> = readMessage stream deserialize
+
+    let inline tryWrite (stream: ProtocolNetworkStream) (protocolResponse: ProtocolResponse) (timeout: int): Async<unit option> = tryWriteMessage stream serialize protocolResponse timeout
+    let inline write (stream: ProtocolNetworkStream) (protocolResponse: ProtocolResponse): Async<unit> = writeMessage stream serialize protocolResponse
+
+
+type ProtocolStream(msgId: MsgId, stream: ProtocolNetworkStream, ?readTimeout: int, ?writeTimeout: int) =
+  let readTimeout = defaultArg readTimeout Message.DefaultReadTimeout
+  let writeTimeout = defaultArg writeTimeout Message.DefaultWriteTimeout
+  let mutable retain = true
+
+  static let getMsgId (s: ProtocolStream) = s.Id
+
+  static member AsyncCreateRead(tcpClient: TcpClient, readTimeout: int, writeTimeout: int, ?keepOpen: bool): Async<(ProtocolRequest * ProtocolStream) option> =
+    async {
+      let stream = new ProtocolNetworkStream(tcpClient, ?keepOpen = keepOpen)
+      let! r = Message.ProtocolRequest.tryRead stream readTimeout
+      match r with
+      | Some((msgId, _, _) as protocolRequest) -> return Some (protocolRequest, new ProtocolStream(msgId, stream, readTimeout, writeTimeout))
+      | None -> return None
+    }
+
+  member __.Id = msgId
+
+  member __.AsyncReadRequest(): Async<ProtocolRequest> = Message.ProtocolRequest.read stream
+  member __.AsyncWriteRequest(protocolRequest: ProtocolRequest): Async<unit> = Message.ProtocolRequest.write stream protocolRequest
+
+  member __.AsyncReadResponse(): Async<ProtocolResponse> = Message.ProtocolResponse.read stream
+  member __.AsyncWriteResponse(protocolResponse: ProtocolResponse): Async<unit> = Message.ProtocolResponse.write stream protocolResponse
+
+  member __.TryAsyncReadRequest(): Async<ProtocolRequest option> = Message.ProtocolRequest.tryRead stream readTimeout
+  member __.TryAsyncWriteRequest(protocolRequest: ProtocolRequest): Async<unit option> = Message.ProtocolRequest.tryWrite stream protocolRequest writeTimeout
+
+  member __.TryAsyncReadResponse(): Async<ProtocolResponse option> = Message.ProtocolResponse.tryRead stream readTimeout
+  member __.TryAsyncWriteResponse(protocolResponse: ProtocolResponse): Async<unit option> = Message.ProtocolResponse.tryWrite stream protocolResponse writeTimeout
+    
+  member __.Retain with get() = retain
+                    and set(value: bool) = retain <- value
+
+  member __.Dispose() = stream.Dispose()
+
+  member __.Acquire() = stream.Acquire()
+
+  override __.GetHashCode() = hash msgId
+  override self.Equals(other: obj) = equalsOn getMsgId self other
+
+  interface IComparable with
+    override self.CompareTo(other: obj) = compareOn getMsgId self other
+
+  interface IDisposable with
+    override self.Dispose() = self.Dispose()
