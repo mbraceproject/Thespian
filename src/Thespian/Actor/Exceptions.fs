@@ -1,108 +1,99 @@
 namespace Nessos.Thespian
 
-    open System
-    open System.Runtime.Serialization        
+open System
+open System.Runtime.Serialization        
 
-    //TODO!!!
-    //Change ActorExceptions to have ActorId field, instead of UUID and name
+//TODO!!!
+//Change ActorExceptions to have ActorId field, instead of UUID and name
 
-    [<Serializable>]
-    type ActorException =
-        inherit Exception
+[<Serializable>]
+type ActorException =
+  inherit Exception
 
-        val private actorName: string
-        val private actorUUID: ActorUUID
+  val private actorName: string
+  val private actorId: ActorId option
 
-        new(message: string, actorName: string, actorId: ActorUUID) = {
-            inherit Exception(message)
+  new (message: string, actorName: string) =
+    {
+      inherit Exception(message)
+      actorName = actorName
+      actorId = None
+    }
+  new (message: string, actorId: ActorId) =
+    {
+      inherit Exception(message)
+      actorName = actorId.Name
+      actorId = Some actorId
+    }
 
-            actorName = actorName
-            actorUUID = actorId
-        }
+  new (message: string, actorName: string, innerException: Exception) =
+    {
+      inherit Exception(message, innerException)
+      actorName = actorName
+      actorId = None
+    }
+  new (message: string, actorId: ActorId, innerException: Exception) =
+    {
+      inherit Exception(message, innerException)
+      actorName = actorId.Name
+      actorId = Some actorId
+    }
 
-        new(message: string, actorName: string, actorId: ActorUUID, innerException: Exception) = {
-            inherit Exception(message, innerException)
+  new (message: string) = ActorException(message, String.Empty)
+  new (message: string, innerException: Exception) = ActorException(message, String.Empty, innerException)
 
-            actorName = actorName
-            actorUUID = actorId
-        }
+  new (info: SerializationInfo, context: StreamingContext) =
+    { 
+      inherit Exception(info, context)
+      actorName = info.GetString("actorName")
+      actorId = info.GetValue("actorId", typeof<ActorId option>) :?> ActorId option
+    }
 
-        new(message: string) = ActorException(message, "", ActorUUID.Empty)
+  member self.ActorName = self.actorName
+  member self.ActorId = self.actorId
 
-        new(message: string, innerException: Exception) = ActorException(message, "", ActorUUID.Empty, innerException)
+  override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
+    info.AddValue("actorName", self.actorName)
+    base.GetObjectData(info, context)
 
-        new(info: SerializationInfo, context: StreamingContext) = { 
-            inherit Exception(info, context)
-
-            actorName = info.GetString("actorName")
-            actorUUID = info.GetValue("actorId", typeof<ActorUUID>) :?> ActorUUID
-        }
-
-        member e.ActorName = e.actorName
-        member e.ActorId = e.actorUUID
-
-        override e.GetObjectData(info: SerializationInfo, context: StreamingContext) =
-            info.AddValue("actorName", e.actorName)
-            info.AddValue("actorId", e.actorUUID)
-
-            base.GetObjectData(info, context)
-
-        interface ISerializable with
-            member e.GetObjectData(info: SerializationInfo, context: StreamingContext) =
-                e.GetObjectData(info, context)
-
-
-    [<Sealed>][<Serializable>]
-    type MessageHandlingException =
-        inherit ActorException
-
-        new(message: string, innerException: Exception) = {
-            inherit ActorException(message, innerException)
-        }
-
-        new(message: string, actorName: string, actorId: ActorUUID, innerException: Exception) = {
-            inherit ActorException(message, actorName, actorId, innerException)
-        }
-
-        private new(info: SerializationInfo, context: StreamingContext) = 
-            { inherit ActorException(info, context) }
-
-        interface ISerializable with
-            member e.GetObjectData(info: SerializationInfo, context: StreamingContext) =
-                base.GetObjectData(info, context)
+  interface ISerializable with
+    override self.GetObjectData(info: SerializationInfo, context: StreamingContext) = self.GetObjectData(info, context)
 
 
+[<Sealed; Serializable>]
+type MessageHandlingException =
+  inherit ActorException
 
-    [<Sealed>][<Serializable>]
-    type ActorInactiveException =
-        inherit ActorException
+  new (message: string, innerException: Exception) = { inherit ActorException(message, innerException) }
+  new (message: string, actorName: string, innerException: Exception) = { inherit ActorException(message, actorName, innerException) }
+  new (message: string, actorId: ActorId, innerException: Exception) = { inherit ActorException(message, actorId, innerException) }
 
-        new(message: string) = {
-            inherit ActorException(message)
-        }
+  private new (info: SerializationInfo, context: StreamingContext) =  { inherit ActorException(info, context) }
 
-        new(message: string, actorName: string, actorId: ActorUUID) = {
-            inherit ActorException(message, actorName, actorId)
-        }
+  interface ISerializable with
+    override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
+      base.GetObjectData(info, context)
 
-        new(message: string, innerException: Exception) = {
-            inherit ActorException(message, innerException)
-        }
 
-        new(message: string, actorName: string, actorId: ActorUUID, innerException: Exception) = {
-            inherit ActorException(message, actorName, actorId, innerException)
-        }
+[<Sealed; Serializable>]
+type ActorInactiveException =
+  inherit ActorException
 
-        private new(info: SerializationInfo, context: StreamingContext) = 
-            { inherit ActorException(info, context) }
+  new (message: string) = { inherit ActorException(message) }
+  new (message: string, actorName: string) = { inherit ActorException(message, actorName) }
+  new (message: string, actorId: ActorId) = { inherit ActorException(message, actorId) }
+  new (message: string, innerException: Exception) = { inherit ActorException(message, innerException) }
+  new (message: string, actorName: string, innerException: Exception) = { inherit ActorException(message, actorName, innerException) }
 
-        interface ISerializable with
-            member e.GetObjectData(info: SerializationInfo, context: StreamingContext) =    
-                base.GetObjectData(info, context)
+  private new (info: SerializationInfo, context: StreamingContext) = { inherit ActorException(info, context) }
 
-    [<Sealed>][<Serializable>]
-    type ActorFailedException =
-        inherit ActorException
+  interface ISerializable with
+    override self.GetObjectData(info: SerializationInfo, context: StreamingContext) = base.GetObjectData(info, context)
+
+
+[<Sealed; Serializable>]
+type ActorFailedException =
+  inherit ActorException
 
         new(message: string) = {
             inherit ActorException(message)
