@@ -1,360 +1,229 @@
 namespace Nessos.Thespian
     
-    open System
-    open System.Runtime.Serialization
+open System
+open System.Threading
+open System.Runtime.Serialization
 
-    open Nessos.Thespian.Serialization
+[<Serializable>]
+type IProtocolFactory =
+  abstract ProtocolName: string
+  abstract CreateServerInstance: string * ActorRef<'T> -> IProtocolServer<'T>
+  abstract CreateClientInstance: string -> IProtocolClient<'T>
 
-    [<Serializable>]
-    type IProtocolFactory =
-      abstract ProtocolName: string
-      abstract CreateServerInstance: string * ActorRef<'T> -> IProtocolServer<'T>
-      abstract CreateClientInstance: string -> IProtocolClient<'T>
-
-    and IProtocolServer<'T> =
-      inherit IDisposable
-      abstract ProtocolName: string
-      abstract ActorId: ActorId
-      abstract Log: IEvent<Log>
-      abstract Start: unit -> unit
-      abstract Stop: unit -> unit
+and IProtocolServer<'T> =
+  inherit IDisposable
+  abstract ProtocolName: string
+  abstract ActorId: ActorId
+  abstract Log: IEvent<Log>
+  abstract Start: unit -> unit
+  abstract Stop: unit -> unit
       
-    and IProtocolClient<'T> =
-      abstract ProtocolName: string
-      abstract ActorId: ActorId
-      abstract Post: 'T -> unit
-      abstract AsyncPost: 'T -> Async<unit>
-      abstract PostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R>
-      abstract TryPostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R option>
+and IProtocolClient<'T> =
+  abstract ProtocolName: string
+  abstract ActorId: ActorId
+  abstract Factory: IProtocolFactory option
+  abstract Post: 'T -> unit
+  abstract AsyncPost: 'T -> Async<unit>
+  abstract PostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R>
+  abstract TryPostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R option>
 
-    and IPrimaryProtocolServer<'T> =
-      inherit IProtocolServer<'T>
-      abstract PendingMessages: int
-      abstract Receive: int -> Async<'T>
-      abstract TryReceive: int -> Async<'T option>
-      abstract Start: (unit -> Async<unit>) -> unit
+and IPrimaryProtocolServer<'T> =
+  inherit IProtocolServer<'T>
+  abstract PendingMessages: int
+  abstract Receive: int -> Async<'T>
+  abstract TryReceive: int -> Async<'T option>
+  abstract Start: (unit -> Async<unit>) -> unit
 
-    and [<Serializable>] IProtocolConfiguration =
-        inherit IComparable<IProtocolConfiguration>
-        inherit IComparable
-        abstract ProtocolName: string
-        abstract Serializer: string option
-        abstract CreateProtocolInstances: ActorRef<'T> -> IActorProtocol<'T> []
-        abstract CreateProtocolInstances : ActorUUID * string -> IActorProtocol<'T> []
-        //abstract TryCreateProtocolInstance : ActorUUID * string -> IActorProtocol<'T>
+and internal ReplyChannelUtils private () =
+  static member Map (mapF: 'U -> 'T) (replyChannel: IReplyChannel<'T>): IReplyChannel<'U> =
+    {
+      new IReplyChannel<'U> with
+        override __.Protocol = replyChannel.Protocol
+        override __.Timeout with get() = replyChannel.Timeout
+                             and set(timeout) = replyChannel.Timeout <- timeout
+        override self.WithTimeout(timeout) = self.Timeout <- timeout; self
+        override __.ReplyUntyped(reply) = replyChannel.ReplyUntyped(match reply with Value(:? 'U as value) -> Value(mapF value |> box) | Exception e -> Reply.Exception e | _ -> invalidArg "reply" "Reply object not of proper type.")
+        override __.AsyncReplyUntyped(reply) = replyChannel.AsyncReplyUntyped(match reply with Value(:? 'U as value) -> Value(mapF value |> box) | Exception e -> Reply.Exception e | _ -> invalidArg "reply" "Reply object not of proper type.")
+        override __.Reply(reply) = replyChannel.Reply(match reply with Value value -> Value(mapF value) | Exception e -> Reply.Exception e)
+        override __.AsyncReply(reply) = replyChannel.AsyncReply(match reply with Value value -> Value(mapF value) | Exception e -> Reply.Exception e)
+    }
 
-    and IActorProtocol =
-        abstract Configuration: IProtocolConfiguration option
-        abstract MessageType: Type
-        abstract ProtocolName: string
-        abstract ActorUUId: ActorUUID
-        abstract ActorName: string
-        abstract ActorId: ActorId
-        abstract Log: IEvent<Log>
-        abstract Start: unit -> unit
-        abstract Stop: unit -> unit
+and [<Serializable; AbstractClass>] ActorRef =
+  val private name: string
+  val private messageType: Type
+  val private protocols: string[]
 
-    and IActorProtocol<'T> = 
-        inherit IActorProtocol
+  new (name: string, messageType: Type, protocols: seq<string>) =
+    if Seq.isEmpty protocols then invalidArg "protocols" "No actors specified for actor reference."
+    {
+      name = name; messageType = messageType; protocols = Seq.toArray protocols
+    }
 
-        abstract Post: 'T -> unit
-        abstract PostAsync: 'T -> Async<unit>
-        abstract PostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R>
-        abstract TryPostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R option>
-        abstract PostWithReply: (IReplyChannel<'R> -> 'T) -> Async<'R>
+  internal new (info: SerializationInfo, context: StreamingContext) =
+    {    
+      name = info.GetString("name")
+      messageType = info.GetValue("messageType", typeof<Type>) :?> Type
+      protocols = info.GetValue("protocols", typeof<IProtocolFactory[]>) :?> IProtocolFactory[] |> Array.map (fun configuration -> configuration.ProtocolName)
+    }
 
-    and IPrincipalActorProtocol<'T> =
-        inherit IActorProtocol<'T>
+  abstract MessageType: Type
+  default self.MessageType = self.messageType
 
-        abstract CurrentQueueLength: int
-        
-        abstract Receive: int -> Async<'T>
-        abstract Receive: unit -> Async<'T>
-        abstract TryReceive: int -> Async<'T option>
-        abstract TryReceive: unit -> Async<'T option>
-        abstract Scan: ('T -> Async<'U> option) * int -> Async<'U>
-        abstract Scan: ('T -> Async<'U> option) -> Async<'U>
-        abstract TryScan: ('T -> Async<'U> option) * int -> Async<'U option>
-        abstract TryScan: ('T -> Async<'U> option) -> Async<'U option>
+  abstract Protocols: string[]
+  default self.Protocols = self.protocols
 
-        abstract Start: (unit -> Async<unit>) -> unit
+  abstract Name: string
+  default self.Name = self.name
 
-    and internal ReplyChannelUtils private () =
-        static member Map (mapF: 'U -> 'T) (replyChannel: IReplyChannel<'T>): IReplyChannel<'U> =
-            {
-                new IReplyChannel<'U> with
-                    member __.Protocol = replyChannel.Protocol
-                    member __.Timeout with get() = replyChannel.Timeout
-                                      and set timeout = replyChannel.Timeout <- timeout
-                    member self.WithTimeout(timeout) = self.Timeout <- timeout; self
-                    member __.ReplyUntyped(reply) = 
-                        replyChannel.ReplyUntyped(match reply with Value(:? 'U as value) -> Value(mapF value |> box) | Exception e -> Reply.Exception e | _ -> invalidArg "Reply object not of proper type." "reply")
-                    member __.AsyncReplyUntyped(reply) = 
-                        replyChannel.AsyncReplyUntyped(match reply with Value(:? 'U as value) -> Value(mapF value |> box) | Exception e -> Reply.Exception e | _ -> invalidArg "Reply object not of proper type." "reply")
-                    member __.Reply(reply) =
-                        replyChannel.Reply(match reply with Value value -> Value(mapF value) | Exception e -> Reply.Exception e)
-                    member __.AsyncReply(reply) =
-                        replyChannel.AsyncReply(match reply with Value value -> Value(mapF value) | Exception e -> Reply.Exception e)
-            }
+  abstract Id: ActorId
 
-    and [<Serializable>] [<AbstractClass>] ActorRef = 
-        
-        val private uuid: ActorUUID
-        val private name: string
-        val private messageType: Type
-        val private protocols: string[]
+  abstract PostUntyped: obj -> unit
+  abstract AsyncPostUntyped: obj -> Async<unit>
+  abstract PostWithReplyUntyped: (IReplyChannel<obj> -> obj) * ?timeout: int -> Async<obj>
+  abstract TryPostWithReplyUntyped: (IReplyChannel<obj> -> obj) * ?timeout: int -> Async<obj option>
 
-        new (uuid: ActorUUID, actorName: string, actorMessageType: Type, actorProtocols: seq<string>) = 
-            if actorProtocols = Seq.empty then
-                raise <| new ArgumentException("No actors specified for actor reference.", "actorProtocols")
+  abstract SerializationDestructor: SerializationInfo * StreamingContext -> unit
+  default self.SerializationDestructor(info: SerializationInfo, context: StreamingContext) =
+    info.AddValue("name", self.name)
+    info.AddValue("messageType", self.MessageType)
 
-            {
-                uuid = uuid; name = actorName; messageType = actorMessageType; protocols = actorProtocols |> Seq.toArray;
-            }
+  interface ISerializable with
+    override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
+      self.SerializationDestructor(info, context)
 
-        internal new (info: SerializationInfo, context: StreamingContext) =
-            {
-                uuid = info.GetValue("uuid", typeof<ActorUUID>) :?> ActorUUID
-                name = info.GetString("name")
-                messageType = info.GetValue("messageType", typeof<Type>) :?> Type
-                protocols = info.GetValue("protocolConfigurations", typeof<IProtocolConfiguration[]>) :?> IProtocolConfiguration[] |> Array.map (fun configuration -> configuration.ProtocolName)
-            }
+and [<Serializable>] ActorRef<'T> =
+  inherit ActorRef
 
-        abstract MessageType: Type
-        default ref.MessageType = ref.messageType
+  val private defaultProtocol: IProtocolClient<'T>
+  val private protocols: IProtocolClient<'T>[]
+  val private protocolFactories: IProtocolFactory[]
 
-        abstract Protocols: string[]
-        default ref.Protocols = ref.protocols
+  new (name: string, protocols: IProtocolClient<'T>[]) =
+    {
+      inherit ActorRef(name, typeof<'T>, protocols |> Seq.map (fun protocol -> protocol.ProtocolName))
 
-        abstract UUId: ActorUUID
-        default ref.UUId = ref.uuid
+      defaultProtocol = protocols.[0]
+      protocols = protocols
+      protocolFactories = protocols |> Array.choose (fun protocol -> protocol.Factory)
+    }
 
-        abstract Name: string
-        default ref.Name = ref.name
+  new (clone: ActorRef<'T>) = new ActorRef<'T>((clone :> ActorRef).Name, clone.protocols)
+  
+  //should be protected; but whatever
+  new (info: SerializationInfo, context: StreamingContext) =
+    let name = info.GetString("name")
+    let protocolFactories = info.GetValue("protocolFactories", typeof<IProtocolFactory[]>) :?> IProtocolFactory[]
+    let protocols = protocolFactories |> Array.map (fun factory -> factory.CreateClientInstance<'T>(name))
+    let defaultProtocol = protocols.[0]
+    {
+      inherit ActorRef(info, context)
 
-        abstract Id: ActorId
+      defaultProtocol = defaultProtocol
+      protocols = protocols
+      protocolFactories = protocols |> Array.choose (fun protocol -> protocol.Factory)
+    }
 
-        abstract PostUntyped: obj -> unit
-        abstract PostUntypedAsync: obj -> Async<unit>
-        abstract PostWithReplyUntyped: (IReplyChannel<obj> -> obj) -> Async<obj>
-        abstract PostWithReplyUntyped: (IReplyChannel<obj> -> obj) * int -> Async<obj>
-        abstract TryPostWithReplyUntyped: (IReplyChannel<obj> -> obj) * int -> Async<obj option>
+  member private self.ProtocolInstances = self.protocols
+  member private self.ActorIdSet = self.ProtocolInstances |> Seq.map (fun protocol -> protocol.ActorId) |> Set.ofSeq
 
-        abstract SerializationDestructor: SerializationInfo * StreamingContext -> unit
-        default ref.SerializationDestructor(info: SerializationInfo, context: StreamingContext) =
-            info.AddValue("uuid", ref.uuid)
-            info.AddValue("name", ref.name)
-            info.AddValue("messageType", ref.MessageType)
+  override self.Id = self.defaultProtocol.ActorId
 
-        interface ISerializable with
-            override ref.GetObjectData(info: SerializationInfo, context: StreamingContext) =
-                ref.SerializationDestructor(info, context)
+  abstract ProtocolFactories: IProtocolFactory[]
+  default self.ProtocolFactories = self.protocolFactories
 
-    and [<Serializable>] ActorRef<'T> =
-        inherit ActorRef
+  abstract Item: string -> ActorRef<'T> with get
+  default self.Item
+    with get(protocol: string): ActorRef<'T> = 
+      match self.TryGetProtocolSpecific(protocol) with
+      | Some actorRef -> actorRef
+      | None -> raise <| new System.Collections.Generic.KeyNotFoundException("Unknown protocol in ActorRef.")
 
-        val private defaultActorProtocol: IActorProtocol<'T>
+  abstract ProtocolFilter: (IProtocolFactory -> bool) -> ActorRef<'T>
+  default self.ProtocolFilter(filterF: IProtocolFactory -> bool): ActorRef<'T> =
+    let protocols = self.ProtocolInstances |> Seq.filter (fun protocol -> match protocol.Factory with Some factory -> filterF factory | None -> false)
+                                           |> Seq.toList
+    new ActorRef<'T>(self.Name, self.defaultProtocol::protocols |> List.toArray)
 
-        //val private actorProtocolMap: Map<string, IActorProtocol<'T> list>
-        val private actorProtocols: IActorProtocol<'T>[]
+  abstract TryGetProtocolSpecific: string -> ActorRef<'T> option
+  default self.TryGetProtocolSpecific(protocol: string): ActorRef<'T> option = 
+    let specificProtocols = self.protocols |> Array.filter (fun p -> p.ProtocolName = protocol)
+    if Array.isEmpty specificProtocols then None else Some(new ActorRef<'T>(self.Name, specificProtocols))
 
-        new (uuid: ActorUUID, name: string, actorProtocols: IActorProtocol<'T>[]) = 
-            {
-                inherit ActorRef(uuid, name, typeof<'T>, actorProtocols |> Seq.map (fun protocol -> protocol.ProtocolName))
-
-                defaultActorProtocol = actorProtocols.[0]
-                actorProtocols = actorProtocols
-//                actorProtocolMap = actorProtocols |> Seq.map (fun actorProtocol -> actorProtocol.ProtocolName, actorProtocol)
-//                                                  |> Seq.groupBy fst
-//                                                  |> Seq.map (fun (protocolName, protocols) -> protocolName, protocols |> Seq.map snd |> List.ofSeq)
-//                                                  |> Map.ofSeq
-            }
-
-        new (clone: ActorRef<'T>) =
-            let cloneBase = clone :> ActorRef
-            ActorRef<'T>(cloneBase.UUId, cloneBase.Name, clone.actorProtocols |> Array.append [| clone.defaultActorProtocol |])
-            //ActorRef<'T>(cloneBase.UUId, cloneBase.Name, clone.actorProtocolMap |> Map.toSeq |> Seq.map snd |> Seq.collect (fun ps -> ps |> Seq.filter (fun p -> p.ProtocolName <> clone.defaultActorProtocol.ProtocolName)) |> Seq.toArray |> Array.append [| clone.defaultActorProtocol |])
-
-        //should be protected; but whatever
-        new (info: SerializationInfo, context: StreamingContext) = 
-            let id = info.GetValue("uuid", typeof<ActorUUID>) :?> ActorUUID
-            let name = info.GetString("name")
-            let protocolConfigurations = info.GetValue("protocolConfigurations", typeof<IProtocolConfiguration[]>) :?> IProtocolConfiguration[]
-            let protocols = protocolConfigurations |> Array.collect (fun configuration -> configuration.CreateProtocolInstances<'T>(id, name))
-            let defaultProtocol = protocols.[0]
-            {
-                inherit ActorRef(info, context)
-                
-                actorProtocols = protocols
-//                actorProtocolMap = protocols
-//                    |> Seq.map (fun actorProtocol -> actorProtocol.ProtocolName, actorProtocol)
-//                    |> Seq.groupBy fst
-//                    |> Seq.map (fun (protocolName, protocols) -> protocolName, protocols |> Seq.map snd |> List.ofSeq)
-//                    |> Map.ofSeq
-
-                defaultActorProtocol = defaultProtocol
-            }
-
-        member private ref.ProtocolInstances
-            with get() = ref.actorProtocols
-                //ref.actorProtocolMap |> Map.toSeq |> Seq.map snd |> Seq.collect id
-
-        member private ref.ActorIdSet =
-            ref.ProtocolInstances |> Seq.map (fun protocol -> protocol.ActorId) |> Set.ofSeq
-
-        override ref.Id = ref.defaultActorProtocol.ActorId
-
-        abstract Configurations: IProtocolConfiguration list with get
-        default ref.Configurations
-            with get(): IProtocolConfiguration list =
-                ref.ProtocolInstances |> Seq.map (fun protocol -> protocol.Configuration)
-                                      |> Seq.choose id
-                                      |> Seq.toList
-
-        abstract Item: string -> ActorRef<'T> with get
-        default ref.Item 
-            with get(protocol: string): ActorRef<'T> = 
-                match ref.TryGetProtocolSpecific(protocol) with
-                | Some actorRef -> actorRef
-                | None -> raise <| new System.Collections.Generic.KeyNotFoundException("Unknown protocol in ActorRef.")
-
-        abstract ConfigurationFilter: (IProtocolConfiguration -> bool) -> ActorRef<'T>
-        default ref.ConfigurationFilter(filterF: IProtocolConfiguration -> bool): ActorRef<'T> =
-            let protocols = ref.ProtocolInstances |> Seq.filter (fun protocol -> match protocol.Configuration with Some conf -> filterF conf | None -> false)
-                                                  |> Seq.toList
-            new ActorRef<'T>(ref.UUId, ref.Name, ref.defaultActorProtocol::protocols |> List.toArray)
-
-        abstract TryGetProtocolSpecific: string -> ActorRef<'T> option
-        default ref.TryGetProtocolSpecific(protocol: string): ActorRef<'T> option = 
-            let specificProtocols = ref.actorProtocols |> Array.filter (fun p -> p.ProtocolName = protocol)
-            if Array.isEmpty specificProtocols then None else Some(new ActorRef<'T>(ref.UUId, ref.Name, specificProtocols))
-//            match ref.actorProtocolMap.TryFind(protocol) with
-//            | Some protocols -> Some(new ActorRef<'T>(ref.UUId, ref.Name, List.toArray protocols))
-//            | None -> None
-
-        abstract TryGetActorIdSpecific: ActorId -> ActorRef<'T> option
-        default ref.TryGetActorIdSpecific(actorId: ActorId): ActorRef<'T> option =
-            match ref.ProtocolInstances |> Seq.tryFind (fun protocol -> protocol.ActorId = actorId) with
-            | Some protocol -> Some(new ActorRef<'T>(ref.UUId, ref.Name, [| protocol |]))
-            | None -> None
+  abstract TryGetActorIdSpecific: ActorId -> ActorRef<'T> option
+  default self.TryGetActorIdSpecific(actorId: ActorId): ActorRef<'T> option =
+    match self.ProtocolInstances |> Seq.tryFind (fun protocol -> protocol.ActorId = actorId) with
+    | Some protocol -> Some(new ActorRef<'T>(self.Name, [| protocol |]))
+    | None -> None
            
-        abstract Post: 'T -> unit 
-        default ref.Post(msg: 'T): unit = 
-            (ref.defaultActorProtocol : IActorProtocol<'T>).Post(msg)
+  abstract Post: 'T -> unit 
+  default self.Post(msg: 'T): unit = self.defaultProtocol.Post(msg)
 
-        abstract PostAsync: 'T -> Async<unit>
-        default ref.PostAsync(msg: 'T): Async<unit> =
-            (ref.defaultActorProtocol : IActorProtocol<'T>).PostAsync(msg)
+  abstract AsyncPost: 'T -> Async<unit>
+  default self.AsyncPost(msg: 'T): Async<unit> = self.defaultProtocol.AsyncPost(msg)
 
-        abstract PostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R>
-        default ref.PostWithReply(msgBuilder: (IReplyChannel<'R> -> 'T), timeout: int): Async<'R> =
-            ref.defaultActorProtocol.PostWithReply(msgBuilder, timeout)
+  abstract PostWithReply: (IReplyChannel<'R> -> 'T) * ?timeout: int -> Async<'R>
+  default self.PostWithReply(msgF: (IReplyChannel<'R> -> 'T), ?timeout: int): Async<'R> =
+    let timeout = defaultArg timeout Timeout.Infinite
+    self.defaultProtocol.PostWithReply(msgF, timeout)
 
-        abstract TryPostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R option>
-        default ref.TryPostWithReply(msgBuilder: (IReplyChannel<'R> -> 'T), timeout: int): Async<'R option> =
-            ref.defaultActorProtocol.TryPostWithReply(msgBuilder, timeout)
+  abstract TryPostWithReply: (IReplyChannel<'R> -> 'T) * ?timeout: int -> Async<'R option>
+  default self.TryPostWithReply(msgF: (IReplyChannel<'R> -> 'T), ?timeout: int): Async<'R option> =
+    let timeout = defaultArg timeout Timeout.Infinite
+    self.defaultProtocol.TryPostWithReply(msgF, timeout)
 
-        abstract PostWithReply: (IReplyChannel<'R> -> 'T) -> Async<'R>
-        default ref.PostWithReply(msgBuilder: IReplyChannel<'R> -> 'T): Async<'R> =
-            ref.defaultActorProtocol.PostWithReply(msgBuilder)
+  override self.PostUntyped(msg: obj): unit = self.Post(unbox msg)
+  override self.AsyncPostUntyped(msg: obj): Async<unit> = self.AsyncPost(unbox msg)
+  override self.PostWithReplyUntyped(msgF: IReplyChannel<obj> -> obj, ?timeout: int): Async<obj> = self.PostWithReply((fun ch -> unbox (msgF ch)), ?timeout = timeout)
+  override self.TryPostWithReplyUntyped(msgF: IReplyChannel<obj> -> obj, ?timeout: int): Async<obj option> = self.TryPostWithReply((fun ch -> unbox (msgF ch)), ?timeout = timeout)
 
-        override ref.PostUntyped(msg: obj): unit = ref.Post(unbox msg)
-        override ref.PostUntypedAsync(msg: obj): Async<unit> = ref.PostAsync(unbox msg)
+  override self.ToString() =
+    let appendWithNewLineAndInlined str1 str2 = str1 + Environment.NewLine + "\t" + str2
+    (sprintf "actor://%O.%s" self.Id typeof<'T>.Name) +
+             (self.protocols |> Seq.map (fun p -> p.ToString())
+                             |> Seq.toList
+                             |> List.rev |> List.fold appendWithNewLineAndInlined "")
 
-        override ref.PostWithReplyUntyped(msgF: IReplyChannel<obj> -> obj): Async<obj> = ref.PostWithReply(fun ch -> unbox (msgF ch))
+  override self.Equals(other: obj) =
+    match other with
+    | :? ActorRef<'T> as otherRef -> self.CompareTo(otherRef) = 0
+    | _ -> false
 
-        override ref.PostWithReplyUntyped(msgF: IReplyChannel<obj> -> obj, timeout: int): Async<obj> =
-            ref.PostWithReply((fun ch -> unbox (msgF ch)), timeout)
+  override self.GetHashCode() = self.Id.GetHashCode()
 
-        override ref.TryPostWithReplyUntyped(msgF: IReplyChannel<obj> -> obj, timeout: int): Async<obj option> =
-            ref.TryPostWithReply((fun ch -> unbox (msgF ch)), timeout)
+  abstract CompareTo: ActorRef<'T> -> int
+  default self.CompareTo(other: ActorRef<'T>): int =
+    //equality is when the actorRefs have at least one ActorId in common
+    if Set.intersect self.ActorIdSet other.ActorIdSet |> Set.isEmpty |> not then 0
+    else let comp = self.Id.CompareTo(other.Id) in comp
 
-        override ref.ToString() =
-            let appendWithNewLineAndInlined str1 str2 = str1 + Environment.NewLine + "\t" + str2
-            (sprintf "actor://%O.%s" ref.Id typeof<'T>.Name) + 
-                (ref.actorProtocols |> Seq.map (fun p -> p.ToString())
-                                    |> Seq.toList
-                                    |> List.rev |> List.fold appendWithNewLineAndInlined "")
-//            (ref.actorProtocolMap |> Map.toSeq 
-//                                  |> Seq.map snd
-//                                  |> Seq.map (fun protocol -> protocol.ToString())
-//                                  |> Seq.toList
-//                                  |> List.rev |> List.fold appendWithNewLineAndInlined "")
+  override self.SerializationDestructor(info: SerializationInfo, context: StreamingContext) =
+    let protocolFactories = self.ProtocolInstances |> Seq.choose (fun protocol -> protocol.Factory)
+    if Seq.isEmpty protocolFactories then raise <| new SerializationException("Cannot serialize an ActorRef for non-remote protocols.")
+    info.AddValue("protocolFactories", Seq.toArray protocolFactories)
+    base.SerializationDestructor(info, context)
 
-        override ref.Equals(other: obj) =
-            match other with
-            | :? ActorRef<'T> as otherRef -> ref.CompareTo(otherRef) = 0
-            | _ -> false
+  interface IComparable<ActorRef<'T>> with override self.CompareTo(other: ActorRef<'T>): int = self.CompareTo(other)
+  interface IComparable with
+    override self.CompareTo(other: obj): int =
+      match other with
+      | :? ActorRef<'T> -> (self :> IComparable<ActorRef<'T>>).CompareTo(other :?> ActorRef<'T>)
+      | _ -> invalidArg "Argument not an ActorRef<>" "other"
 
-        override ref.GetHashCode() = 
-            ref.Id.GetHashCode()
+and IReplyChannel =
+  abstract Protocol: string
+  abstract Timeout: int with get, set
+  abstract ReplyUntyped: Reply<obj> -> unit
+  abstract AsyncReplyUntyped: Reply<obj> -> Async<unit>
 
-        //ActorRef<'T> comparison:
-        //Comparison behavior depends on the availability of the UUID
-        //if both UUIDs are available (not eq ActorUUID.Empty)
-        //then ActorRef<'T>s are equal iff their UUIDs are equal.
-        //Otherwise, the comparsion result is determined by the
-        //the available ActorIds. Note that in this case
-        //there will be a different ActorId for each protocol configuration 
-        //Therefore, in the absence of an UUID, ActorRefs are
-        //equal iff they have at least one common ActorId, and
-        //when not equal ordering is determined by the ordering
-        //of the ActorIds of their respective default protocols.
-        abstract CompareTo: ActorRef<'T> -> int
-        default ref.CompareTo(other: ActorRef<'T>): int =
-            if ref.UUId <> ActorUUID.Empty && other.UUId <> ActorUUID.Empty && ref.UUId = other.UUId then 0
-            else
-                //equality is when the actorRefs have at least one ActorId in common
-                if Set.intersect ref.ActorIdSet other.ActorIdSet |> Set.isEmpty |> not then 0
-                else                     
-                    let comp = ref.Id.CompareTo(other.Id)
-                    comp
+and IReplyChannel<'T> =
+  inherit IReplyChannel
+  abstract Reply: Reply<'T> -> unit
+  abstract AsyncReply: Reply<'T> -> Async<unit>
+  abstract WithTimeout: int -> IReplyChannel<'T>
 
-        override ref.SerializationDestructor(info: SerializationInfo, context: StreamingContext) =
-            let protocolConfigurations = ref.ProtocolInstances |> Seq.choose (fun protocol -> protocol.Configuration)
-
-            if protocolConfigurations |> Seq.isEmpty then
-                raise <| new SerializationException("Cannot serialize an ActorRef for non-remote protocols.")
-
-            info.AddValue("protocolConfigurations", protocolConfigurations |> Seq.toArray)
-
-            base.SerializationDestructor(info, context)
-
-//        interface ISerializable with
-//            override ref.GetObjectData(info: SerializationInfo, context: StreamingContext) =
-//                let protocolConfigurations = ref.ProtocolInstances |> Seq.choose (fun protocol -> protocol.Configuration)
-//
-//                if protocolConfigurations |> Seq.isEmpty then
-//                    raise <| new SerializationException("Cannot serialize an ActorRef for non-remote protocols.")
-//
-//                info.AddValue("protocolConfigurations", protocolConfigurations |> Seq.toArray)
-//
-//                base.GetObjectData(info, context)
-
-        interface IComparable<ActorRef<'T>> with
-            member ref.CompareTo(other: ActorRef<'T>): int =
-                ref.CompareTo(other)
-
-        interface IComparable with
-            member ref.CompareTo(other: obj): int =
-                match other with
-                | :? ActorRef<'T> -> (ref :> IComparable<ActorRef<'T>>).CompareTo(other :?> ActorRef<'T>)
-                | _ -> invalidArg "Argument not an ActorRef<>" "other"
-
-    and IReplyChannel =
-        abstract Protocol: string
-        abstract Timeout: int with get, set
-        abstract ReplyUntyped: Reply<obj> -> unit
-        abstract AsyncReplyUntyped: Reply<obj> -> Async<unit>
-    and IReplyChannel<'T> =
-        inherit IReplyChannel
-        abstract Reply: Reply<'T> -> unit
-        abstract AsyncReply: Reply<'T> -> Async<unit>
-        abstract WithTimeout: int -> IReplyChannel<'T>
-
-    and IReplyChannelFactory =
-        abstract Protocol: string
-        abstract Create: unit -> ReplyChannelProxy<'T>
+and IReplyChannelFactory =
+  abstract Protocol: string
+  abstract Create: unit -> ReplyChannelProxy<'T>
 
     and MessageSerializationContext(serializer: IMessageSerializer, replyChannelFactory: IReplyChannelFactory) = //, furtherContext: obj) =
         //list of foreign reply channel information gathered by the context
