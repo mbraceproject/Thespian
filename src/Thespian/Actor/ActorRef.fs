@@ -4,6 +4,8 @@ open System
 open System.Threading
 open System.Runtime.Serialization
 
+open Nessos.Thespian.Serialization
+
 [<Serializable>]
 type IProtocolFactory =
   abstract ProtocolName: string
@@ -225,75 +227,70 @@ and IReplyChannelFactory =
   abstract Protocol: string
   abstract Create: unit -> ReplyChannelProxy<'T>
 
-    and MessageSerializationContext(serializer: IMessageSerializer, replyChannelFactory: IReplyChannelFactory) = //, furtherContext: obj) =
-        //list of foreign reply channel information gathered by the context
-        //list of (foreignReplyChannel, nativeOverrideReplyChannel)
-        let replyChannels = Atom.atom List.empty<IReplyChannel * IReplyChannel>
-        member c.Serializer = serializer
-        member c.ReplyProtocol = replyChannelFactory.Protocol
-        member c.CreateReplyChannelOverride<'T>() = replyChannelFactory.Create<'T>()
-        member c.ReplyChannelOverrides with get() = replyChannels.Value
-        member c.AddReplyChannelOverride(foreignReplyChannel: IReplyChannel, nativeReplyChannel: IReplyChannel) =
-            Atom.swap replyChannels (fun rcs -> (foreignReplyChannel, nativeReplyChannel)::rcs)
-//        member c.FurtherContext = furtherContext
+and MessageSerializationContext(serializer: IMessageSerializer, replyChannelFactory: IReplyChannelFactory) =
+  //list of foreign reply channel information gathered by the context
+  //list of (foreignReplyChannel, nativeOverrideReplyChannel)
+  let replyChannels = Atom.atom List.empty<IReplyChannel * IReplyChannel>
+  member __.Serializer = serializer
+  member __.ReplyProtocol = replyChannelFactory.Protocol
+  member __.CreateReplyChannelOverride<'T>() = replyChannelFactory.Create<'T>()
+  member __.ReplyChannelOverrides with get() = replyChannels.Value
+  member __.AddReplyChannelOverride(foreignReplyChannel: IReplyChannel, nativeReplyChannel: IReplyChannel) =
+    Atom.swap replyChannels (fun rcs -> (foreignReplyChannel, nativeReplyChannel)::rcs)
 
-        member c.GetStreamingContext() = new StreamingContext(StreamingContextStates.All, c)
+  member self.GetStreamingContext() = new StreamingContext(StreamingContextStates.All, self)
 
-    and ReplyChannelProxy<'T> =
-        val realReplyChannel: IReplyChannel<'T>
+and ReplyChannelProxy<'T> =
+  val realReplyChannel: IReplyChannel<'T>
 
-        new(realReplyChannel: IReplyChannel<'T>) = {
-            realReplyChannel = realReplyChannel
-        }
+  new(realReplyChannel: IReplyChannel<'T>) = { realReplyChannel = realReplyChannel }
+  internal new (info: SerializationInfo, context: StreamingContext) = { realReplyChannel = info.GetValue("realReplyChannel", typeof<IReplyChannel<'T>>) :?> IReplyChannel<'T> }
 
-        internal new (info: SerializationInfo, context: StreamingContext) = {
-            realReplyChannel = info.GetValue("realReplyChannel", typeof<IReplyChannel<'T>>) :?> IReplyChannel<'T>
-        }
+  interface IReplyChannel<'T> with
+    override self.Protocol = self.realReplyChannel.Protocol
+    override self.ReplyUntyped(reply) = self.realReplyChannel.ReplyUntyped(reply)
+    override self.AsyncReplyUntyped(reply) = self.realReplyChannel.AsyncReplyUntyped(reply)
+    override self.Timeout with get() = self.realReplyChannel.Timeout and set(timeout) = self.realReplyChannel.Timeout <- timeout
+    override self.WithTimeout(timeout: int) = self.realReplyChannel.Timeout <- timeout; self :> IReplyChannel<'T>
+    override self.Reply(reply) = self.realReplyChannel.Reply(reply)
+    override self.AsyncReply(reply) = self.realReplyChannel.AsyncReply(reply)
 
-        interface IReplyChannel<'T> with
-            override r.Protocol = r.realReplyChannel.Protocol
-            override r.ReplyUntyped(reply) = r.realReplyChannel.ReplyUntyped(reply)
-            override r.Timeout with get() = r.realReplyChannel.Timeout and set(timeout) = r.realReplyChannel.Timeout <- timeout
-            override r.WithTimeout(timeout: int) = r.realReplyChannel.Timeout <- timeout; r :> IReplyChannel<'T>
-            override r.Reply(reply) = r.realReplyChannel.Reply(reply)
+  interface ISerializable with
+    override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
+      let serializedReplyChannel =
+        match context.Context with
+        | :? MessageSerializationContext as c when self.realReplyChannel.Protocol <> c.ReplyProtocol ->
+          let nativeReplyChannel = c.CreateReplyChannelOverride<'T>()
+          let nrc = nativeReplyChannel :> IReplyChannel<'T>
+          c.AddReplyChannelOverride(self.realReplyChannel, nativeReplyChannel.realReplyChannel)
+          nrc.Timeout <- self.realReplyChannel.Timeout
+          nrc
+        | _ -> self.realReplyChannel
 
-        interface ISerializable with
-            member r.GetObjectData(info: SerializationInfo, context: StreamingContext) =
-                let serializedReplyChannel =
-                    match context.Context with
-                    | :? MessageSerializationContext as c when r.realReplyChannel.Protocol <> c.ReplyProtocol ->
-                        let nativeReplyChannel = c.CreateReplyChannelOverride<'T>()
-                        let nrc = nativeReplyChannel :> IReplyChannel<'T>
-                        c.AddReplyChannelOverride(r.realReplyChannel, nativeReplyChannel.realReplyChannel)
-                        nrc.Timeout <- r.realReplyChannel.Timeout
-                        nrc
-                    | _ -> r.realReplyChannel
-
-                info.AddValue("realReplyChannel", serializedReplyChannel)
+      info.AddValue("realReplyChannel", serializedReplyChannel)
 
 
-    [<AutoOpen>]
-    module Reply =
-        //convenience active pattern for getting a reply func
-        let (|R|) (replyChannel: IReplyChannel<'T>) =
-            replyChannel.Reply
+[<AutoOpen>]
+module Reply =
+  //convenience active pattern for getting a reply func
+  let (|R|) (replyChannel: IReplyChannel<'T>) = replyChannel.Reply
 
-        module Reply =
-            let exn (e : #exn) : Reply<'T> = Reply.Exception(e :> exn)
+  module Reply =
+    let exn (e : #exn) : Reply<'T> = Reply.Exception(e :> exn)
 
-            let box (reply: Reply<'T>): Reply<obj> =
-                match reply with
-                | Value v -> Value(box v)
-                | Exception e -> Reply.Exception e
+    let box (reply: Reply<'T>): Reply<obj> =
+      match reply with
+      | Value v -> Value(box v)
+      | Exception e -> Reply.Exception e
 
-            let unbox<'T> (reply: Reply<obj>): Reply<'T> =
-                match reply with
-                | Value v -> Value(unbox<'T> v)
-                | Exception e -> Reply.Exception e
+    let unbox<'T> (reply: Reply<obj>): Reply<'T> =
+      match reply with
+      | Value v -> Value(unbox<'T> v)
+      | Exception e -> Reply.Exception e
 
-    module ReplyChannel =
-        let map (mapF: 'U -> 'T) (replyChannel: IReplyChannel<'T>): IReplyChannel<'U> = ReplyChannelUtils.Map mapF replyChannel
+  module ReplyChannel =
+    let map (mapF: 'U -> 'T) (replyChannel: IReplyChannel<'T>): IReplyChannel<'U> = ReplyChannelUtils.Map mapF replyChannel
 
-    //Helper type to be extended with extension methods for giving protocol configurations
-    type Protocols private () = class end
+//Helper type to be extended with extension methods for giving protocol configurations
+type Protocols private () = class end
 
