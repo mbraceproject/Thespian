@@ -39,6 +39,12 @@ let rec private attempt f =
                                  | _ -> return! Async.Raise e
   }
 
+let inline private addressToEndpoints (actorId: ActorId) (address: Address) =
+  async {
+    try return! address.ToEndPointsAsync()
+    with e -> return! Async.Raise <| new CommunicationException("Unable to obtain ip endpoint from address.", actorId, e)
+  }
+
 module ProtocolMessage =
   let box (protocolMessage: ProtocolMessage<'T>): ProtocolMessage<obj> =
     match protocolMessage with
@@ -122,8 +128,7 @@ type ReplyChannel =
     info.AddValue("msgId", r.msgId)
 
   interface ISerializable with
-    override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
-      self.GetObjectData(info, context)
+    override self.GetObjectData(info: SerializationInfo, context: StreamingContext) = self.GetObjectData(info, context)
 
 [<Serializable>]
 type ReplyChannel<'T> =
@@ -151,7 +156,7 @@ type ReplyChannel<'T> =
       match r with
       | Some() ->
         return! protocolMessageStream.ProtocolStream.TryAsyncReadResponse()
-      | None -> return! Async.Raise (new TimeoutException("Timeout occurred while trying to write reply on channel."))
+      | None -> return! Async.Raise (new CommunicationTimeoutException("Timeout occurred while trying to write reply on channel.", self.ActorId, TimeoutType.MessageSend))
     }
 
   member self.TryAsyncReplyOnEndPoint(endPoint: IPEndPoint, reply: Reply<'T>) =
@@ -160,15 +165,17 @@ type ReplyChannel<'T> =
         let! protocolResponse = attempt <| self.AsyncReplyOnEndPoint(endPoint, reply)
         return match protocolResponse with
                | Some(Acknowledge _) -> Choice1Of2()
-               | Some(UnknownRecipient _) -> Choice2Of2(new UnknownRecipientException("Remote host could not find the reply recipient.") :> exn)
-               | Some(Failure(_, e)) -> Choice2Of2(new CommunicationException("Unable to send reply to sender.", e) :> exn)
-               | None -> Choice2Of2(new TimeoutException("Timeout occurred while waiting for response on writing reply to channel.") :> exn)
-      with e -> return Choice2Of2 e 
+               | Some(UnknownRecipient _) -> Choice2Of2(new UnknownRecipientException("Remote host could not find the reply recipient.", self.ActorId) :> exn)
+               | Some(Failure(_, e)) -> Choice2Of2(new DeliveryException("Unable to send reply to sender.", self.ActorId, e) :> exn)
+               | None -> Choice2Of2(new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of reply delivery.", self.ActorId, TimeoutType.ConfirmationReceive) :> exn)
+      with :? SocketException as e when e.SocketErrorCode = SocketError.TimedOut -> return Choice2Of2(new CommunicationTimeoutException("Timeout occurred while trying to establish connection.", self.ActorId, TimeoutType.Connection, e) :> exn)
+          | CommunicationException _ as e -> return Choice2Of2 e
+          | e -> return Choice2Of2(new CommunicationException("Communication failure occurred while trying to send reply.", self.ActorId, e) :> exn)
     }
 
   member self.AsyncReply(reply: Reply<'T>) =
     async {
-      let! endPoints = self.replyAddress.ToEndPointsAsync()
+      let! endPoints = addressToEndpoints self.ActorId self.replyAddress
 
       let! r = endPoints |> List.conditionalFoldAsync (fun es endPoint ->
                  async {
@@ -178,9 +185,7 @@ type ReplyChannel<'T> =
                    | Choice2Of2 e -> return e::es, true
                  }) []
 
-      if r.Length = endPoints.Length then
-        //TODO, make this an aggregate exception
-        return! Async.Raise (new CommunicationException("Unable to send reply on all possible endpoints of reply channel."))
+      if r.Length = endPoints.Length then return! Async.Raise r.Head
       else return ()
     }
 
@@ -368,13 +373,13 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
                | None -> Choice2Of2(new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of message delivery.", actorId, TimeoutType.ConfirmationReceive) :> exn)
       with :? SocketException as e when e.SocketErrorCode = SocketError.TimedOut -> return Choice2Of2(new CommunicationTimeoutException("Timeout occurred while trying to establish connection.", actorId, TimeoutType.Connection, e) :> exn)
           | CommunicationException _ as e -> return Choice2Of2 e
-          | e -> return Choice2Of2(new CommunicationException("Communication failure occurred while posting message.", actorId, e) :> exn)
+          | e -> return Choice2Of2(new CommunicationException("Communication failure occurred while trying to send message.", actorId, e) :> exn)
     }
 
   let postMessage msgId msg =
     async {
       //this is memoized
-      let! endPoints = address.ToEndPointsAsync()
+      let! endPoints = addressToEndpoints actorId address
 
       let! r = endPoints |> List.conditionalFoldAsync (fun es endPoint -> async {
                  let! r = tryPostOnEndpoint endPoint msgId msg
