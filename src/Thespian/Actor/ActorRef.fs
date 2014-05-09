@@ -24,8 +24,21 @@ and IProtocolClient<'T> =
   abstract ProtocolName: string
   abstract ActorId: ActorId
   abstract Factory: IProtocolFactory option
+  //Asynchronous message passing
+  //Succeeds only if message delivery can be guaranteed.
+  //Message delivery means that on the receiving side
+  //the message has entered the actor's message queue
+  //and can eventually be dequeued via Receive()
+  //Exceptions:
+  //UnknownRecipientException: message received but the actor recipient cannot be found
+  //DeliveryException: message received but unable to process payload (e.g. deserialisation exception)
+  //CommunicationTimeout: Timeout when
+  //a). establishing connection/channel...
+  //b). sending message
+  //c). receiving confirmation or failure indication of message delivery
   abstract Post: 'T -> unit
   abstract AsyncPost: 'T -> Async<unit>
+  //Synchronous message passing
   abstract PostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R>
   abstract TryPostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R option>
 

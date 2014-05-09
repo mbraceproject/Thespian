@@ -117,6 +117,7 @@ type MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
 
   interface IProtocolClient<'T> with
     override __.ProtocolName = srv.ProtocolName
+    override __.Factory = None
     override __.ActorId = srv.ActorId
     override __.Post(message: 'T) = post message
     override __.AsyncPost(message: 'T) = async { return post message }

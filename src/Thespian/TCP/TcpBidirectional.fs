@@ -194,6 +194,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
       })
   let replyRegistry = new ReplyResultsRegistry()
   let logEvent = new Event<Log>()
+  let factory = new BTcpFactory(ProtocolMode.Client address)
 
   let processReply (protocolStream: ProtocolStream) =
     async {
@@ -354,13 +355,14 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
   interface IProtocolClient<'T> with
     override __.ProtocolName = ProtocolName
     override __.ActorId = actorId :> ActorId
+    override __.Factory = Some (factory :> IProtocolFactory)
     override __.Post(msg: 'T) = Async.RunSynchronously (post msg)
     override __.AsyncPost(msg: 'T) = post msg
     override self.PostWithReply(msgF: IReplyChannel<'R> -> 'T, timeout: int) = self.PostWithReply(msgF, timeout)
     override self.TryPostWithReply(msgF: IReplyChannel<'R> -> 'T, timeout: int) = self.TryPostWithReply(msgF, timeout)
 
 
-type ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRef<'T>) =
+and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRef<'T>) =
   let serializer = Serialization.defaultSerializer
   let listener = TcpListenerPool.GetListener(endPoint)
   let listenerAddress = new Address(TcpListenerPool.DefaultHostname, listener.LocalEndPoint.Port)
@@ -419,10 +421,8 @@ type ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorR
     override __.Dispose() = stop()
 
 
-type ProtocolMode = TcpProtocol.Unidirectional.ProtocolMode
-
-[<Serializable>]
-type BTcpFactory =
+and ProtocolMode = TcpProtocol.Unidirectional.ProtocolMode
+and [<Serializable>] BTcpFactory =
   val private protocolMode: ProtocolMode
 
   new (protocolMode: ProtocolMode) = { protocolMode = protocolMode }

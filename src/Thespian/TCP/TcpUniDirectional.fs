@@ -303,6 +303,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
       })
   let replyRegistry = new ReplyResultRegistry<'T>(actorId, localListener)
   let logEvent = new Event<Log>()
+  let factory = new UTcpFactory(Client address)
 
   let handleForeignReplyChannel (foreignRc: IReplyChannel, nativeRc: IReplyChannel) =
     //register async wait handle for the nativeRc
@@ -350,7 +351,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
         | Some() ->
           Async.Start foreignRcHandle
           return! protocolStream.TryAsyncReadResponse()
-        | None -> return! Async.Raise (new TimeoutException("Timeout occurred while trying to send message."))
+        | None -> return! Async.Raise (new CommunicationTimeoutException("Timeout occurred while trying to send message.", actorId, TimeoutType.MessageSend))
       with e ->
         cancelForeignReplyChannels context
         return! Async.Raise e
@@ -362,10 +363,12 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
         let! protocolResponse = attempt (postOnEndpoint endPoint msgId msg)
         return match protocolResponse with
                | Some(Acknowledge _) -> Choice1Of2() //post was successfull
-               | Some(UnknownRecipient _) -> Choice2Of2(new UnknownRecipientException("Remote host could not find the message recipient.") :> exn)
-               | Some(Failure(_, e)) ->  Choice2Of2(new CommunicationException("Message delivery failed on the remote host.", e) :> exn)
-               | None -> Choice2Of2(new TimeoutException("Timeout occurred while waiting for response on message delivery.") :> exn)        
-      with e -> return Choice2Of2 e
+               | Some(UnknownRecipient _) -> Choice2Of2(new UnknownRecipientException("Remote host could not find the message recipient.", actorId) :> exn)
+               | Some(Failure(_, e)) ->  Choice2Of2(new DeliveryException("Message delivery failed on the remote host.", actorId, e) :> exn)
+               | None -> Choice2Of2(new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of message delivery.", actorId, TimeoutType.ConfirmationReceive) :> exn)
+      with :? SocketException as e when e.SocketErrorCode = SocketError.TimedOut -> return Choice2Of2(new CommunicationTimeoutException("Timeout occurred while trying to establish connection.", actorId, TimeoutType.Connection, e) :> exn)
+          | CommunicationException _ as e -> return Choice2Of2 e
+          | e -> return Choice2Of2(new CommunicationException("Communication failure occurred while posting message.", actorId, e) :> exn)
     }
 
   let postMessage msgId msg =
@@ -380,9 +383,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
                  | Choice2Of2 e -> return e::es, true
                }) []
 
-      if r.Length = endPoints.Length then
-        //TODO:: Change to CommunicationException
-        return! Async.Raise (new SystemException("utcp :: postMessage :: Invalid State :: target endpoints exhausted"))
+      if r.Length = endPoints.Length then return! Async.Raise r.Head
       else return ()
     }
 
@@ -407,7 +408,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
       let! resposne = postMessageWithReply msgId msg timeout
       match resposne with
       | Some (Value v) -> return Some (v :?> 'R)
-      | Some (Exception e) -> return! Async.Raise (new MessageHandlingException("Remote Actor threw exception while handling message.", e))
+      | Some (Exception e) -> return! Async.Raise (new MessageHandlingException("Remote Actor threw exception while handling message.", actorId, e))
       | None -> return None
     }
 
@@ -416,19 +417,20 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
       let! r = self.TryPostWithReply(msgF, timeout)
       match r with
       | Some v -> return v
-      | None -> return! Async.Raise (new TimeoutException())
+      | None -> return! Async.Raise (new TimeoutException("Timeout occurred while waiting for reply."))
     }
   
   interface IProtocolClient<'T> with
     override __.ProtocolName = ProtocolName
     override __.ActorId = actorId :> ActorId
+    override __.Factory = Some (factory :> IProtocolFactory)
     override __.Post(msg: 'T) = Async.RunSynchronously (post msg)
     override __.AsyncPost(msg: 'T) = post msg
     override self.PostWithReply(msgF: IReplyChannel<'R> -> 'T, timeout: int) = self.PostWithReply(msgF, timeout)
     override self.TryPostWithReply(msgF: IReplyChannel<'R> -> 'T, timeout: int) = self.TryPostWithReply(msgF, timeout)
 
 
-type ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRef<'T>) =
+and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRef<'T>) =
   let serializer = Serialization.defaultSerializer
   let listener = TcpListenerPool.GetListener(endPoint)
   let listenerAddress = new Address(TcpListenerPool.DefaultHostname, listener.LocalEndPoint.Port)
@@ -469,7 +471,7 @@ type ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorR
     override __.Stop() = stop()
     override __.Dispose() = stop()
 
-type ProtocolMode =
+and ProtocolMode =
   | Client of Address
   | Server of IPEndPoint
 with
@@ -479,8 +481,8 @@ with
     | Client address -> address
     | Server endPoint -> new Address(TcpListenerPool.DefaultHostname, endPoint.Port)
 
-[<Serializable>]
-type UTcpFactory =
+
+and [<Serializable>] UTcpFactory =
   val private protocolMode: ProtocolMode
 
   new (protocolMode: ProtocolMode) = { protocolMode = protocolMode }
