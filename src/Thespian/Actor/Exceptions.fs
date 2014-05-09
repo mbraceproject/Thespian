@@ -258,3 +258,4 @@ module ExceptionHelpers =
     match e with
     | null -> None
     | _ -> Some e
+

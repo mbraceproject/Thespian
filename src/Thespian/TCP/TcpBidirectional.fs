@@ -22,15 +22,8 @@ open Nessos.Thespian.Remote.TcpProtocol.ConnectionPool
 
 let ProtocolName = "btcp"
 
-let rec private attempt f =
-  async {
-    try return! f
-    with :? SocketException as e when e.SocketErrorCode = SocketError.ConnectionReset || e.SocketErrorCode = SocketError.ConnectionAborted -> return! attempt f
-        | :? EndOfStreamException -> return! attempt f
-        | :? IOException as e -> match e.InnerException with
-                                 | :? SocketException as e' when e'.SocketErrorCode = SocketError.ConnectionReset || e'.SocketErrorCode = SocketError.ConnectionAborted -> return! attempt f
-                                 | _ -> return! Async.Raise e
-  }
+let internal attempt = TcpProtocol.Unidirectional.attempt
+let internal addressToEndPoints = TcpProtocol.Unidirectional.addressToEndpoints
         
 type ProtocolMessageStream(protocolStream: ProtocolStream) =
   let refCount = ref 0
@@ -87,7 +80,6 @@ type ReplyChannel = TcpProtocol.Unidirectional.ReplyChannel
 type ReplyChannel<'T> =
   inherit ReplyChannel
         
-  //val private streamResource: NestedDisposable<ProtocolStream>
   val private stream: ProtocolMessageStream
   val private replyWriter: Actor<AsyncExecutor>
             
@@ -120,24 +112,27 @@ type ReplyChannel<'T> =
 
   member private self.AsyncReplyOp(reply: Reply<'T>) =
     async {
-      use _ = self.stream
+      try
+        use _ = self.stream
 
-      let! r = self.stream.TryAsyncWriteProtocolMessage(self.MessageId, self.ActorId, Reply.box reply)
-      match r with
-      | Some() ->
-        let! r' = self.stream.ProtocolStream.TryAsyncReadResponse()
-        match r' with
-        | Some(Acknowledge _) -> return ()
-        | Some(UnknownRecipient _) -> return! Async.Raise <| new UnknownRecipientException("Reply recipient not found on the reply channel's receiving end.")
-        | Some(Failure(_, e)) -> return! Async.Raise <| new CommunicationException("Failure occurred while trying to reply.", e)
-      | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while trying to write reply on the reply channel.")
+        let! r = self.stream.TryAsyncWriteProtocolMessage(self.MessageId, self.ActorId, Reply.box reply)
+        match r with
+        | Some() ->
+          let! r' = self.stream.ProtocolStream.TryAsyncReadResponse()
+          match r' with
+          | Some(Acknowledge _) -> return ()
+          | Some(UnknownRecipient _) -> return! Async.Raise <| new UnknownRecipientException("Reply recipient not found on the other end of the reply channel.", self.ActorId)
+          | Some(Failure(_, e)) -> return! Async.Raise <| new DeliveryException("Failure occurred on the other end of the reply channel.", self.ActorId, e)
+          | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of reply delivery.", self.ActorId, TimeoutType.ConfirmationReceive)
+        | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while trying to write reply on channel.", self.ActorId, TimeoutType.MessageSend)
+      with e -> return! Async.Raise <| new CommunicationException("Failure occurred while trying to reply.", self.ActorId, e)
     }
   member self.AsyncReply(reply: Reply<'T>) =
     async {
-      try
-        do! self.replyWriter.Ref <!- fun ch -> ch, self.AsyncReply(reply)
+      try do! self.replyWriter.Ref <!- fun ch -> ch, self.AsyncReply(reply)
       with MessageHandlingException(_, _, _, e) -> return! Async.Raise e
-           | :? ActorInactiveException -> return! Async.Raise <| new CommunicationException("Attempting to reply a second time on a closed channel.")
+           | :? ActorInactiveException -> return! Async.Raise <| new CommunicationException("Attempting to reply a second time on a closed channel.", self.ActorId)
+           | e -> return! Async.Raise <| new CommunicationException("Failure occurred while trying to reply.", self.ActorId, e)
     }
   member self.Reply(reply: Reply<'T>) = Async.RunSynchronously <| self.AsyncReplyOp(reply)
   member self.AsyncReplyUtyped(reply: Reply<obj>) = self.AsyncReply(Reply.unbox reply)
@@ -155,8 +150,7 @@ type ReplyChannel<'T> =
     override self.AsyncReply(reply: Reply<'T>) = self.AsyncReply(reply)
 
   interface ISerializable with
-    member r.GetObjectData(info: SerializationInfo, context: StreamingContext) = 
-      base.GetObjectData(info, context)
+    override __.GetObjectData(info: SerializationInfo, context: StreamingContext) = base.GetObjectData(info, context)
 
 
 type ReplyResultsRegistry() =

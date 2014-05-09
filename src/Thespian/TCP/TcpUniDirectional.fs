@@ -29,7 +29,7 @@ type ProtocolMessage<'T> =
   | Request of 'T
   | Response of Reply<obj>
 
-let rec private attempt f =
+let rec internal attempt f =
   async {
     try return! f
     with :? SocketException as e when e.SocketErrorCode = SocketError.ConnectionReset || e.SocketErrorCode = SocketError.ConnectionAborted -> return! attempt f
@@ -39,7 +39,7 @@ let rec private attempt f =
                                  | _ -> return! Async.Raise e
   }
 
-let inline private addressToEndpoints (actorId: ActorId) (address: Address) =
+let inline internal addressToEndpoints (actorId: ActorId) (address: Address) =
   async {
     try return! address.ToEndPointsAsync()
     with e -> return! Async.Raise <| new CommunicationException("Unable to obtain ip endpoint from address.", actorId, e)
@@ -165,8 +165,8 @@ type ReplyChannel<'T> =
         let! protocolResponse = attempt <| self.AsyncReplyOnEndPoint(endPoint, reply)
         return match protocolResponse with
                | Some(Acknowledge _) -> Choice1Of2()
-               | Some(UnknownRecipient _) -> Choice2Of2(new UnknownRecipientException("Remote host could not find the reply recipient.", self.ActorId) :> exn)
-               | Some(Failure(_, e)) -> Choice2Of2(new DeliveryException("Unable to send reply to sender.", self.ActorId, e) :> exn)
+               | Some(UnknownRecipient _) -> Choice2Of2(new UnknownRecipientException("Reply recipient not found on the other end of the reply channel.", self.ActorId) :> exn)
+               | Some(Failure(_, e)) -> Choice2Of2(new DeliveryException("Failure occurred on the other end of the reply channel.", self.ActorId, e) :> exn)
                | None -> Choice2Of2(new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of reply delivery.", self.ActorId, TimeoutType.ConfirmationReceive) :> exn)
       with :? SocketException as e when e.SocketErrorCode = SocketError.TimedOut -> return Choice2Of2(new CommunicationTimeoutException("Timeout occurred while trying to establish connection.", self.ActorId, TimeoutType.Connection, e) :> exn)
           | CommunicationException _ as e -> return Choice2Of2 e
@@ -233,7 +233,7 @@ type MessageProcessor<'T> private (actorId: TcpActorId, listener: TcpProtocolLis
           return Option.isSome r
         with e ->
           //TODO!!! Fix this exception
-          logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, new SocketListenerException("Failed to respond with Acknowledgement.", null, e) |> box)
+          logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, new CommunicationException("Failed to respond with Acknowledgement.", actorId, e) |> box)
           return false
       | Response reply ->
         let isValid, k = clientRegistry.TryRemove msgId
@@ -243,7 +243,7 @@ type MessageProcessor<'T> private (actorId: TcpActorId, listener: TcpProtocolLis
             let! r = protocolStream.TryAsyncWriteResponse(UnknownRecipient(msgId, actorId))
             return Option.isSome r
           with e ->
-            logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, new CommunicationException("Failed to send an UknownRecipient response.", e) |> box)
+            logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, new CommunicationException("Failed to send an UknownRecipient response.", actorId, e) |> box)
             return false
     }
 
