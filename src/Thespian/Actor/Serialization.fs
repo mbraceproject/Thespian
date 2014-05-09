@@ -66,7 +66,7 @@ type FsPicklerSerializer(?pickler : FsPickler) =
     override self.Deserialize<'T> (data:byte[], ?context) = self.Deserialize<'T>(data, ?context = context)
 
 
-let defaultSerializer = new FsPicklerSerializer() :> IMessageSerializer
+let mutable defaultSerializer = new FsPicklerSerializer() :> IMessageSerializer
 
         
 //NOTE!! OBSOLETE
