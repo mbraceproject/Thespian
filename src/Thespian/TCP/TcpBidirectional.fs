@@ -123,8 +123,8 @@ type ReplyChannel<'T> =
           | Some(Acknowledge _) -> return ()
           | Some(UnknownRecipient _) -> return! Async.Raise <| new UnknownRecipientException("Reply recipient not found on the other end of the reply channel.", self.ActorId)
           | Some(Failure(_, e)) -> return! Async.Raise <| new DeliveryException("Failure occurred on the other end of the reply channel.", self.ActorId, e)
-          | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of reply delivery.", self.ActorId, TimeoutType.ConfirmationReceive)
-        | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while trying to write reply on channel.", self.ActorId, TimeoutType.MessageSend)
+          | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of reply delivery.", self.ActorId, TimeoutType.ConfirmationRead)
+        | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while trying to write reply on channel.", self.ActorId, TimeoutType.MessageWrite)
       with e -> return! Async.Raise <| new CommunicationException("Failure occurred while trying to reply.", self.ActorId, e)
     }
   member self.AsyncReply(reply: Reply<'T>) =
@@ -200,18 +200,19 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
           if not <| replyRegistry.TrySetResult(replyMsgId, Choice1Of2 reply) then
             let! r' = protocolStream.TryAsyncWriteResponse(UnknownRecipient(replyMsgId, actorId))
             match r' with
-            | Some() ->
-              let! r'' = protocolStream.TryAsyncWriteResponse(Acknowledge(replyMsgId))
-              match r'' with
-              | Some() -> return ()
-              | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while trying to write a response for received reply.")
-            | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while trying to write a response for received reply.")
-            else return ()
+            | Some() -> return ()
+            | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while trying to write a response for received reply.", actorId, TimeoutType.ConfirmationWrite)
+          else
+            let! r'' = protocolStream.TryAsyncWriteResponse(Acknowledge(replyMsgId))
+            match r'' with
+            | Some() -> return ()
+            | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while trying to write a response for received reply.", actorId, TimeoutType.ConfirmationWrite)
         with e ->
           let! r''' = protocolStream.TryAsyncWriteResponse(Failure(replyMsgId, e))
           match r''' with
           | Some() -> return ()
-          | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while trying to write a response for received reply.")
+          | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while trying to write a response for received reply.", actorId, TimeoutType.ConfirmationWrite)
+      | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while waiting for a reply message.", actorId, TimeoutType.MessageRead)
     }
 
   let handleForeignReplyChannel (foreignRc: IReplyChannel, nativeRc: IReplyChannel) =
@@ -224,9 +225,9 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
       match response with
       | Some reply ->
         //forward to foreign rc
-        try do! foreignRc.AsyncReplyUntyped <| match reply with Choice1Of2 r -> r | Choice2Of2 e -> Exception(new CommunicationException("A communication failure occurred while waiting for a reply.", e))
+        try do! foreignRc.AsyncReplyUntyped <| match reply with Choice1Of2 r -> r | Choice2Of2 e -> Exception e
         with e -> logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, new CommunicationException("Failed to forward a reply.", e) |> box)
-      | None -> ()
+      | None -> () //timeout on nativeRc, no need to do anything, timeout will eventually occur on the other side as well
     }
 
   let setupForeignReplyChannelHandler (context: MessageSerializationContext) =
@@ -244,6 +245,11 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
   let failForeignReplyChannels (context: MessageSerializationContext) (e: exn) =
     context.ReplyChannelOverrides
     |> List.iter (fun (_, nrc) -> let msgId = (nrc :?> ReplyChannel).MessageId in replyRegistry.TrySetResult(msgId, Choice2Of2 e) |> ignore)
+
+  let failProcessReplies msgId context withReply e =
+    logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, box e)
+    failForeignReplyChannels context e
+    if withReply then replyRegistry.TrySetResult(msgId, Choice2Of2 e) |> ignore
 
   let postOnEndpoint targetEndPoint msgId msg withReply =
     async {
@@ -273,22 +279,28 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
               try
                 for _ in 1..expectedReplies do
                   do! processReply protocolStream
-              with e ->
-                logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, new CommunicationException("Communication failure while waiting for reply.", e) |> box)
-                failForeignReplyChannels context e
-                if withReply then replyRegistry.TrySetResult(msgId, Choice2Of2 e) |> ignore
+              with CommunicationException _ as e -> failProcessReplies msgId context withReply e
+                  | e -> failProcessReplies msgId context withReply (new CommunicationException("Failure occurred while posting message.", actorId, e))
             } |> Async.Start
-          | Some(UnknownRecipient _) -> return! Async.Raise <| new UnknownRecipientException("Remote host could not find the message recipient.")
-          | Some(Failure(_, e)) -> return! Async.Raise <| new CommunicationException("Message delivery failed on the remote host.", e)
-          | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while waiting for response on message send.")
-        | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while trying to send message.")
+          | Some(UnknownRecipient _) -> return! Async.Raise <| new UnknownRecipientException("Remote host could not find the message recipient.", actorId)
+          | Some(Failure(_, e)) -> return! Async.Raise <| new DeliveryException("Message delivery failed on the remote host.", actorId, e)
+          | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of message send.", actorId, TimeoutType.ConfirmationRead)
+        | None -> return! Async.Raise <| new CommunicationTimeoutException("Timeout occurred while trying to send message.", actorId, TimeoutType.MessageWrite)
       with e ->
         cancelForeignReplyChannels context
         protocolStream.Dispose()
         return! Async.Raise e
     }
 
-  let tryPostOnEndpoint endPoint msgId msg withReply = Async.Catch <| attempt (postOnEndpoint endPoint msgId msg withReply)
+  let tryPostOnEndpoint endPoint msgId msg withReply =
+    async {
+      try
+        do! attempt (postOnEndpoint endPoint msgId msg withReply)
+        return Choice1Of2()
+      with :? SocketException as e when e.SocketErrorCode = SocketError.TimedOut -> return Choice2Of2(new CommunicationTimeoutException("Timeout occurred while trying to establish connection.", actorId, TimeoutType.Connection, e) :> exn)
+          | CommunicationException _ as e -> return Choice2Of2 e
+          | e -> return Choice2Of2(new CommunicationException("Communication failure occurred while trying to send message.", actorId, e) :> exn)
+    }
 
   let postMessage msgId msg withReply =
     async {
@@ -303,9 +315,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
                   | Choice2Of2 e -> return e::es, true
                 }) []
 
-      if r.Length = endPoints.Length then
-        //TODO! Change this to appropriate exception
-        return! Async.Raise (new SystemException("btcp :: postMessage :: Invalid State :: target endpoints exhausted"))
+      if r.Length = endPoints.Length then return! Async.Raise r.Head
       else return ()
     }
 
@@ -343,7 +353,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
       let! r = self.TryPostWithReply(msgF, timeout)
       match r with
       | Some v -> return v
-      | None -> return! Async.Raise (new TimeoutException())
+      | None -> return! Async.Raise (new TimeoutException("Timeout occurred while waiting for reply."))
     }
 
   interface IProtocolClient<'T> with

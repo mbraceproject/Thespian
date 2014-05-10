@@ -16,6 +16,7 @@ and IProtocolServer<'T> =
   inherit IDisposable
   abstract ProtocolName: string
   abstract ActorId: ActorId
+  abstract Client: IProtocolClient<'T>
   abstract Log: IEvent<Log>
   abstract Start: unit -> unit
   abstract Stop: unit -> unit

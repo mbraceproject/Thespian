@@ -47,7 +47,7 @@
         | Error
 
     type LogSource =
-        | Actor of string * ActorUUID
+        | Actor of string
         | Protocol of string
     
     type Log<'T> = LogLevel * LogSource * 'T

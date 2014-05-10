@@ -75,9 +75,10 @@ type MailboxProtocolServer<'T>(actorName: string) =
 
   override __.ToString() = sprintf "%s://%O.%s" ProtocolName actorId typeof<'T>.Name
 
-  interface IPrimaryProtocolServer<'T> with
+  interface IPrimaryProtocolServer<'T> with 
     override __.ProtocolName = ProtocolName
     override __.ActorId = actorId
+    override self.Client = new MailboxProtocolClient<'T>(self) :> IProtocolClient<'T>
     override __.Log = logEvent.Publish
     override __.PendingMessages
       with get () =
@@ -101,7 +102,7 @@ type MailboxProtocolServer<'T>(actorName: string) =
     override self.Dispose() = self.Stop()
 
 
-type MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
+and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
   let srv = server :> IProtocolServer<'T>
 
   let protectMailbox f =

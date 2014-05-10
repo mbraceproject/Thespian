@@ -155,8 +155,10 @@ type DeliveryException =
 
 type TimeoutType =
   | Connection = 1
-  | MessageSend = 2
-  | ConfirmationReceive = 3
+  | MessageWrite = 2
+  | MessageRead = 3
+  | ConfirmationRead = 4
+  | ConfirmationWrite = 5
 
 [<Serializable>]
 type CommunicationTimeoutException =

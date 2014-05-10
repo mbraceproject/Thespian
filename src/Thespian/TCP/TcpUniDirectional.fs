@@ -156,7 +156,7 @@ type ReplyChannel<'T> =
       match r with
       | Some() ->
         return! protocolMessageStream.ProtocolStream.TryAsyncReadResponse()
-      | None -> return! Async.Raise (new CommunicationTimeoutException("Timeout occurred while trying to write reply on channel.", self.ActorId, TimeoutType.MessageSend))
+      | None -> return! Async.Raise (new CommunicationTimeoutException("Timeout occurred while trying to write reply on channel.", self.ActorId, TimeoutType.MessageWrite))
     }
 
   member self.TryAsyncReplyOnEndPoint(endPoint: IPEndPoint, reply: Reply<'T>) =
@@ -167,7 +167,7 @@ type ReplyChannel<'T> =
                | Some(Acknowledge _) -> Choice1Of2()
                | Some(UnknownRecipient _) -> Choice2Of2(new UnknownRecipientException("Reply recipient not found on the other end of the reply channel.", self.ActorId) :> exn)
                | Some(Failure(_, e)) -> Choice2Of2(new DeliveryException("Failure occurred on the other end of the reply channel.", self.ActorId, e) :> exn)
-               | None -> Choice2Of2(new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of reply delivery.", self.ActorId, TimeoutType.ConfirmationReceive) :> exn)
+               | None -> Choice2Of2(new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of reply delivery.", self.ActorId, TimeoutType.ConfirmationRead) :> exn)
       with :? SocketException as e when e.SocketErrorCode = SocketError.TimedOut -> return Choice2Of2(new CommunicationTimeoutException("Timeout occurred while trying to establish connection.", self.ActorId, TimeoutType.Connection, e) :> exn)
           | CommunicationException _ as e -> return Choice2Of2 e
           | e -> return Choice2Of2(new CommunicationException("Communication failure occurred while trying to send reply.", self.ActorId, e) :> exn)
@@ -227,8 +227,8 @@ type MessageProcessor<'T> private (actorId: TcpActorId, listener: TcpProtocolLis
       let msg = serializer.Deserialize<ProtocolMessage<obj>>(payload) |> ProtocolMessage.unbox<'T>
       match msg with
       | Request request ->
-        do processRequest request
         try
+          do processRequest request
           let! r = protocolStream.TryAsyncWriteResponse(Acknowledge msgId)
           return Option.isSome r
         with e ->
@@ -447,6 +447,8 @@ and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRe
   let processMessage msg = primary <-- msg
   let messageProcessor = MessageProcessor<'T>.GetServerProcessor(actorId, listener, processMessage)
 
+  let client = new ProtocolClient<'T>(actorId)
+
   let start() =
     match listenerLogSubcription with
     | None ->
@@ -471,6 +473,7 @@ and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRe
   interface IProtocolServer<'T> with
     override __.ProtocolName = ProtocolName
     override __.ActorId = actorId :> ActorId
+    override __.Client = client :> IProtocolClient<'T>
     override self.Log = self.Log
     override __.Start() = start()
     override __.Stop() = stop()
