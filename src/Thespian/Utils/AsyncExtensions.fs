@@ -17,7 +17,7 @@ namespace Nessos.Thespian
             member __.Value = value
 
         type Microsoft.FSharp.Control.Async with
-            static member Raise (e : #exn) = Async.FromContinuations(fun (_,econt,_) -> econt e)
+            static member Raise (e : #exn) = async { return raise e } //Async.FromContinuations(fun (_,econt,_) -> econt e)
 
             static member Sleepx (timeout: int) = async {
                 let! ct = Async.CancellationToken

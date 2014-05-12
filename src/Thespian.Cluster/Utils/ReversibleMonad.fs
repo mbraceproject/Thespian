@@ -199,10 +199,12 @@
                             |> Seq.map (fun (i,s) -> (i, Seq.toList s))
                             |> Map.ofSeq
 
-                        let values = map.[0]
-                        let exns = map.[1]
-                        let faults = map.[2]
-                        let cancelled = map.[3]
+                        let lookup i = defaultArg (map.TryFind i) []
+
+                        let values = lookup 0
+                        let exns = lookup 1
+                        let faults = lookup 2
+                        let cancelled = lookup 3
 
                         if faults.Length > 0 then
                             do cancel cts
