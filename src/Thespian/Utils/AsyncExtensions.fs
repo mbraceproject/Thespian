@@ -17,7 +17,13 @@ namespace Nessos.Thespian
             member __.Value = value
 
         type Microsoft.FSharp.Control.Async with
-            static member Raise (e : #exn) = async { return raise e } //Async.FromContinuations(fun (_,econt,_) -> econt e)
+            static member Raise (e : #exn) =
+// when debug, need to notify the CLR that an exception is raised
+#if DEBUG
+                async { return raise e }
+#else
+                Async.FromContinuations(fun (_,econt,_) -> econt e)
+#endif
 
             static member Sleepx (timeout: int) = async {
                 let! ct = Async.CancellationToken
