@@ -26,7 +26,7 @@ namespace Nessos.Thespian.ConcurrencyTools
     [<RequireQualifiedAccess>]
     module Atom =
 
-        let atom value = new Atom<'T>(value)
+        let atom<'T when 'T : not struct> value = new Atom<'T>(value)
         let swap (atom : Atom<'T>) f = atom.Swap f
         let transact (atom : Atom<'T>) f : 'R = atom.Transact f
         let set (atom : Atom<'T>) t = atom.Set t
