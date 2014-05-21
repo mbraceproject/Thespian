@@ -1,4 +1,4 @@
-namespace Nessos.Thespian.PowerPack
+namespace Nessos.Thespian.ActorExtensions
 
     open System
     open Nessos.Thespian

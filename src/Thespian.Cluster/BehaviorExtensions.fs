@@ -4,7 +4,7 @@ module Nessos.Thespian.Cluster.BehaviorExtensions
 open System
 open System.Threading
 open Nessos.Thespian
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.ConcurrencyTools
 
 let (|MessageHandlingException2|_|) (e: exn) = 
     match e with
@@ -49,7 +49,7 @@ type BehaviorContext<'T>(self: ActorBase, selfRef: ActorRef<'T>) =
     member __.LogEvent(l, e) = self.LogEvent(l, e)
 
     static member map (mapF: 'T -> 'U) (ctx: BehaviorContext<'U>) =
-        new BehaviorContext<'T>(ctx.Actor, ctx.Self |> PowerPack.ActorRef.map mapF)
+        new BehaviorContext<'T>(ctx.Actor, ctx.Self |> ActorExtensions.ActorRef.map mapF)
             
 
 module Behavior =
@@ -71,8 +71,8 @@ module Behavior =
     let union (state1: 'S1) (behavior1: BehaviorContext<'T1> -> 'S1 -> 'T1 -> Async<'S1>)
               (state2: 'S2) (behavior2: BehaviorContext<'T2> -> 'S2 -> 'T2 -> Async<'S2>)
               (self: Actor<Choice<'T1, 'T2>>) =
-        let ctx1 = new BehaviorContext<'T1>(self, self.Ref |> PowerPack.ActorRef.map Choice1Of2)
-        let ctx2 = new BehaviorContext<'T2>(self, self.Ref |> PowerPack.ActorRef.map Choice2Of2)
+        let ctx1 = new BehaviorContext<'T1>(self, self.Ref |> ActorExtensions.ActorRef.map Choice1Of2)
+        let ctx2 = new BehaviorContext<'T2>(self, self.Ref |> ActorExtensions.ActorRef.map Choice2Of2)
         let rec stateful (state1, state2) = async {
             let! msg = self.Receive()
             match msg with

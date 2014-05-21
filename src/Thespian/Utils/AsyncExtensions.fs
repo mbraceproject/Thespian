@@ -1,22 +1,39 @@
-namespace Nessos.Thespian
+namespace Nessos.Thespian.ConcurrencyTools
 
+    open System
+    open System.Threading
+    open System.Threading.Tasks
+
+    [<AutoOpen>]
     module AsyncExtensions = 
-    
-        open System
-        open System.Threading
-        open System.Threading.Tasks
 
-        exception ResultException of obj
-
-        type internal Latch() =
-            let mutable switch = 0
-            member __.Trigger() = Interlocked.CompareExchange(&switch, 1, 0) = 0
+        // used for the Async.Choice implementation
 
         type private SuccessException<'T> (value : 'T) = 
             inherit Exception()
             member __.Value = value
 
-        type Microsoft.FSharp.Control.Async with
+        //Based on
+        //http://moiraesoftware.com/blog/2012/01/30/FSharp-Dataflow-agents-II/
+        //but it is simplified
+        type AsyncResultCell<'T>() =
+            let completionSource = new TaskCompletionSource<'T>()
+
+            let t = completionSource.Task
+
+            member c.RegisterResult<'T>(result: 'T) = completionSource.SetResult(result)
+            member c.AsyncWaitResult<'T>(millisecondsTimeout: int): Async<'T option> =
+                Async.AwaitTask<'T>(completionSource.Task, millisecondsTimeout)
+
+            // use default AwaitTask when no timeout overload is given
+            member c.AsyncWaitResult<'T>(): Async<'T> = async {
+                let! r = Async.AwaitTask<'T>(completionSource.Task, Timeout.Infinite)
+                return Option.get r
+            }
+
+        and Microsoft.FSharp.Control.Async with
+
+            /// Performant Async.Raise
             static member Raise (e : #exn) =
 // when debug, need to notify the CLR that an exception is raised
 #if DEBUG
@@ -43,31 +60,7 @@ namespace Nessos.Thespian
             }
 
 
-//            static member WithTimeout (timeout: int) (computation: Async<'T>): Async<'T option> = async {
-//                let! ct = Async.CancellationToken
-//                return! Async.FromContinuations(fun (success, error, cancel) ->
-//                    let ctsTimeout = System.Threading.CancellationTokenSource.CreateLinkedTokenSource([| ct |])
-//                    let ctsComp = System.Threading.CancellationTokenSource.CreateLinkedTokenSource([| ct |])
-//                    let k = async {
-//                        let! r = Async.Catch computation
-//                        ctsTimeout.Cancel()
-//                        match r with
-//                        | Choice1Of2 v -> success (Some v)
-//                        | Choice2Of2 e -> error e
-//                    }
-//                    let t = async {
-//                        do! Async.Sleep timeout
-//                        //sprintfn "TIMEOUT %A" c
-//                        ctsComp.Cancel()
-//                        //error (new System.TimeoutException("Workflow timeout."))
-//                        success None
-//                    }
-//                    Async.Start(k, ctsComp.Token)
-//                    Async.Start(t, ctsTimeout.Token)
-//                )
-//            }
-
-            static member ConditionalCancel (condition: Async<bool>) (computation: Async<'T>): Async<'T option> = async {
+            static member ConditionalCancel<'T> (condition: Async<bool>) (computation: Async<'T>): Async<'T option> = async {
                 let! ct = Async.CancellationToken
                 return! Async.FromContinuations(fun (success, error, _) ->
                     let ctsTimeout = System.Threading.CancellationTokenSource.CreateLinkedTokenSource([| ct |])
@@ -98,32 +91,19 @@ namespace Nessos.Thespian
                 )
             }
 
-            static member WithTimeout (timeout: int) (computation: Async<'T>): Async<'T option> =
+            static member WithTimeout<'T> (timeout: int) (computation: Async<'T>): Async<'T option> =
                 let cancelCondition = async {
                     do! Async.Sleep timeout
                     return true
                 }
+
                 Async.ConditionalCancel cancelCondition computation
 
-//                let timeout = async {
-//                    do! Async.Sleepx timeout
-//                    return! Async.Raise (new TimeoutException("The operation has timed out."))
-//                }
-//                let operation = async {
-//                    let! result = computation
-//                    return! Async.Raise <| ResultException (box result)
-//                }
-//                let! result = Async.Parallel [operation; timeout] |> Async.Catch
-//                match result with
-//                | Choice2Of2(:? TimeoutException as e) -> return None
-//                | Choice2Of2(ResultException v) -> return Some (unbox v)
-//                | _ -> return failwith "Control flow failure."
-//            }
-
-            // untyped awaitTask
+            /// untyped awaitTask
             static member AwaitTask (t : Task) = t.ContinueWith ignore |> Async.AwaitTask
-            // non-blocking awaitTask with timeout
-            static member AwaitTask (t : Task<'T>, timeout : int) =
+
+            /// non-blocking awaitTask with timeout
+            static member AwaitTask<'T> (t : Task<'T>, timeout : int) : Async<'T option> =
                 async {
                     let! ct = Async.CancellationToken
                     use cts = CancellationTokenSource.CreateLinkedTokenSource(ct)
@@ -142,44 +122,6 @@ namespace Nessos.Thespian
                     finally cts.Cancel()
                 }
 
-            static member AwaitObservableCorrect(source: IObservable<'T>) =
-                let value : 'T option ref = ref None
-                let subscription : IDisposable option ref = ref None
-                let continuation : ('T -> unit) option ref = ref None
-
-                let observer result =
-                    lock source (fun _ ->
-                        match subscription.Value with
-                        | Some d -> 
-                            d.Dispose()
-                            subscription := None
-                        | None -> ()
-                        match continuation.Value with
-                        | Some cont -> 
-                            continuation := None
-                            cont result
-                        | None -> value := Some result
-                    )
-
-                subscription := Some (source.Subscribe observer)
-
-                Async.FromContinuations((fun (cont, _, _) -> 
-                    lock source (fun _ ->
-                        match value.Value with
-                        | Some result -> 
-                            value := None
-
-                            match subscription.Value with
-                            | Some d -> 
-                                d.Dispose()
-                                subscription := None
-                            | None -> ()
-
-                            cont result
-                        | None -> continuation := Some cont
-                    )
-                ))
-
             static member IsolateCancellation (computationF : CancellationToken -> Async<'T>, ?cancellationToken : CancellationToken) : Async<'T> =
                 async {
                     let! ct = 
@@ -193,7 +135,7 @@ namespace Nessos.Thespian
                         return! Async.Raise <| e.InnerExceptions.[0]
                 }
 
-            //correct sleep implementation
+            /// correct sleep implementation
             static member SleepSafe (timeout: int) = async {
                 let! ct = Async.CancellationToken
                 let tmr = ref (null : System.Threading.Timer)
@@ -233,98 +175,8 @@ namespace Nessos.Thespian
                     with 
                     | :? SuccessException<'T> as ex -> return Some ex.Value
                 }
-        
-        //Based on
-        //http://moiraesoftware.com/blog/2012/01/30/FSharp-Dataflow-agents-II/
-        //but it is simplified
-        type AsyncResultCell<'T>() =
-            let completionSource = new TaskCompletionSource<'T>()
 
-            let t = completionSource.Task
-
-            member c.RegisterResult(result: 'T) = completionSource.SetResult(result)
-            member c.AsyncWaitResult(millisecondsTimeout: int): Async<'T option> =
-                Async.AwaitTask(completionSource.Task, millisecondsTimeout)
-
-            // use default AwaitTask when no timeout overload is given
-            member c.AsyncWaitResult(): Async<'T> = async {
-                let! r = Async.AwaitTask(completionSource.Task, Timeout.Infinite)
-                return Option.get r
-            }
-
-
-        type AsyncResultCell2<'T>() =
-            let spinLock = new SpinLock()
-            let continuation: ('T -> unit) option ref = ref None
-            let result: 'T option ref = ref None
-
-            member cell.RegisterResult(resultValue: 'T) =
-                let mutable gotLock = false
-                spinLock.Enter(&gotLock)
-                match result.Value with
-                | Some _ ->
-                    if gotLock then spinLock.Exit()
-                    invalidOp "Cell value already registered."
-                | None ->
-                    match continuation.Value with
-                    | Some success -> 
-                        if gotLock then spinLock.Exit()
-                        success resultValue
-                    | None -> 
-                        result := Some resultValue
-                        if gotLock then spinLock.Exit()
-
-            member cell.AsyncWaitResult(): Async<'T> = async {
-                let! ct = Async.CancellationToken
-                return! 
-                    Async.FromContinuations(fun (success, error, cancellation) ->
-                        if ct.IsCancellationRequested then cancellation (new OperationCanceledException())
-                        else
-                            let mutable gotLock = false
-                            spinLock.Enter(&gotLock)
-                            match continuation.Value with
-                            | Some _ -> 
-                                if gotLock then spinLock.Exit()
-                                error (new InvalidOperationException("Another workflow is waiting for cell value."))
-                            | None ->
-                                match result.Value with
-                                | Some value -> 
-                                    if gotLock then spinLock.Exit()
-                                    success value
-                                | None -> 
-                                    continuation := Some success
-                                    if gotLock then spinLock.Exit()
-                    )
-            }
-
-            member cell.AsyncWaitResult(millisecondsTimeout: int): Async<'T option> =
-                cell.AsyncWaitResult() |> Async.WithTimeout millisecondsTimeout
-                    
-
-
-//             async {
-//                let! result = c.AsyncWaitResult(Timeout.Infinite)
-//                return match result with
-//                        | Some r -> r
-//                        | None -> raise <| new TimeoutException("Waiting for result in cell has timed out.")
-//            }
-
-//        type AsyncResultCell<'T>() =
-//            let event = new Event<'T>()
-//
-//            member c.OnSetResult = event.Publish
-//            member c.RegisterResult(result: 'T) = event.Trigger result
-//            member c.AsyncWaitResult(millisecondsTimeout: int): Async<'T option> =
-//                async {
-//                    let! result = Async.AwaitObservableCorrect c.OnSetResult
-//
-//                    return Some result
-//                }
-//            member c.AsyncWaitResult(): Async<'T> =
-//                Async.AwaitObservableCorrect c.OnSetResult
-
-        type Microsoft.FSharp.Control.Async with 
-            static member AwaitObservable(observable: IObservable<'T>, ?timeout) =
+            static member AwaitObservable<'T>(observable: IObservable<'T>, ?timeout) =
                 let resultCell = new AsyncResultCell<'T>()
                 let rec observer = (fun result ->
                     resultCell.RegisterResult(result)
@@ -341,66 +193,6 @@ namespace Nessos.Thespian
                         | None -> return! Async.Raise <| TimeoutException()
                         | Some v -> return v
                     }
-
-        // Implementation of the 'AwaitEvent' primitive
-        // From Real World Functional Programming
-        // NOTE!!!! THIS IMLEMENTATION IS HIGHLY PROBLEMATIC
-        // The actual registrastion on the observable does not
-        // occur until the control flow actually reaches
-        // a monadic bind.
-        // The problem is that the event we want to observe could
-        // have been triggered before the monadic bind.
-        // A correct implementation would be to register the callback
-        // on the observable on construction of the Async
-        type Microsoft.FSharp.Control.Async with 
-            static member AwaitObservableWrong(ev1:IObservable<'a>) = 
-                Async.FromContinuations((fun (cont,econt,ccont) -> 
-                    let rec callback = (fun value ->
-                        remover.Dispose()
-                        cont(value) )
-                    and remover : IDisposable  = ev1.Subscribe(callback) 
-                    () ))
-
-            static member AwaitObservableWrong(ev1:IObservable<'a>, ev2:IObservable<'b>) = 
-                Async.FromContinuations((fun (cont,econt,ccont) ->
-                    let rec callback1 = (fun value ->
-                        remover1.Dispose()
-                        remover2.Dispose()
-                        cont(Choice1Of2(value)) )
-
-                    and callback2 = (fun value ->
-                        remover1.Dispose()
-                        remover2.Dispose()
-                        cont(Choice2Of2(value)) )
-
-                    and remover1 : IDisposable  = ev1.Subscribe(callback1) 
-                    and remover2 : IDisposable  = ev2.Subscribe(callback2) 
-                    () ))
-
-            static member AwaitObservableWrong(ev1:IObservable<'a>, ev2:IObservable<'b>, ev3:IObservable<'c>) = 
-                Async.FromContinuations((fun (cont,econt,ccont) -> 
-                    let rec callback1 = (fun value ->
-                        remover1.Dispose()
-                        remover2.Dispose()
-                        remover3.Dispose()
-                        cont(Choice1Of3(value)) )
-
-                    and callback2 = (fun value ->
-                        remover1.Dispose()
-                        remover2.Dispose()
-                        remover3.Dispose()
-                        cont(Choice2Of3(value)) )
-
-                    and callback3 = (fun value ->
-                        remover1.Dispose()
-                        remover2.Dispose()
-                        remover3.Dispose()
-                        cont(Choice3Of3(value)) )
-
-                    and remover1 : IDisposable  = ev1.Subscribe(callback1) 
-                    and remover2 : IDisposable  = ev2.Subscribe(callback2) 
-                    and remover3 : IDisposable  = ev3.Subscribe(callback3) 
-                    () ))
 
 
     [<RequireQualifiedAccess>]

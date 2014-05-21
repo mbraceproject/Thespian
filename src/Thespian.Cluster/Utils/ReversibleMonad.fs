@@ -4,7 +4,7 @@
     open System.Threading
 
     open Nessos.Thespian.LazyList
-    open Nessos.Thespian.AsyncExtensions
+    open Nessos.Thespian.ConcurrencyTools
 
     type RevAsync<'T> = private { Expr : ReversibleExpr }
 

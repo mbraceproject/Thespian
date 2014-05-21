@@ -8,7 +8,7 @@
     
     open Nessos.Thespian
     open Nessos.Thespian.Serialization
-    open Nessos.Thespian.AsyncExtensions
+    open Nessos.Thespian.ConcurrencyTools
 
     //
     //  This is a *very* rudimentary implementation of an actor protocol for named pipes

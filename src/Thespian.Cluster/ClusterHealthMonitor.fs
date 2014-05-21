@@ -2,7 +2,9 @@
 
 open System
 open System.Diagnostics
+
 open Nessos.Thespian
+open Nessos.Thespian.ConcurrencyTools
 open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Serialization
 open Nessos.Thespian.Utils

@@ -3,7 +3,9 @@
     open System
     open System.Net
     open System.Runtime.Serialization
+
     open Nessos.Thespian
+    open Nessos.Thespian.ConcurrencyTools
 
     [<AutoOpen>]
     module Utils = 

@@ -51,16 +51,13 @@
     type Log<'T> = LogLevel * LogSource * 'T
     type Log = Log<obj>
 
-
-    // in-place replacement for MBrace's logger interface: temporary solution
-
-    type ILogger =
+    type IActorLogger =
         abstract Log : msg:string * lvl:LogLevel * time:DateTime -> unit     
         
-    type Logger private () =
+    type ActorLogRegistry private () =
         static let loggerContainer = ref None  
 
-        static member Register(logger : ILogger) =
+        static member Register(logger : IActorLogger) =
             lock logger (fun () -> loggerContainer := Some logger)
 
         static member DefaultLogger =
@@ -71,16 +68,16 @@
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Log =
         
-        let log time lvl msg = Logger.DefaultLogger.Log(msg, lvl, time)
+        let log time lvl msg = ActorLogRegistry.DefaultLogger.Log(msg, lvl, time)
 
-        let logNow lvl msg = Logger.DefaultLogger.Log(msg, lvl, DateTime.Now)
+        let logNow lvl msg = ActorLogRegistry.DefaultLogger.Log(msg, lvl, DateTime.Now)
 
-        let logInfo msg = Logger.DefaultLogger.Log(msg, Info, DateTime.Now)
+        let logInfo msg = ActorLogRegistry.DefaultLogger.Log(msg, Info, DateTime.Now)
 
-        let logWarning msg = Logger.DefaultLogger.Log(msg, Warning, DateTime.Now)
+        let logWarning msg = ActorLogRegistry.DefaultLogger.Log(msg, Warning, DateTime.Now)
 
-        let logError msg = Logger.DefaultLogger.Log(msg, Error, DateTime.Now)
+        let logError msg = ActorLogRegistry.DefaultLogger.Log(msg, Error, DateTime.Now)
 
         let logException (e : exn) msg =
             let message = sprintf "%s\n    Exception=%O" msg e
-            Logger.DefaultLogger.Log(message, Error, DateTime.Now)
+            ActorLogRegistry.DefaultLogger.Log(message, Error, DateTime.Now)

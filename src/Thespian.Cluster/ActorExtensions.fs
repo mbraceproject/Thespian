@@ -4,7 +4,7 @@ module Nessos.Thespian.Cluster.ActorExtensions
 open System
 open Nessos.Thespian
 open Nessos.Thespian.Utils
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.ConcurrencyTools
 
 exception BroadcastPartialFailureException of string * (ActorRef * exn) list
 exception BroadcastFailureException of string

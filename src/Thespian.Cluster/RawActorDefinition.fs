@@ -2,7 +2,7 @@
 
 open Nessos.Thespian
 open Nessos.Thespian.Remote.TcpProtocol
-open Nessos.Thespian.PowerPack
+open Nessos.Thespian.ActorExtensions
 open Nessos.Thespian.Cluster.BehaviorExtensions
 open Nessos.Thespian.Reversible
 

@@ -5,7 +5,7 @@
 //open System.Diagnostics
 //open Nessos.MBrace.Utils
 //
-//let private logger = lazy IoC.Resolve<ILogger>()
+//let private logger = lazy IoC.Resolve<IActorLogger>()
 //
 //let msg logLevel msg = logger.Value.Log msg logLevel
 //let entry entry = logger.Value.LogEntry entry
@@ -16,7 +16,7 @@
 //
 //type LoggerTraceListener() =
 //    inherit TraceListener()
-//    let logger = lazy IoC.Resolve<ILogger>()
+//    let logger = lazy IoC.Resolve<IActorLogger>()
 //
 //    override __.Write(message: string) = logger.Value.Log message LogLevel.Info
 //    override l.WriteLine(message: string) = logger.Value.Log message LogLevel.Info

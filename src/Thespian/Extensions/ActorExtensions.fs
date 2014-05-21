@@ -1,9 +1,11 @@
-namespace Nessos.Thespian.PowerPack
+namespace Nessos.Thespian.ActorExtensions
 
     open System
     open System.Net
     open System.Runtime.Serialization
+
     open Nessos.Thespian
+    open Nessos.Thespian.ConcurrencyTools
     open Nessos.Thespian.Serialization
 
     type Rely<'T> = IReplyChannel<unit> * 'T
@@ -77,7 +79,7 @@ namespace Nessos.Thespian.PowerPack
             }
 
 #if LOG_RAW_MSG_PAYLOAD_SIZE
-        static member private Logger with get() = Nessos.MBrace.Utils.IoC.Resolve<Nessos.MBrace.Utils.ILogger>()
+        static member private Logger with get() = Nessos.MBrace.Utils.IoC.Resolve<Nessos.MBrace.Utils.IActorLogger>()
 #endif
         member r.Value = r.rawValue
 

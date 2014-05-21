@@ -7,7 +7,7 @@ open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Remote.TcpProtocol.Unidirectional
 open Nessos.Thespian.ImemDb
 open Nessos.Thespian.Utils
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.ConcurrencyTools
 open Nessos.Thespian.Reversible
 open Nessos.Thespian.Cluster
 

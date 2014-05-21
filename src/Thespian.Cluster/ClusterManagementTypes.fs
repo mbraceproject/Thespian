@@ -4,7 +4,7 @@ module Nessos.Thespian.Cluster.Common
 open System
 open Nessos.Thespian
 open Nessos.Thespian.Utils
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.ConcurrencyTools
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Remote.TcpProtocol.Unidirectional
@@ -71,7 +71,6 @@ module Default =
     let actorEventHandler = actorEventHandlerNoProtocol
 
     let fatalActorFailure e = 
-//        let logger = IoC.Resolve<ILogger>()
 //        logger.LogError e "FATAL ERROR. UNABLE TO CONTINUE."
         System.Threading.Thread.Sleep 4000
         System.Diagnostics.Process.GetCurrentProcess().Kill()
@@ -216,8 +215,8 @@ and [<AbstractClass>] Definition(parent: DefinitionPath) as self =
     abstract Path: DefinitionPath
     default def.Path = parent/def.Name
 
-    abstract Logger : ILogger
-    default def.Logger = Logger.DefaultLogger
+    abstract Logger : IActorLogger
+    default def.Logger = ActorLogRegistry.DefaultLogger
 //    abstract LogEntry: LogEntry -> unit
 //    default def.LogEntry entry =
 //        let (SystemLog(msg, level, time)) = entry
@@ -1439,7 +1438,7 @@ and NodeHeartBeat =
     | StopBeating
     | StartBeating of TimeSpan
 
-and Raw<'T> = Nessos.Thespian.PowerPack.Raw<'T>
+and Raw<'T> = Nessos.Thespian.ActorExtensions.Raw<'T>
 
 and RawProxy =
     | PostRaw of Raw<obj>

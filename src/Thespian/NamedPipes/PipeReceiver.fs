@@ -7,7 +7,7 @@
     open System.Threading.Tasks
     
     open Nessos.Thespian
-    open Nessos.Thespian.AsyncExtensions
+    open Nessos.Thespian.ConcurrencyTools
     open Nessos.Thespian.Serialization
     open Nessos.Thespian.Utils
 

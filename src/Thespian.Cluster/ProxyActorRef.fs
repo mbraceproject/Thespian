@@ -3,7 +3,7 @@
 open System
 open System.Runtime.Serialization
 open Nessos.Thespian
-open Nessos.Thespian.PowerPack
+open Nessos.Thespian.ActorExtensions
 
 [<Serializable>]
 type RawActorRef<'T> =

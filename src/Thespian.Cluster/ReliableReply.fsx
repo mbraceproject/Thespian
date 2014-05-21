@@ -2,7 +2,7 @@
 #r "bin/debug/Nessos.Thespian.dll"
 #r "bin/debug/Nessos.Thespian.Remote.dll"
 #r "bin/debug/Nessos.Thespian.ClientPack.dll"
-#r "bin/debug/Nessos.Thespian.PowerPack.dll"
+#r "bin/debug/Nessos.Thespian.ActorExtensions.dll"
 #r "../Nessos.MBrace.Utils/bin/debug/Nessos.MBrace.Utils.dll"
 
 #load "ReliableActorRef.fsx"

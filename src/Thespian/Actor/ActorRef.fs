@@ -4,6 +4,7 @@ namespace Nessos.Thespian
     open System.Runtime.Serialization
 
     open Nessos.Thespian.Serialization
+    open Nessos.Thespian.ConcurrencyTools
 
     [<Serializable>]
     type IProtocolConfiguration =

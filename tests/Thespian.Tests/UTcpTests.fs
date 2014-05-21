@@ -4,7 +4,7 @@
     open System.Net
     open System.Diagnostics
     open Nessos.Thespian
-    open Nessos.Thespian.AsyncExtensions
+    open Nessos.Thespian.ConcurrencyTools
     open Nessos.Thespian.Serialization
     open Nessos.Thespian.Remote
     open Nessos.Thespian.Remote.TcpProtocol

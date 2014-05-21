@@ -10,6 +10,7 @@
     open Nessos.FsPickler
 
     open Nessos.Thespian
+    open Nessos.Thespian.ConcurrencyTools
 
     type IMessageSerializer =
         abstract Name: string

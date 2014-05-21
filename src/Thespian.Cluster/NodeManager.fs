@@ -6,7 +6,7 @@ open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Remote.TcpProtocol.Unidirectional
 open Nessos.Thespian.Cluster.BehaviorExtensions.FSM
 open Nessos.Thespian.Utils
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.ConcurrencyTools
 open Nessos.Thespian.Reversible
 
 type private LogLevel = Nessos.Thespian.LogLevel

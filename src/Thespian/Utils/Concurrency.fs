@@ -1,4 +1,4 @@
-namespace Nessos.Thespian
+namespace Nessos.Thespian.ConcurrencyTools
 
     open System
     open System.Threading
@@ -30,3 +30,30 @@ namespace Nessos.Thespian
         let swap (atom : Atom<'T>) f = atom.Swap f
         let transact (atom : Atom<'T>) f : 'R = atom.Transact f
         let set (atom : Atom<'T>) t = atom.Set t
+
+
+    type Latch() =
+        let mutable switch = 0
+        member __.Trigger() = Interlocked.CompareExchange(&switch, 1, 0) = 0
+
+    /// thread safe counter implementation
+    type ConcurrentCounter (?start : int64) =
+        let count = ref <| defaultArg start 0L
+
+        member __.Incr () = System.Threading.Interlocked.Increment count
+        member __.Value = count
+
+    type CountdownLatch() =
+        let mutable counter = 0
+    
+        ///Set the latch
+        member self.Increment(): unit =
+            Interlocked.Increment(&counter) |> ignore
+
+        ///Reset the latch
+        member __.Decrement(): unit =
+            Interlocked.Decrement(&counter) |> ignore
+
+        ///Spin-wait until the latch is reset
+        member __.WaitToZero(): unit =
+            while (Interlocked.CompareExchange(&counter, 0, 0) <> 0) do Thread.SpinWait 20
