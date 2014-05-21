@@ -233,3 +233,35 @@ namespace Nessos.Thespian.ConcurrencyTools
                         return! foldArrayAsync foldF nextState (index + 1)
                 }
             foldArrayAsync foldF state 0
+    
+
+    [<RequireQualifiedAccess>]
+    module Async =
+        /// postcompose covariant operation
+        let map (f : 'T -> 'S) (w : Async<'T>) : Async<'S> =
+            async { let! r = w in return f r }
+
+        /// lifting of lambdas to async funcs
+        let lift (f : 'T -> 'S) = fun t -> async { return f t }
+
+        /// nodeterministic pick
+        let tryPick (f : 'T -> Async<'S option>) (ts : seq<'T>) : Async<'S option> =
+            ts |> Seq.map f |> Async.Choice
+
+        /// nondeterministic pick
+        let pick (f : 'T -> Async<'S>) (ts : seq<'T>) : Async<'S> =
+            async {
+                let! result = ts |> Seq.map (fun t -> map Some (f t)) |> Async.Choice
+
+                return result.Value
+            }
+
+        /// nondeterministic forall
+        let forall (f : 'T -> Async<bool>) (ts : seq<'T>) : Async<bool> =
+            let wrapper t = map (function true -> None | false -> Some ()) (f t)
+            ts |> Seq.map wrapper |> Async.Choice |> map Option.isNone
+
+        /// nondeterministic existential
+        let exists (f : 'T -> Async<bool>) (ts : seq<'T>) : Async<bool> =
+            let wrapper t = map (function true -> Some () | false -> None) (f t)
+            ts |> Seq.map wrapper |> Async.Choice |> map Option.isSome
