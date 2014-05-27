@@ -1,3 +1,6 @@
+### 0.0.4-alpha - May 27, 2014
+* Fix support for non-public tables in IMemDb
+
 ### 0.0.3-alpha - May 21, 2014
 * Maintenance release, bug fixes.
 
