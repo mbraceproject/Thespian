@@ -309,6 +309,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
   let replyRegistry = new ReplyResultRegistry<'T>(actorId, localListener)
   let logEvent = new Event<Log>()
   let factory = new UTcpFactory(Client address)
+  let uri = sprintf "%s://%s:%d/%s" ProtocolName address.HostnameOrAddress address.Port actorId.Name
 
   let handleForeignReplyChannel (foreignRc: IReplyChannel, nativeRc: IReplyChannel) =
     //register async wait handle for the nativeRc
@@ -356,7 +357,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
         | Some() ->
           Async.Start foreignRcHandle
           return! protocolStream.TryAsyncReadResponse()
-        | None -> return! Async.Raise (new CommunicationTimeoutException("Timeout occurred while trying to send message.", actorId, TimeoutType.MessageSend))
+        | None -> return! Async.Raise (new CommunicationTimeoutException("Timeout occurred while trying to send message.", actorId, TimeoutType.MessageWrite))
       with e ->
         cancelForeignReplyChannels context
         return! Async.Raise e
@@ -370,7 +371,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
                | Some(Acknowledge _) -> Choice1Of2() //post was successfull
                | Some(UnknownRecipient _) -> Choice2Of2(new UnknownRecipientException("Remote host could not find the message recipient.", actorId) :> exn)
                | Some(Failure(_, e)) ->  Choice2Of2(new DeliveryException("Message delivery failed on the remote host.", actorId, e) :> exn)
-               | None -> Choice2Of2(new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of message delivery.", actorId, TimeoutType.ConfirmationReceive) :> exn)
+               | None -> Choice2Of2(new CommunicationTimeoutException("Timeout occurred while waiting for confirmation of message delivery.", actorId, TimeoutType.ConfirmationRead) :> exn)
       with :? SocketException as e when e.SocketErrorCode = SocketError.TimedOut -> return Choice2Of2(new CommunicationTimeoutException("Timeout occurred while trying to establish connection.", actorId, TimeoutType.Connection, e) :> exn)
           | CommunicationException _ as e -> return Choice2Of2 e
           | e -> return Choice2Of2(new CommunicationException("Communication failure occurred while trying to send message.", actorId, e) :> exn)
@@ -428,6 +429,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
   interface IProtocolClient<'T> with
     override __.ProtocolName = ProtocolName
     override __.ActorId = actorId :> ActorId
+    override __.Uri = uri
     override __.Factory = Some (factory :> IProtocolFactory)
     override __.Post(msg: 'T) = Async.RunSynchronously (post msg)
     override __.AsyncPost(msg: 'T) = post msg
@@ -512,6 +514,21 @@ and [<Serializable>] UTcpFactory =
     override self.CreateClientInstance(actorName: string): IProtocolClient<'T> = self.CreateClientInstance(actorName)
 
   interface ISerializable with override self.GetObjectData(info: SerializationInfo, context: StreamingContext) = info.AddValue("protocolMode", self.protocolMode)
+
+//TODO move this to other file
+// let (|Port|_|) (port: string) =
+//   match Int32.TryParse(port) with
+//   | (true, portNum) -> Some portNum
+//   | _ -> None
+
+// let tryFromUri (uri: string) =
+//   match uri with
+//   | RegExp.Match @"^(.+)://(.+):(\d+)/(.+)$" (protocol::hostnameOrAddress::Port(port)::name::[]) when protocol = ProtocolName ->
+//     let address = new Address(hostnameOrAddress, port)
+//     let factory = new UTcpFactory(Client address)
+//     let client = factory.CreateClientInstance(name)
+//     Some client
+//   | _ -> None
 
 
 // [<Serializable>]

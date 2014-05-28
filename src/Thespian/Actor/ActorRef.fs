@@ -24,6 +24,7 @@ and IProtocolServer<'T> =
 and IProtocolClient<'T> =
   abstract ProtocolName: string
   abstract ActorId: ActorId
+  abstract Uri: string
   abstract Factory: IProtocolFactory option
   //Asynchronous message passing
   //Succeeds only if message delivery can be guaranteed.
@@ -107,6 +108,7 @@ and [<Serializable; AbstractClass>] ActorRef =
     override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
       self.SerializationDestructor(info, context)
 
+
 and [<Serializable>] ActorRef<'T> =
   inherit ActorRef
 
@@ -141,6 +143,8 @@ and [<Serializable>] ActorRef<'T> =
 
   member private self.ProtocolInstances = self.protocols
   member private self.ActorIdSet = self.ProtocolInstances |> Seq.map (fun protocol -> protocol.ActorId) |> Set.ofSeq
+
+  member self.GetUris() = self.protocols |> Seq.map (fun protocol -> protocol.Uri) |> Seq.toList
 
   override self.Id = self.defaultProtocol.ActorId
 
@@ -224,6 +228,7 @@ and [<Serializable>] ActorRef<'T> =
       match other with
       | :? ActorRef<'T> -> (self :> IComparable<ActorRef<'T>>).CompareTo(other :?> ActorRef<'T>)
       | _ -> invalidArg "Argument not an ActorRef<>" "other"
+
 
 and IReplyChannel =
   abstract Protocol: string

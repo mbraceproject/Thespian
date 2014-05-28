@@ -189,6 +189,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
   let replyRegistry = new ReplyResultsRegistry()
   let logEvent = new Event<Log>()
   let factory = new BTcpFactory(ProtocolMode.Client address)
+  let uri = sprintf "%s://%s:%d/%s" ProtocolName address.HostnameOrAddress address.Port actorId.Name
 
   let processReply (protocolStream: ProtocolStream) =
     async {
@@ -359,6 +360,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
   interface IProtocolClient<'T> with
     override __.ProtocolName = ProtocolName
     override __.ActorId = actorId :> ActorId
+    override __.Uri = uri
     override __.Factory = Some (factory :> IProtocolFactory)
     override __.Post(msg: 'T) = Async.RunSynchronously (post msg)
     override __.AsyncPost(msg: 'T) = post msg
@@ -371,6 +373,7 @@ and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRe
   let listener = TcpListenerPool.GetListener(endPoint)
   let listenerAddress = new Address(TcpListenerPool.DefaultHostname, listener.LocalEndPoint.Port)
   let actorId = new TcpActorId(actorName, ProtocolName, listenerAddress)
+  let client = new ProtocolClient<'T>(actorId)
   
   let logEvent = new Event<Log>()
   let mutable listenerLogSubcription: IDisposable option = None
@@ -419,6 +422,7 @@ and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRe
   interface IProtocolServer<'T> with
     override __.ProtocolName = ProtocolName
     override __.ActorId = actorId :> ActorId
+    override __.Client = client :> IProtocolClient<'T>
     override self.Log = self.Log
     override __.Start() = start()
     override __.Stop() = stop()

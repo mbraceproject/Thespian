@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -73,11 +73,7 @@
     <None Include="Actor\ConcurrentQueue.fsx" />
     <Compile Include="Extensions\Agents.fs" />
     <Compile Include="Extensions\Receiver.fs" />
-    <Compile Include="Extensions\Queue.fs" />
     <Compile Include="Extensions\DisposableExtensions.fs" />
-    <Compile Include="Extensions\Flow.fs" />
-    <Compile Include="Extensions\FlowMailboxActorProtocol.fs" />
-    <Compile Include="Extensions\FlowActor.fs" />
     <Compile Include="Extensions\Powerpack.fs" />
     <Compile Include="TCP\RemoteExceptions.fs" />
     <Compile Include="TCP\SocketExtensions.fs" />

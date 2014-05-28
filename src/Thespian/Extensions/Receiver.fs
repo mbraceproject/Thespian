@@ -1,188 +1,158 @@
 namespace Nessos.Thespian
 
-    open System
-    open System.Threading
+open System
+open System.Threading
 
-    type Receiver<'T> internal (uuid: ActorUUID, name: string, protocols: IActorProtocol<'T>[]) =
-        inherit Actor<'T>(uuid, name, protocols, fun _ -> async.Zero())
+type Receiver<'T> internal (name: string, protocols: IProtocolServer<'T>[]) =
+  inherit Actor<'T>(name, protocols, fun _ -> async.Zero())
 
-        let receiveEvent = new Event<'T>()
+  let receiveEvent = new Event<'T>()
 
-        let rec receiveLoop (actor: Actor<'T>) = async {
-            let! msg = actor.Receive()
+  let rec receiveLoop (actor: Actor<'T>) =
+    async {
+      let! msg = actor.Receive()
 
-            receiveEvent.Trigger(msg)
+      receiveEvent.Trigger(msg)
 
-            return! receiveLoop actor
-        }
+      return! receiveLoop actor
+    }
 
-        new (name: string) = 
-            let id = Guid.NewGuid()
+  new (name: string) = new Receiver<'T>(name, [| new Mailbox.MailboxProtocolServer<'T>(name) |])
 
-            new Receiver<'T>(id, name, [| new MailboxActorProtocol<'T>(id, name) |])
+  member private __.Publish(newProtocolsF: ActorRef<'T> -> IProtocolServer<'T>[]) =
+    let mailboxProtocol = new Mailbox.MailboxProtocolServer<_>(name) :> IPrimaryProtocolServer<_>
+    let actorRef = new ActorRef<'T>(name, [| mailboxProtocol.Client |])
+    let newProtocols = newProtocolsF actorRef
+                       |> Array.append (protocols |> Seq.map (fun protocol -> protocol.Client.Factory)
+                                                  |> Seq.choose id
+                                                  |> Seq.map (fun factory -> factory.CreateServerInstance<_>(name, actorRef))
+                                                  |> Seq.toArray)
+                       |> Array.append [| mailboxProtocol |]
+                       
+    new Receiver<'T>(name, newProtocols) :> Actor<'T>
 
-        member private actor.Publish(newProtocolsF: ActorRef<'T> -> IActorProtocol<'T>[]) =
-            let newId = ActorUUID.NewGuid()
-            let mailboxProtocol = new MailboxActorProtocol<_>(newId, name)
-            let actorRef = new ActorRef<'T>(newId, name, [| mailboxProtocol |])
-            let newProtocols = newProtocolsF actorRef
-                               |> Array.append (protocols |> Seq.map (fun protocol -> protocol.Configuration) 
-                                                          |> Seq.choose id |> Seq.collect (fun conf -> conf.CreateProtocolInstances(actorRef)) 
-                                                          |> Seq.toArray)
-                               |> Array.append [| mailboxProtocol |]
+  member __.ReceiveEvent = receiveEvent.Publish
 
-            new Receiver<'T>(newId, name, newProtocols) :> Actor<'T>
+  override __.Rename(newName: string) =
+    //first check new name
+    if newName.Contains("/") then invalidArg "newName" "Receiver names must not contain '/'."
 
-        member r.ReceiveEvent = receiveEvent.Publish
+    let mailboxProtocol = new Mailbox.MailboxProtocolServer<_>(newName) :> IPrimaryProtocolServer<_>
+    let actorRef = new ActorRef<'T>(newName, [| mailboxProtocol.Client |])
 
-        override r.Rename(newName: string) =
-            //first check new name
-            if newName.Contains("/") then invalidArg "newName" "Receiver names must not contain '/'."
-
-            let newId = ActorUUID.NewGuid()
-            let mailboxProtocol = new MailboxActorProtocol<_>(newId, newName)
-            let actorRef = new ActorRef<'T>(newId, newName, [| mailboxProtocol |])
-
-            let newProtocols = protocols |> Array.map (fun protocol -> protocol.Configuration)
-                                         |> Array.choose id
-                                         |> Array.collect (fun conf -> conf.CreateProtocolInstances(actorRef))
-                                         |> Array.append [| mailboxProtocol |]
+    let newProtocols = protocols |> Array.map (fun protocol -> protocol.Client.Factory)
+                                 |> Array.choose id
+                                 |> Array.map (fun factory -> factory.CreateServerInstance(name, actorRef))
+                                 |> Array.append [| mailboxProtocol |]
             
-            new Receiver<'T>(newId, newName, newProtocols) :> Actor<'T>
+    new Receiver<'T>(newName, newProtocols) :> Actor<'T>
 
-        override r.Start() =
-            r.ReBind(receiveLoop)
+  override __.Start() = __.ReBind(receiveLoop)
 
-        override r.Publish(protocols': IActorProtocol<'T>[]) = 
-            r.Publish(fun _ -> protocols')
+  override __.Publish(protocols': IProtocolServer<'T>[]) = __.Publish(fun _ -> protocols')
 
-        override r.Publish(configurations: #seq<'U> when 'U :> IProtocolConfiguration) =
-            r.Publish(fun actorRef -> configurations |> Seq.collect (fun conf -> conf.CreateProtocolInstances(actorRef)) |> Seq.toArray)
-        
-    type ObservableActorProtocol<'T>(actorUUId: ActorUUID, actorName: string, observable: IObservable<'T>) as self =
-        let observationActor = Actor.empty()
+  override __.Publish(protocolFactories: #seq<'U> when 'U :> IProtocolFactory) =
+    __.Publish(fun actorRef -> protocolFactories |> Seq.map (fun factory -> factory.CreateServerInstance<'T>(name, actorRef)) |> Seq.toArray)
 
-        [<VolatileField>]
-        let mutable remover: IDisposable option = None
 
-        [<VolatileField>]
-        let mutable cancellationTokenSource = new CancellationTokenSource()
+module Observable =
 
-        let protocol = self :> IPrincipalActorProtocol<'T>
+  type ObservableProtocolClient<'T>(actorName: string, observableActorRef: ActorRef<'T>) =
+    interface IProtocolClient<'T> with
+      override __.ProtocolName = "observable"
+      override __.ActorId = new Mailbox.MailboxActorId(actorName) :> ActorId
+      override __.Uri = String.Empty
+      override __.Factory = None
+      override __.Post(msg: 'T) = observableActorRef.Post(msg)
+      override __.AsyncPost(msg: 'T) = observableActorRef.AsyncPost(msg)
+      override __.PostWithReply<'R>(msgF: IReplyChannel<'R> -> 'T, timeout: int) = observableActorRef.PostWithReply(msgF, timeout)
+      override __.TryPostWithReply<'R>(msgF: IReplyChannel<'R> -> 'T, timeout: int) = observableActorRef.TryPostWithReply(msgF, timeout)
 
-        interface IPrincipalActorProtocol<'T> with
 
-            member op.ProtocolName = "observable"
-            member op.Configuration = None
-            member op.MessageType = typeof<'T>
-            member op.ActorUUId = actorUUId
-            member op.ActorName = actorName
-            member op.ActorId = new MailboxActorId(actorUUId, actorName) :> ActorId
+  and ObservableProtocolServer<'T>(actorName: string, observable: IObservable<'T>) =
+    let observationActor = Actor.empty()
+    let actorId = new Mailbox.MailboxActorId(actorName)
+    let client = new ObservableProtocolClient<'T>(actorName, observationActor.Ref)
+    [<VolatileField>]
+    let mutable remover: IDisposable option = None
+    [<VolatileField>]
+    let mutable cancellationTokenSource = new CancellationTokenSource()
+
+    member __.Start(body: unit -> Async<unit>) =
+      match remover with
+      | None ->
+        observationActor.Start()
+        Async.Start(body(), cancellationTokenSource.Token)
+        remover <- Some <| observable.Subscribe observationActor.Ref.Post
+      | Some _ -> ()
+
+    member __.Stop() =
+      match remover with
+      | Some disposable ->
+        observationActor.Stop()
+        cancellationTokenSource.Cancel()
+        cancellationTokenSource <- new CancellationTokenSource()
+        disposable.Dispose()
+        remover <- None
+      | None -> ()
+
+    interface IPrimaryProtocolServer<'T> with
+      override __.ProtocolName = "observable"
+      override __.ActorId = actorId :> ActorId
+      override __.Client = client :> IProtocolClient<'T>
+      override __.Log = observationActor.Log
+      override __.Start() = invalidOp "Principal protocol; use the overload tha requires actor body."
+      override self.Stop() = self.Stop()
+      override __.PendingMessages = observationActor.PendingMessages
+      override __.Receive(timeout: int) = observationActor.Receive(timeout)
+      override __.TryReceive(timeout: int) = observationActor.TryReceive(timeout)
+      override self.Start(body: unit -> Async<unit>) = self.Start(body)
+      override __.Dispose() = __.Stop()
+
+
+module Receiver =
+  let create<'T> () = new Receiver<'T>(Guid.NewGuid().ToString())
+
+  let rename (name: string) (receiver: Receiver<'T>): Receiver<'T> = receiver.Rename(name) :?> Receiver<'T>
+
+  let publish (protocolFactories: #seq<'U> when 'U :> IProtocolFactory) (receiver: Receiver<'T>): Receiver<'T> = receiver.Publish(protocolFactories) :?> Receiver<'T>
+
+  let start (receiver: Receiver<'T>): Receiver<'T> =
+    receiver.Start()
+    receiver
+
+  let toObservable (receiver: Receiver<'T>): IObservable<'T> =
+    receiver.ReceiveEvent :> IObservable<'T>
+
+  let fromObservable (observable: IObservable<'T>): Receiver<'T> =
+    let name = Guid.NewGuid().ToString()
+
+    new Receiver<'T>(name, [| new Observable.ObservableProtocolServer<'T>(name, observable) |])
+
+  let forward (actor: Actor<'T>) (receiver: Receiver<'T>): Actor<'T> =
+    let rec forwardBehavior (self: Actor<'T>) =
+      async {
+        let! msg = self.Receive()
+
+        !actor <-- msg
+
+        return! forwardBehavior self
+      }
             
-            member op.CurrentQueueLength with get() = observationActor.CurrentQueueLength
+    let name = Guid.NewGuid().ToString()
 
-            member op.Log = observationActor.Log
+    new Actor<'T>(name, [| new Observable.ObservableProtocolServer<'T>(name, receiver.ReceiveEvent) |], forwardBehavior, [actor; receiver])
 
-            member op.Start() =
-                raise <| new InvalidOperationException("Principal Protocol; Use the overload that requires the actor's behavior.")
+  module Actor =
+    let bindOnObservable (name: string) (behavior: Actor<'T> -> Async<unit>) (observable: IObservable<'T>): Actor<'T> =
+      new Actor<'T>(name, [| new Observable.ObservableProtocolServer<'T>(name, observable) |], behavior, [])
 
-            member op.Start(body: unit -> Async<unit>) =
-                match remover with
-                | None ->
-                    observationActor.Start()
-                    Async.Start(body(), cancellationTokenSource.Token)
-                    remover <- Some( observable.Subscribe (!observationActor).Post )
-                | Some _ -> ()
-
-            member op.Stop() =
-                match remover with
-                | Some disposable ->
-                    observationActor.Stop()
-                    cancellationTokenSource.Cancel()
-                    cancellationTokenSource <- new CancellationTokenSource()
-                    disposable.Dispose()
-                    remover <- None
-                | None -> ()
-
-            member op.Receive(timeout: int) = observationActor.Receive(timeout)
-
-            member op.Receive() = protocol.Receive(-1)
-
-            member op.TryReceive(timeout: int) = observationActor.TryReceive(timeout)
-
-            member op.TryReceive() = protocol.TryReceive(-1)
-
-            member op.Scan(scanner: 'T -> Async<'U> option, timeout: int): Async<'U> =
-                observationActor.Scan(scanner, timeout)
-
-            member op.Scan(scanner: 'T -> Async<'U> option) = protocol.Scan(scanner, -1)
-
-            member op.TryScan(scanner: 'T -> Async<'U> option, timeout: int): Async<'U option> =
-                observationActor.TryScan(scanner, timeout)
-
-            member op.TryScan(scanner: 'T -> Async<'U> option) = protocol.TryScan(scanner, -1)
-
-            member op.Post(msg: 'T) = !observationActor <-- msg
-            member op.PostAsync(msg: 'T) = observationActor.Ref.PostAsync(msg)
-
-            member op.PostWithReply<'R>(msgBuilder: IReplyChannel<'R> -> 'T): Async<'R> =
-                !observationActor <!- msgBuilder
-
-            member op.PostWithReply<'R>(msgBuilder: IReplyChannel<'R> -> 'T, timeout: int): Async<'R> =
-                observationActor.Ref.PostWithReply(msgBuilder, timeout)
-
-            member op.TryPostWithReply<'R>(msgBuilder: IReplyChannel<'R> -> 'T, timeout: int): Async<'R option> =
-                observationActor.Ref.TryPostWithReply(msgBuilder, timeout)
+    let bindOnReceiver (name: string) (behavior: Actor<'T> -> Async<unit>) (receiver: Receiver<'T>): Actor<'T> =
+      receiver |> toObservable |> bindOnObservable name behavior
 
 
-    module Receiver =
-        let create<'T> () = new Receiver<'T>("")
+  module Observable =
+    let toReceiver (observable: IObservable<'T>): Receiver<'T> = fromObservable observable
 
-        let rename (name: string) (receiver: Receiver<'T>): Receiver<'T> =
-            receiver.Rename(name) :?> Receiver<'T>
-
-        let publish (protocolConfs: #seq<'U> when 'U :> IProtocolConfiguration) (receiver: Receiver<'T>): Receiver<'T> =
-            receiver.Publish(protocolConfs) :?> Receiver<'T>
-
-        let start (receiver: Receiver<'T>): Receiver<'T> =
-            receiver.Start()
-            receiver
-
-        let toObservable (receiver: Receiver<'T>): IObservable<'T> =
-            receiver.ReceiveEvent :> IObservable<'T>
-
-        let fromObservable (observable: IObservable<'T>): Receiver<'T> =
-            let uuid = Guid.NewGuid()
-
-            new Receiver<'T>(uuid, "", [| new ObservableActorProtocol<'T>(uuid, "", observable) |])
-
-        let forward (actor: Actor<'T>) (receiver: Receiver<'T>): Actor<'T> =
-            let rec forwardBehavior (self: Actor<'T>) = async {
-                let! msg = self.Receive()
-
-                !actor <-- msg
-
-                return! forwardBehavior self
-            }
-            
-            let uuid = Guid.NewGuid()
-
-            new Actor<'T>(uuid, "", [| new ObservableActorProtocol<'T>(uuid, "", receiver.ReceiveEvent) |], forwardBehavior, [actor; receiver])
-
-        module Actor =
-            let bindOnObservable (name: string) (behavior: Actor<'T> -> Async<unit>) (observable: IObservable<'T>): Actor<'T> =
-                let uuid = Guid.NewGuid()
-
-                new Actor<'T>(uuid, name, [| new ObservableActorProtocol<'T>(uuid, "", observable) |], behavior)
-
-            let bindOnReceiver (name: string) (behavior: Actor<'T> -> Async<unit>) (receiver: Receiver<'T>): Actor<'T> =
-                receiver |> toObservable |> bindOnObservable name behavior
-
-
-        module Observable = 
-            let toReceiver (observable: IObservable<'T>): Receiver<'T> =
-                fromObservable observable
-
-            let forward (actor: Actor<'T>) (observable: IObservable<'T>): Actor<'T> =
-                observable |> toReceiver |> forward actor
+    let forward (actor: Actor<'T>) (observable: IObservable<'T>): Actor<'T> = observable |> toReceiver |> forward actor
         

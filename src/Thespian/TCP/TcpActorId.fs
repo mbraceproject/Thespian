@@ -21,13 +21,13 @@ type TcpActorId(actorName: string, protocolName: string, address: Address) =
   member __.ProtocolName = protocolName
   member __.Address = address
         
-  override actorId.CompareTo(otherActorId: ActorId): int =
+  override self.CompareTo(otherActorId: ActorId): int =
     match otherActorId with
     | :? TcpActorId as otherId ->
-      compareOn (fun (aid: TcpActorId) -> (aid.ProtocolName + aid.Name), aid.Address) actorId otherId
-    | _ -> actorId.ToString().CompareTo(otherActorId.ToString())
+      compareOn (fun (aid: TcpActorId) -> (aid.ProtocolName + aid.Name), aid.Address) self otherId
+    | _ -> self.ToString().CompareTo(otherActorId.ToString())
 
-  override actorId.ToString() = sprintf "%s/%O/%s" protocolName address actorName
+  override __.ToString() = sprintf "%s/%O/%s" protocolName address actorName
 
   member __.BinarySerialize(writer: BinaryWriter) =
     //actorName: string

@@ -192,7 +192,7 @@ module Message =
     }
 
   module ProtocolRequest =
-    let inline serialize ((msgId, actorId, payload): ProtocolRequest) =
+    let serialize ((msgId, actorId, payload): ProtocolRequest) =
       use memoryStream = new MemoryStream()
       use writer = new BinaryWriter(memoryStream)
       //msgId: GUID (16 bytes)
@@ -204,7 +204,7 @@ module Message =
       writer.WriteByteArray(payload)
       memoryStream.ToArray()
 
-    let inline deserialize (reader: BinaryReader) =
+    let deserialize (reader: BinaryReader) =
       //msgId: GUID (16 bytes)
       let msgIdBinary = reader.ReadBytes(16)
       let msgId = new MsgId(msgIdBinary)
@@ -215,26 +215,26 @@ module Message =
       let payload = reader.ReadByteArray()
       (msgId, actorId, payload): ProtocolRequest
 
-    let inline tryRead (stream: ProtocolNetworkStream) (timeout: int): Async<ProtocolRequest option> = tryReadMessage stream deserialize timeout
-    let inline read (stream: ProtocolNetworkStream): Async<ProtocolRequest> = readMessage stream deserialize
+    let tryRead (stream: ProtocolNetworkStream) (timeout: int): Async<ProtocolRequest option> = tryReadMessage stream deserialize timeout
+    let read (stream: ProtocolNetworkStream): Async<ProtocolRequest> = readMessage stream deserialize
 
-    let inline tryWrite (stream: ProtocolNetworkStream) (protocolRequest: ProtocolRequest) (timeout: int): Async<unit option> = tryWriteMessage stream serialize protocolRequest timeout
-    let inline write (stream: ProtocolNetworkStream) (protocolRequest: ProtocolRequest): Async<unit> = writeMessage stream serialize protocolRequest
+    let tryWrite (stream: ProtocolNetworkStream) (protocolRequest: ProtocolRequest) (timeout: int): Async<unit option> = tryWriteMessage stream serialize protocolRequest timeout
+    let write (stream: ProtocolNetworkStream) (protocolRequest: ProtocolRequest): Async<unit> = writeMessage stream serialize protocolRequest
 
   module ProtocolResponse =
-    let inline serialize (protocolResponse: ProtocolResponse) =
+    let serialize (protocolResponse: ProtocolResponse) =
       use memoryStream = new MemoryStream()
       use writer = new BinaryWriter(memoryStream)
       protocolResponse.BinarySerialize(writer)      
       memoryStream.ToArray()
 
-    let inline deserialize (reader: BinaryReader) = ProtocolResponse.BinaryDeserialize(reader)
+    let deserialize (reader: BinaryReader) = ProtocolResponse.BinaryDeserialize(reader)
 
-    let inline tryRead (stream: ProtocolNetworkStream) (timeout: int): Async<ProtocolResponse option> = tryReadMessage stream deserialize timeout
-    let inline read (stream: ProtocolNetworkStream): Async<ProtocolResponse> = readMessage stream deserialize
+    let tryRead (stream: ProtocolNetworkStream) (timeout: int): Async<ProtocolResponse option> = tryReadMessage stream deserialize timeout
+    let read (stream: ProtocolNetworkStream): Async<ProtocolResponse> = readMessage stream deserialize
 
-    let inline tryWrite (stream: ProtocolNetworkStream) (protocolResponse: ProtocolResponse) (timeout: int): Async<unit option> = tryWriteMessage stream serialize protocolResponse timeout
-    let inline write (stream: ProtocolNetworkStream) (protocolResponse: ProtocolResponse): Async<unit> = writeMessage stream serialize protocolResponse
+    let tryWrite (stream: ProtocolNetworkStream) (protocolResponse: ProtocolResponse) (timeout: int): Async<unit option> = tryWriteMessage stream serialize protocolResponse timeout
+    let write (stream: ProtocolNetworkStream) (protocolResponse: ProtocolResponse): Async<unit> = writeMessage stream serialize protocolResponse
 
 
 type ProtocolStream(msgId: MsgId, stream: ProtocolNetworkStream, ?readTimeout: int, ?writeTimeout: int) =

@@ -84,7 +84,6 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
       //first check new name
       if newName.Contains("/") then invalidArg "newName" "Actor names must not contain '/'."
 
-      let newId = ActorUUID.NewGuid()
       let mailboxProtocol = new Mailbox.MailboxProtocolServer<_>(newName) :> IPrimaryProtocolServer<_>
       let actorRef = new ActorRef<'T>(newName, [| mailboxProtocol.Client |])
 

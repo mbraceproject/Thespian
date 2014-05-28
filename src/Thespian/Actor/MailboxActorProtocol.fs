@@ -85,7 +85,7 @@ type MailboxProtocolServer<'T>(actorName: string) =
         match mailboxProcessor with
         | Some mailbox -> mailbox.CurrentQueueLength
         | None -> 0
-    override __.Start() = invalidOp "Principal protocol; Use the overload that requires the actor body."
+    override __.Start() = invalidOp "Principal protocol; use the overload that requires the actor body."
     override self.Stop() = self.Stop()
 
     override __.Receive(timeout: int) =
@@ -120,6 +120,7 @@ and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
     override __.ProtocolName = srv.ProtocolName
     override __.Factory = None
     override __.ActorId = srv.ActorId
+    override __.Uri = String.Empty
     override __.Post(message: 'T) = post message
     override __.AsyncPost(message: 'T) = async { return post message }
     override __.PostWithReply(messageF: IReplyChannel<'R> -> 'T, timeout: int) =
