@@ -14,12 +14,12 @@ namespace Nessos.Thespian
 
         let transact f =
             let result = ref Unchecked.defaultof<_>
-            let f' t = let r,t' = f t in result := r ; t
+            let f' t = let t',r = f t in result := r ; t'
             swap f' ; result.Value
         
         member self.Value with get() : 'T = !refCell
         member self.Swap (f : 'T -> 'T) : unit = swap f
-        member self.Transact(f : 'T -> 'R * 'T) : 'R = transact f
+        member self.Transact(f : 'T -> 'T * 'R) : 'R = transact f
         member self.Set (t : 'T) = swap (fun _ -> t)
 
 
