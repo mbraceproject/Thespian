@@ -128,6 +128,8 @@ type TcpListenerPool() =
   [<VolatileField>]
   static let mutable hostname = Dns.GetHostName()
 
+  static let initDefaultIfEmpty() = if tcpListeners.IsEmpty then TcpListenerPool.RegisterListener(new IPEndPoint(IPAddress.Any, 0))
+
   //Register a listener on any address an a specific port
   static member RegisterListener(port: int, ?backLog: int, ?concurrentAccepts: int) =
     TcpListenerPool.RegisterListener(new IPEndPoint(IPAddress.Any, port), ?backLog = backLog, ?concurrentAccepts = concurrentAccepts)
@@ -140,6 +142,7 @@ type TcpListenerPool() =
 
   //General listener allocation
   static member GetListeners(ipEndPoint: IPEndPoint) =
+    initDefaultIfEmpty()
     let initialCandidates = tcpListeners |> Seq.map (fun kv -> kv.Value)
     
     let addressFilteredCandidates =
