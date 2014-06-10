@@ -43,6 +43,7 @@ let tags = "actors, agents, message-passing, distributed"
 let solutionFile  = "Thespian"
 // Pattern specifying assemblies to be tested using NUnit
 let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
+let testAssembliesDebug = "tests/**/bin/Debug/*Tests*.dll"
 
 // Git configuration (used for publishing documentation in gh-pages branch)
 // The profile where the project is posted 
@@ -98,11 +99,26 @@ Target "Build" (fun _ ->
     |> ignore
 )
 
+Target "DebugBuild" (fun _ ->
+    !! (solutionFile + "*.sln")
+    |> MSBuildDebug "" "Build"
+    |> ignore
+)
+
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner
 
 Target "RunTests" (fun _ ->
     !! testAssemblies 
+    |> NUnit (fun p ->
+        { p with
+            DisableShadowCopy = true
+            TimeOut = TimeSpan.FromMinutes 20.
+            OutputFile = "TestResults.xml" })
+)
+
+Target "RunTestsDebug" (fun _ ->
+    !! testAssembliesDebug
     |> NUnit (fun p ->
         { p with
             DisableShadowCopy = true
@@ -154,6 +170,8 @@ Target "ReleaseDocs" (fun _ ->
 
 Target "Release" DoNothing
 
+Target "Debug" DoNothing
+
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
 
@@ -172,6 +190,11 @@ Target "All" DoNothing
 //  ==> "ReleaseDocs"
   ==> "NuGet"
   ==> "Release"
+
+"DebugBuild"
+  ==> "RunTestsDebug"
+  ==> "Debug"
+
 
 //RunTargetOrDefault "Release"
 RunTargetOrDefault "All"
