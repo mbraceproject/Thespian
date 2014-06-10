@@ -15,6 +15,12 @@ type Actor() =
   abstract Start: unit -> unit
   abstract Stop: unit -> unit
 
+type IPrimaryProtocolFactory =
+  abstract Create: string -> IPrimaryProtocolServer<'T>
+
+type MailboxPrimaryProtocolFactory() =
+  interface IPrimaryProtocolFactory with override __.Create(actorName: string) = new Mailbox.MailboxProtocolServer<'T>(actorName) :> IPrimaryProtocolServer<'T>
+
 type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) as self =
   inherit Actor()
 
@@ -46,13 +52,19 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
         self.Stop()
     }
 
-  new (name: string, behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) = new Actor<'T>(name, [| new Mailbox.MailboxProtocolServer<_>(name) |], behavior, ?linkedActors = linkedActors)
+  [<VolatileField>]
+  static let mutable primaryProtocolFactory = new MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory
+
+  new (name: string, behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) = new Actor<'T>(name, [| primaryProtocolFactory.Create name |], behavior, ?linkedActors = linkedActors)
   new (behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) = new Actor<'T>(String.Empty, behavior, ?linkedActors = linkedActors)
   new (otherActor: Actor<'T>) = new Actor<'T>(otherActor.Name, otherActor.Protocols, otherActor.Behavior, otherActor.LinkedActors)
 
   member private __.Protocols = protocols
   member private __.Behavior = behavior
   member private __.LinkedActors = linkedActors
+
+  static member DefaultPrimaryProtocolFactory with get() = primaryProtocolFactory
+                                               and set f = primaryProtocolFactory <- f
 
   member __.Name = name
 
@@ -144,16 +156,6 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
       currentBehavior <- behavior
       self.Start(behavior)
 
-  override self.Equals(other: obj) =
-      match other with
-      | :? Actor<'T> as otherActor -> self.Ref.Equals(otherActor.Ref)
-      | _ -> false
-
-  override self.GetHashCode() = hash name
-
-  interface IComparable with
-      member self.CompareTo(other: obj) = compareOn (fun (actor: Actor<'T>) -> actor.Name) self other
-
   interface IDisposable with override self.Dispose() = self.Stop()
 
 
@@ -180,7 +182,7 @@ module Operators =
 module Actor =
   open Nessos.Thespian.Utils
 
-  let inline bind (body: Actor<'T> -> Async<unit>) = new Actor<'T>(String.Empty, body)
+  let inline bind (body: Actor<'T> -> Async<unit>) = let name = Guid.NewGuid().ToString() in new Actor<'T>(name, body)
 
   let inline empty(): Actor<'T> = bind (fun _ -> async.Zero())
   let inline sink(): Actor<'T> = bind (fun actor -> actor.Receive() |> Async.Ignore)

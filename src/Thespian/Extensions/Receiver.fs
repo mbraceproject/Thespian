@@ -3,7 +3,7 @@ namespace Nessos.Thespian
 open System
 open System.Threading
 
-type Receiver<'T> internal (name: string, protocols: IProtocolServer<'T>[]) =
+type Receiver<'T>(name: string, protocols: IProtocolServer<'T>[]) =
   inherit Actor<'T>(name, protocols, fun _ -> async.Zero())
 
   let receiveEvent = new Event<'T>()
@@ -17,7 +17,7 @@ type Receiver<'T> internal (name: string, protocols: IProtocolServer<'T>[]) =
       return! receiveLoop actor
     }
 
-  new (name: string) = new Receiver<'T>(name, [| new Mailbox.MailboxProtocolServer<'T>(name) |])
+  new (name: string) = new Receiver<'T>(name, [| Actor.DefaultPrimaryProtocolFactory.Create<'T>(name) |])
 
   member private __.Publish(newProtocolsF: ActorRef<'T> -> IProtocolServer<'T>[]) =
     let mailboxProtocol = new Mailbox.MailboxProtocolServer<_>(name) :> IPrimaryProtocolServer<_>
