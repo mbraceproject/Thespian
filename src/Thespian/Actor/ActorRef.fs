@@ -144,7 +144,7 @@ and [<Serializable>] ActorRef<'T> =
   member private self.ProtocolInstances = self.protocols
   member private self.ActorIdSet = self.ProtocolInstances |> Seq.map (fun protocol -> protocol.ActorId) |> Set.ofSeq
 
-  member self.GetUris() = self.protocols |> Seq.map (fun protocol -> protocol.Uri) |> Seq.toList
+  member self.GetUris() = self.protocols |> Seq.map (fun protocol -> protocol.Uri) |> Seq.filter (fun u -> u <> String.Empty) |> Seq.toList
 
   override self.Id = self.defaultProtocol.ActorId
 

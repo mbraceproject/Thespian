@@ -358,9 +358,20 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
     actor'.Ref.MessageType |> should equal typeof<TestMessage<int, int>>
 
   [<Test>]
-  member self.``ActorRef.Protocols``() =
+  member self.``ActorRef.Protocols on primary only``() =
     use actor = Actor.bind PrimitiveBehaviors.nill
     actor.Ref.Protocols.Length |> should equal 1
     let primaryProtocolName = self.PrimaryProtocolFactory.Create<unit>("test").ProtocolName
     actor.Ref.Protocols.[0] |> should equal primaryProtocolName
 
+  [<Test>]
+  member __.``ActorRef protocol factories on primary only``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill
+    actor.Ref.ProtocolFactories |> should equal Array.empty
+
+  [<Test>]
+  member __.``ActorRef GetUris on primary only``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill
+    for uri in actor.Ref.GetUris() do
+      printfn "%A" uri
+    actor.Ref.GetUris() |> should equal List.empty
