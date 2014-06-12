@@ -47,7 +47,9 @@ type Receiver<'T>(name: string, protocols: IProtocolServer<'T>[]) =
             
     new Receiver<'T>(newName, newProtocols) :> Actor<'T>
 
-  override __.Start() = __.ReBind(receiveLoop)
+  override __.Start() =
+    __.ReBind(receiveLoop)
+    base.Start()
 
   override __.Publish(protocols': IProtocolServer<'T>[]) = __.Publish(fun _ -> protocols')
 
