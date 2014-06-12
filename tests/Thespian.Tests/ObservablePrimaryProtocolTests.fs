@@ -17,4 +17,4 @@ module ObservableTestUtils =
 
 [<TestFixture>]
 type ``Observable Primary Protocol Tests``() =
-  inherit BaseTests(new ObservableTestUtils.ProtocolFactory() :> IPrimaryProtocolFactory)
+  inherit PrimaryProtocolTests(new ObservableTestUtils.ProtocolFactory() :> IPrimaryProtocolFactory)

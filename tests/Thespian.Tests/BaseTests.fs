@@ -8,7 +8,7 @@ open Nessos.Thespian
 open Nessos.Thespian.Tests.TestDefinitions
 
 [<AbstractClass>]
-type BaseTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
+type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
   let mutable oldPrimaryProtocolServerFactory = Unchecked.defaultof<IPrimaryProtocolFactory>
 
   abstract PrimaryProtocolFactory: IPrimaryProtocolFactory
@@ -108,7 +108,7 @@ type BaseTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
     !actor <-- TestAsync()
 
   [<Test>]
-  member __.``Post to started Actor and the to stopped``() =
+  member __.``Post to started Actor and then post to stopped``() =
     let actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
 
     !actor <-- TestAsync()
@@ -116,4 +116,100 @@ type BaseTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
     actor.Stop()
 
     TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
-    
+
+  [<Test>]
+  [<ExpectedException(typeof<ActorInactiveException>)>]
+  member __.``Post with reply to stopped actor``() =
+    let actor = Actor.bind PrimitiveBehaviors.nill
+
+    !actor <!= fun ch -> TestSync(ch, ())
+
+  [<Test>]
+  member __.``Post with reply to started Actor then post with reply to stopped``() =
+    let actor = Actor.bind PrimitiveBehaviors.consumeOne |> Actor.start
+
+    !actor <!= fun ch -> TestSync(ch, ())
+
+    actor.Stop()
+
+    TestDelegate(fun () -> !actor <!= fun ch -> TestSync(ch, ())) |> should throw typeof<ActorInactiveException>
+
+  [<Test>]
+  member __.``Post to started actor then post with reply to stopped``() =
+    let actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+
+    !actor <-- TestAsync()
+
+    actor.Stop()
+
+    TestDelegate(fun () -> !actor <!= fun ch -> TestSync(ch, ())) |> should throw typeof<ActorInactiveException>
+
+  [<Test>]
+  member __.``Post with reply to started actor then post to stopped``() =
+    let actor = Actor.bind PrimitiveBehaviors.consumeOne |> Actor.start
+
+    !actor <!= fun ch -> TestSync(ch, ())
+
+    actor.Stop()
+
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+
+  [<Test>]
+  member __.``Primitive behavior self stop``() =
+    use actor = Actor.bind PrimitiveBehaviors.selfStop |> Actor.start
+
+    !actor <!= fun ch -> TestSync(ch, ())
+
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+
+  [<Test>]
+  member __.``Self stop requires sync message``() =
+    use actor = Actor.bind PrimitiveBehaviors.selfStop |> Actor.start
+
+    !actor <-- TestAsync()
+
+    try !actor <-- TestAsync() with :? ActorInactiveException -> ()
+
+  [<Test>]
+  member __.``Call start multiple times``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+
+    actor.Start()
+    actor.Start()
+
+    !actor <-- TestAsync()
+
+    actor.Start()
+
+    !actor <-- TestAsync()
+
+  [<Test>]
+  member __.``Call stop multiple times``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+
+    !actor <-- TestAsync()
+
+    actor.Stop()
+    actor.Stop()
+
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+
+    actor.Stop()
+
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+
+  [<Test>]
+  member __.``Actor start/stop``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+    !actor <-- TestAsync()
+
+    actor.Stop()
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+
+    actor.Start()
+    !actor <-- TestAsync()
+
+    actor.Stop()
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+
+
