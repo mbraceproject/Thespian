@@ -108,10 +108,7 @@ and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
   let protectMailbox f =
     match server.Mailbox with
     | Some mailbox -> f mailbox
-    | None ->
-      //TODO!! Change this to a communication exception (DeliveryExcpetion)
-      //with inner exception ActorInactiveException
-      invalidOp "Not started"
+    | None -> raise <| new ActorInactiveException("The target actor is stopped.", srv.ActorId)
 
   let mailboxPost message (mailbox: MailboxProcessor<_>) = mailbox.Post message
   let post = protectMailbox << mailboxPost

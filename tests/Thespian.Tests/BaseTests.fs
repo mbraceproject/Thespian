@@ -87,4 +87,33 @@ type BaseTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
   member __.``Actor.Name = ActorRef.Id.Name``() =
     let actor = Actor.bind PrimitiveBehaviors.nill
     actor.Name |> should equal actor.Ref.Id.Name
+
+  [<Test>]
+  member __.``Simple start/stop``() =
+    let actor = Actor.bind PrimitiveBehaviors.nill
+    actor.Start()
+    actor.Stop()
+    ()
+
+  [<Test>]
+  member __.``use binding on Actor.start``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start in ()
+
+
+  [<Test>]
+  [<ExpectedException(typeof<ActorInactiveException>)>]
+  member __.``Post to stopped Actor``() =
+    let actor = Actor.bind PrimitiveBehaviors.nill
+
+    !actor <-- TestAsync()
+
+  [<Test>]
+  member __.``Post to started Actor and the to stopped``() =
+    let actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+
+    !actor <-- TestAsync()
+
+    actor.Stop()
+
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
     
