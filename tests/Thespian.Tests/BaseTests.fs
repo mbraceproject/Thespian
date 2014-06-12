@@ -278,7 +278,7 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
   member __.``Default actor name is guid string``() =
     use actor = Actor.bind PrimitiveBehaviors.nill
 
-    let b, g = Guid.TryParse(actor.Name)
+    let b, _ = Guid.TryParse(actor.Name)
 
     b |> should equal true
 
@@ -317,3 +317,34 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
     actor.Start()
     !actor <-- TestAsync()
     actor.PendingMessages |> should equal 1
+
+  [<Test>]
+  member __.``Actor.ReBind``() =
+    let actor = Actor.bind PrimitiveBehaviors.nill
+    actor.ReBind(PrimitiveBehaviors.consume)
+    use actor = Actor.start actor
+
+    !actor <-- TestAsync()
+    !actor <!= fun ch -> TestSync(ch, ())
+
+  [<Test>]
+  member __.``Actor.ReBind on started actor``() =
+    use actor = Actor.bind (PrimitiveBehaviors.stateful 0) |> Actor.start
+    !actor <-- TestAsync 42
+    ignore (!actor <!= fun ch -> TestSync(ch, 4242))
+
+    actor.ReBind(PrimitiveBehaviors.stateful 1)
+    let s = !actor <!= fun ch -> TestSync(ch, 42)
+
+    s |> should equal 1
+
+  [<Test>]
+  member __.``Actor.ReBind and Actor.PendingMessages``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+    !actor <-- TestAsync()
+    !actor <-- TestAsync()
+    actor.PendingMessages |> should equal 2
+
+    actor.ReBind(PrimitiveBehaviors.nill)
+    actor.PendingMessages |> should equal 0
+

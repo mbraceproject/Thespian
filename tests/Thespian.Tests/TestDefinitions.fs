@@ -19,6 +19,14 @@ module PrimitiveBehaviors =
       | TestAsync _ -> ()
       | TestSync(R reply, _) -> reply <| Value()
     }
+  let rec consume (self: Actor<TestMessage<unit>>) =
+    async {
+      let! m = self.Receive()
+      match m with
+      | TestAsync() -> ()
+      | TestSync(R reply, _) -> reply <| Value()
+      return! consume self
+    }
   let selfStop (self: Actor<TestMessage<unit>>) =
     async {
       let! m = self.Receive()

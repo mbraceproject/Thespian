@@ -152,9 +152,12 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
 
   abstract ReBind: (Actor<'T> -> Async<unit>) -> unit
   default self.ReBind(behavior: Actor<'T> -> Async<unit>) =
+    if isStarted then
       self.Stop()
       currentBehavior <- behavior
       self.Start(behavior)
+    else
+      currentBehavior <- behavior
 
   interface IDisposable with override self.Dispose() = self.Stop()
 
