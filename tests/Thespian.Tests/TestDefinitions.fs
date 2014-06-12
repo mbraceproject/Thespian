@@ -53,3 +53,11 @@ module PrimitiveBehaviors =
       | TestSync(R reply, _) -> reply nothing; failwith "Dead sync"
       | _ -> return! failing self
     }
+
+module Behaviors =
+  let refCell (cell: 'T ref) (m: TestMessage<'T, 'T>) =
+    async {
+      match m with
+      | TestAsync s -> cell := s
+      | TestSync(R reply, _) -> reply (Value cell.Value)
+    }

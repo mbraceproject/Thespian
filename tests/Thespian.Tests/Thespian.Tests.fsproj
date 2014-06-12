@@ -61,6 +61,9 @@
     <Compile Include="BaseTests.fs" />
     <Compile Include="MailboxPrimaryProtocolTests.fs" />
     <Compile Include="ObservablePrimaryProtocolTests.fs" />
+    <Compile Include="CommunicationTests.fs" />
+    <Compile Include="InMemoryCommunicationTests.fs" />
+    <Compile Include="UtcpCommunicationTests.fs" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
