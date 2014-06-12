@@ -212,4 +212,108 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
     actor.Stop()
     TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
 
+  [<Test>]
+  member __.``Rename actor``() =
+    let actor = new Actor<TestMessage<unit>>("old", PrimitiveBehaviors.nill)
 
+    actor.Name |> should equal "old"
+
+    let actor' = actor.Rename("new")
+
+    actor.Name |> should equal "old"
+
+    actor'.Name |> should equal "new"
+
+  [<Test>]
+  member __.``Rename actor after start``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+
+    let actor' = Actor.rename "new" actor
+    
+    actor'.Name |> should equal "new"
+
+
+  [<Test>]
+  member __.``Rename actor gives different actors``() =
+    use actor = new Actor<_>("old", PrimitiveBehaviors.stateful 0) |> Actor.start
+    use actor' = actor |> Actor.rename "new" |> Actor.start
+
+    actor.Ref |> should not' (equal actor'.Ref)
+
+    !actor <-- TestAsync 42
+
+    let s = !actor' <!= fun ch -> TestSync(ch, 4242)
+    s |> should equal 0
+    let s' = !actor <!= fun ch -> TestSync(ch, 0)
+    s' |> should equal 42
+    let s'' = !actor' <!= fun ch -> TestSync(ch, 0)
+    s'' |> should equal 4242
+
+  [<Test>]
+  member __.``Actor.rename and start/stop``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+    use actor' = actor |> Actor.rename "new" |> Actor.start
+
+    !actor <-- TestAsync()
+    !actor' <-- TestAsync()
+
+    actor.Stop()
+
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+    !actor' <-- TestAsync()
+
+    actor'.Stop()
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+    TestDelegate(fun () -> !actor' <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+
+    actor.Start()
+    !actor <-- TestAsync()
+    TestDelegate(fun () -> !actor' <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+
+    actor'.Start()
+    !actor <-- TestAsync()
+    !actor' <-- TestAsync()
+
+  [<Test>]
+  member __.``Default actor name is guid string``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill
+
+    let b, g = Guid.TryParse(actor.Name)
+
+    b |> should equal true
+
+
+  [<Test>]
+  member __.``Actor.PendingMessages = unprocessed messages``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+    actor.PendingMessages |> should equal 0
+
+    !actor <-- TestAsync()
+    actor.PendingMessages |> should equal 1
+
+    !actor <-- TestAsync()
+    actor.PendingMessages |> should equal 2
+
+    !actor <-- TestAsync()
+    actor.PendingMessages |> should equal 3
+
+  [<Test>]
+  member __.``Actor.PendingMessages and Actor.start/stop``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+    actor.PendingMessages |> should equal 0
+
+    !actor <-- TestAsync()
+    actor.PendingMessages |> should equal 1
+
+    !actor <-- TestAsync()
+    actor.PendingMessages |> should equal 2
+
+    !actor <-- TestAsync()
+    actor.PendingMessages |> should equal 3
+
+    actor.Stop()
+    actor.PendingMessages |> should equal 0
+
+    actor.Start()
+    !actor <-- TestAsync()
+    actor.PendingMessages |> should equal 1

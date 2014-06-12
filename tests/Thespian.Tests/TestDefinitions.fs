@@ -26,3 +26,10 @@ module PrimitiveBehaviors =
       | TestSync(R reply, _) -> reply <| Value(); self.Stop()
       | _ -> self.Stop()
     }
+  let rec stateful (s: 'S) (self: Actor<TestMessage<'S, 'S>>) =
+    async {
+      let! m = self.Receive()
+      match m with
+      | TestAsync s' -> return! stateful s' self
+      | TestSync(R reply, s') -> reply (Value s); return! stateful s' self
+    }
