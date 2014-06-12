@@ -415,3 +415,9 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
   [<ExpectedException(typeof<ArgumentException>)>]
   member __.``Actor construct with invalid name``() =
     new Actor<_>("foo/bar", PrimitiveBehaviors.nill) |> ignore
+
+  [<Test>]
+  [<ExpectedException(typeof<TimeoutException>)>]
+  member __.``Actor.Receive with timeout``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+    actor.Receive(100) |> Async.RunSynchronously |> ignore
