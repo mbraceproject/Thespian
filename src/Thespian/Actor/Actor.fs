@@ -5,8 +5,21 @@ open System.Threading
 
 open Nessos.Thespian.Utils
 
+
+type IPrimaryProtocolFactory =
+  abstract Create: string -> IPrimaryProtocolServer<'T>
+
+type MailboxPrimaryProtocolFactory() =
+  interface IPrimaryProtocolFactory with override __.Create(actorName: string) = new Mailbox.MailboxProtocolServer<'T>(actorName) :> IPrimaryProtocolServer<'T>
+
 [<AbstractClass>]
 type Actor() =
+  [<VolatileField>]
+  static let mutable primaryProtocolFactory = new MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory
+
+  static member DefaultPrimaryProtocolFactory with get() = primaryProtocolFactory
+                                               and set f = primaryProtocolFactory <- f
+  
   abstract Log: IEvent<Log>
   abstract LogEvent: LogLevel * 'E -> unit
   abstract LogInfo: 'I -> unit
@@ -14,12 +27,6 @@ type Actor() =
   abstract LogError: exn -> unit
   abstract Start: unit -> unit
   abstract Stop: unit -> unit
-
-type IPrimaryProtocolFactory =
-  abstract Create: string -> IPrimaryProtocolServer<'T>
-
-type MailboxPrimaryProtocolFactory() =
-  interface IPrimaryProtocolFactory with override __.Create(actorName: string) = new Mailbox.MailboxProtocolServer<'T>(actorName) :> IPrimaryProtocolServer<'T>
 
 type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) as self =
   inherit Actor()
@@ -52,19 +59,13 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
         self.Stop()
     }
 
-  [<VolatileField>]
-  static let mutable primaryProtocolFactory = new MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory
-
-  new (name: string, behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) = new Actor<'T>(name, [| primaryProtocolFactory.Create name |], behavior, ?linkedActors = linkedActors)
+  new (name: string, behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) = new Actor<'T>(name, [| Actor.DefaultPrimaryProtocolFactory.Create name |], behavior, ?linkedActors = linkedActors)
   new (behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) = new Actor<'T>(String.Empty, behavior, ?linkedActors = linkedActors)
   new (otherActor: Actor<'T>) = new Actor<'T>(otherActor.Name, otherActor.Protocols, otherActor.Behavior, otherActor.LinkedActors)
 
   member private __.Protocols = protocols
   member private __.Behavior = behavior
   member private __.LinkedActors = linkedActors
-
-  static member DefaultPrimaryProtocolFactory with get() = primaryProtocolFactory
-                                               and set f = primaryProtocolFactory <- f
 
   member __.Name = name
 

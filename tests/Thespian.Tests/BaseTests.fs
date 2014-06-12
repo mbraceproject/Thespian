@@ -9,18 +9,12 @@ open Nessos.Thespian.Tests.TestDefinitions
 
 [<AbstractClass>]
 type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
-  let mutable oldPrimaryProtocolServerFactory = Unchecked.defaultof<IPrimaryProtocolFactory>
-
   abstract PrimaryProtocolFactory: IPrimaryProtocolFactory
   default __.PrimaryProtocolFactory = primaryProtocolFactory
 
-  [<SetUp>]
+  [<TestFixtureSetUp>]
   member self.SetUp() =
-    oldPrimaryProtocolServerFactory <- Actor.DefaultPrimaryProtocolFactory
     Actor.DefaultPrimaryProtocolFactory <- self.PrimaryProtocolFactory
-
-  [<TearDown>]
-  member __.TearDown() = Actor.DefaultPrimaryProtocolFactory <- oldPrimaryProtocolServerFactory
   
   [<Test>]
   member __.``Primitive actor bind - actor name``() =
@@ -347,4 +341,26 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
 
     actor.ReBind(PrimitiveBehaviors.nill)
     actor.PendingMessages |> should equal 0
+
+  [<Test>]
+  member __.``Actor clone constructor``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.rename "name"
+    use actor' = new Actor<_>(actor)
+
+    actor.Name |> should equal actor'.Name
+
+  [<Test>]
+  member __.``ActorRef.MessageType``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill
+    actor.Ref.MessageType |> should equal typeof<TestMessage<unit>>
+
+    use actor' = Actor.bind (PrimitiveBehaviors.stateful 42)
+    actor'.Ref.MessageType |> should equal typeof<TestMessage<int, int>>
+
+  [<Test>]
+  member self.``ActorRef.Protocols``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill
+    actor.Ref.Protocols.Length |> should equal 1
+    let primaryProtocolName = self.PrimaryProtocolFactory.Create<unit>("test").ProtocolName
+    actor.Ref.Protocols.[0] |> should equal primaryProtocolName
 
