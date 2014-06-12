@@ -421,3 +421,19 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
   member __.``Actor.Receive with timeout``() =
     use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
     actor.Receive(100) |> Async.RunSynchronously |> ignore
+
+  [<Test>]
+  [<ExpectedException(typeof<TimeoutException>)>]
+  member __.``Actor.Receive with 0 timeout``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+    actor.Receive(0) |> Async.RunSynchronously |> ignore
+
+  [<Test>]
+  member __.``Actor.TryReceive with 0 timeout``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+    actor.TryReceive(0) |> Async.RunSynchronously |> should equal None
+
+  [<Test>]
+  member __.``Actor.TryReceive with some timeout``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+    actor.TryReceive(100) |> Async.RunSynchronously |> should equal None
