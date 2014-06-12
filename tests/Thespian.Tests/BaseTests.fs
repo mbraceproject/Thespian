@@ -375,3 +375,43 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
     for uri in actor.Ref.GetUris() do
       printfn "%A" uri
     actor.Ref.GetUris() |> should equal List.empty
+
+  [<Test>]
+  [<ExpectedException(typeof<ActorInactiveException>)>]
+  member __.``Actor failure``() =
+    use actor = Actor.bind PrimitiveBehaviors.failing |> Actor.start
+    !actor <!= fun ch -> TestSync(ch, ())
+    !actor <-- TestAsync()
+
+  [<Test>]
+  member __.``Actor failure and restart``() =
+    use actor = Actor.bind PrimitiveBehaviors.failing |> Actor.start
+    !actor <!= fun ch -> TestSync(ch, ())
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+
+    actor.Start()
+    !actor <-- TestAsync()
+    !actor <!= fun ch -> TestSync(ch, ())
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+
+  [<Test>]
+  member __.``ActorFailedException log event on actor failure``() =
+    use actor = Actor.bind PrimitiveBehaviors.failing |> Actor.start
+
+    let caught = ref false
+    use d = actor.Log |> Observable.subscribe (function Error, _, :? ActorFailedException -> caught := true | _ -> caught := false)
+
+    !actor <!= fun ch -> TestSync(ch, ())
+    TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
+
+    caught.Value |> should equal true
+
+  [<Test>]
+  [<ExpectedException(typeof<ArgumentException>)>]
+  member __.``Actor.rename invalid name``() =
+    Actor.bind PrimitiveBehaviors.nill |> Actor.rename "foo/bar" |> ignore
+
+  [<Test>]
+  [<ExpectedException(typeof<ArgumentException>)>]
+  member __.``Actor construct with invalid name``() =
+    new Actor<_>("foo/bar", PrimitiveBehaviors.nill) |> ignore

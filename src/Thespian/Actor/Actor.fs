@@ -32,6 +32,7 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
   inherit Actor()
 
   do
+    if name.Contains("/") then invalidArg "name" "Actor names must not contain '/'."
     if protocols = Array.empty then invalidArg "protocols" "No protocols specified."
 
     match protocols.[0] with
