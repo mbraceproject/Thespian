@@ -10,3 +10,4 @@ type ``In-memory communication tests``() =
   inherit CommunicationTests()
 
   override __.PublishActorPrimary a = a
+  override __.RefPrimary(a: Actor<'T>) = a.Ref

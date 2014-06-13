@@ -25,10 +25,22 @@ type Stream with
     elif timeout = Timeout.Infinite then async { let! r = self.AsyncRead(buffer, offset, size) in return Some r }
     else Async.TryFromBeginEnd(buffer, offset, size, self.BeginRead, self.EndRead, timeout, fun () -> self.Dispose())
 
-  member self.TryAsyncRead(count: int, timeout: int): Async<int option> =
+  member self.TryAsyncRead(count: int, timeout: int): Async<byte[] option> =
+    let rec tryAsyncRead (buffer: byte[], bytesRead: int) =
+      async {
+        if count >= bytesRead then return Some()
+        else
+          let! r = self.TryAsyncRead(buffer, bytesRead, (count - bytesRead), timeout)
+          match r with
+          | Some bytesRead' -> return! tryAsyncRead (buffer, bytesRead + bytesRead')
+          | None -> return None
+      }
     async {
       let buffer = Array.zeroCreate count
-      return! self.TryAsyncRead(buffer, 0, count, timeout)
+      let! r = tryAsyncRead (buffer, 0)
+      match r with
+      | Some() -> return Some buffer
+      | None -> return None
     }
 
   member self.TryAsyncWrite(buffer: byte[], timeout: int, ?offset: int, ?count: int, ?timeoutF: Stream -> unit): Async<unit option> =

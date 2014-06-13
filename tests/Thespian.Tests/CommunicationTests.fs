@@ -11,27 +11,16 @@ open Nessos.Thespian.Tests.TestDefinitions
 type CommunicationTests() =
 
   abstract PublishActorPrimary: Actor<'T> -> Actor<'T>
+  abstract RefPrimary: Actor<'T> -> ActorRef<'T>
   
   [<Test>]
-  member self.``Post with method on ref``() =
+  member self.``Post``() =
     let cell = ref 0
     use actor = Actor.bind <| Behavior.stateless (Behaviors.refCell cell)
                 |> self.PublishActorPrimary
                 |> Actor.start
 
-    actor.Ref.Post(TestAsync 42)
-    //do something for a while
-    System.Threading.Thread.Sleep(500)
-    cell.Value |> should equal 42
-
-  [<Test>]
-  member self.``Post with operator``() =
-    let cell = ref 0
-    use actor = Actor.bind <| Behavior.stateless (Behaviors.refCell cell)
-                |> self.PublishActorPrimary
-                |> Actor.start
-
-    !actor <-- TestAsync 42
+    self.RefPrimary(actor).Post(TestAsync 42)
     //do something for a while
     System.Threading.Thread.Sleep(500)
     cell.Value |> should equal 42

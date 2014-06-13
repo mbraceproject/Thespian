@@ -9,6 +9,9 @@ open Nessos.Thespian
 open Nessos.Thespian.Utils
 open Nessos.Thespian.Serialization
 
+let UTCP = Nessos.Thespian.Remote.TcpProtocol.Unidirectional.ProtocolName
+let BTCP = Nessos.Thespian.Remote.TcpProtocol.Bidirectional.ProtocolName
+
 type Protocols with
   static member utcp(?endPoint: IPEndPoint) =
     let endPoint = defaultArg endPoint (new IPEndPoint(IPAddress.Any, 0))
