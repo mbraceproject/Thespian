@@ -13,7 +13,7 @@ type CommunicationTests() =
   abstract PublishActorPrimary: Actor<'T> -> Actor<'T>
   abstract RefPrimary: Actor<'T> -> ActorRef<'T>
   
-  [<Test>]
+  [<Test; Repeat 1>]
   member self.``Post``() =
     let cell = ref 0
     use actor = Actor.bind <| Behavior.stateless (Behaviors.refCell cell)
@@ -24,3 +24,13 @@ type CommunicationTests() =
     //do something for a while
     System.Threading.Thread.Sleep(500)
     cell.Value |> should equal 42
+
+  [<Test; Repeat 1>]
+  member self.``Post with reply``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor).Post(TestAsync 42)
+    let r = Async.RunSynchronously <| self.RefPrimary(actor).PostWithReply(fun ch -> TestSync(ch, 43))
+    r |> should equal 42

@@ -400,7 +400,7 @@ and PooledTcpClient(tracePrefix: string, tcpClient: TcpClient, clientPool: IClie
         override self.Dispose() = self.Return()
 
 and PooledNetworkStream(client: PooledTcpClient) =
-    inherit ProtocolNetworkStream(client.UnderlyingClient, false)
+    inherit ProtocolNetworkStream(client.UnderlyingClient, true)
 
     override __.Close() = base.Close(); client.Return()
     override self.FaultDispose() = self.Dispose();

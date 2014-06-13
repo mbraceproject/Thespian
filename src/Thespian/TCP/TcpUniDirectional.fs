@@ -92,6 +92,7 @@ type DeserializationContext() =
   let mutable maxReplyChannelTimeout = 0
   member __.MaxReplyChannelTimeout with get() = maxReplyChannelTimeout
   member __.TrySetMaxReplyChannelTimeout(timeout: int) = if timeout > maxReplyChannelTimeout then maxReplyChannelTimeout <- timeout
+  member self.GetStreamingContext() = new StreamingContext(StreamingContextStates.All, self)
                                     
 
 [<AbstractClass>][<Serializable>]
@@ -224,7 +225,8 @@ type MessageProcessor<'T> private (actorId: TcpActorId, listener: TcpProtocolLis
     async {
       //second stage deserialization
       //throws SerializationException, InvalidCastException
-      let msg = serializer.Deserialize<ProtocolMessage<obj>>(payload) |> ProtocolMessage.unbox<'T>
+      let ctx = new DeserializationContext()
+      let msg = serializer.Deserialize<ProtocolMessage<obj>>(payload, ctx.GetStreamingContext()) |> ProtocolMessage.unbox<'T>
       match msg with
       | Request request ->
         try

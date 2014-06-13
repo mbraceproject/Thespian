@@ -183,7 +183,7 @@ namespace Nessos.Thespian
                      iar),
                   (fun iar ->
                      //timer no longer needed
-                     timer.Value.Dispose()
+                     if timer.Value <> Unchecked.defaultof<Timer> then timer.Value.Dispose()
                      //if the current thread sets the latch, then no timeout will occur
                      //if latch has been already set, timeout occurs,
                      //that is: the resource is a) already disposed or, b) will be disposed

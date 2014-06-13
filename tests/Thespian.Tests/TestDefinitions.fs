@@ -61,3 +61,10 @@ module Behaviors =
       | TestAsync s -> cell := s
       | TestSync(R reply, _) -> reply (Value cell.Value)
     }
+
+  let state (s: 'S) (m: TestMessage<'S, 'S>) =
+    async {
+      match m with
+      | TestAsync s -> return s
+      | TestSync(R reply, s') -> reply (Value s); return s'
+    }
