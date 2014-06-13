@@ -522,53 +522,44 @@ namespace Nessos.Thespian.ActorExtensions
 
         type ActorRef<'T> with
             member self.PostRetriable(message : 'T, retries, ?waitInterval) =
+                if retries < 0 then invalidArg "retries" "should be non-negative."
                 let waitInterval = defaultArg waitInterval 100
-                // negative inputs mean infinite retries
-                let retries = if retries < 0 then -2 else retries
 
-                let rec retryloop =
-                    function
-                    | -1 ->
-                        raise <| TimeoutException("Connections attempts reached maximum permitted")
-                    |  n ->
-                        try
-                            self.Post message
-                        with
-                        | :? TimeoutException
-                        | CommunicationException _ -> Thread.Sleep(waitInterval) ; retryloop (n-1)
-                        | _ -> reraise()
-
-
-                async { return retryloop retries }
-
-            member self.PostWithReplyRetriable(msgBuilder, retries, ?waitInterval) =
-                let waitInterval = defaultArg waitInterval 100
-                // negative inputs mean infinite retries
-                let retries = if retries < 0 then -2 else retries
-
-                let rec retryloop n = async {
-                    match n with
-                    | -1 ->
-                        return raise <| CommunicationException("Connections attempts reached maximum permitted.")
-                    |  _ ->
-                        try return! self.PostWithReply msgBuilder
-                        with
-                        // bug: actors do not wrap SocketException from client side
-                        | :? Sockets.SocketException
-                        | :? TimeoutException
-                        | CommunicationException _ -> 
-                            Thread.Sleep(waitInterval) 
-                            return! retryloop (n-1)
-                        | e -> return raise e // reraise?
+                let rec retry retries = async {
+                    try do! self.PostAsync message
+                    with
+                    | :? TimeoutException
+                    | :? CommunicationException as e ->
+                        if retries = 0 then return! Async.Raise e
+                        else
+                            do! Async.Sleep waitInterval
+                            return! retry (retries - 1)
                 }
 
-                retryloop retries
+                retry retries
+
+            member self.PostWithReplyRetriable(msgBuilder, retries, ?waitInterval) =
+                if retries < 0 then invalidArg "retries" "should be non-negative."
+                let waitInterval = defaultArg waitInterval 100
+
+                let rec retry retries = async {
+                    try return! self.PostWithReply msgBuilder
+                    with
+                    | :? TimeoutException
+                    | :? CommunicationException as e ->
+                        if retries = 0 then return! Async.Raise e
+                        else
+                            do! Async.Sleep waitInterval
+                            return! retry (retries - 1)
+                }
+
+                retry retries
 
 
         [<AutoOpen>]
         module Operators =
 
-            let internal RetryInterval = 100
+            let private RetryInterval = 100
             
             let (<===) (actor : ActorRef<'T>) (msg, timeout) = 
                 actor.PostRetriable(msg,timeout / RetryInterval, RetryInterval)
@@ -577,7 +568,3 @@ namespace Nessos.Thespian.ActorExtensions
             let (<!==) (actor : ActorRef<'T>) (msgBuilder, timeout) =
                 actor.PostWithReplyRetriable(msgBuilder,timeout / RetryInterval,RetryInterval)
                 |> fun expr -> Async.RunSynchronously(expr, timeout)
-
-
-            
-

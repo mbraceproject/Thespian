@@ -1,3 +1,6 @@
+### 0.0.5-alpha - Jun 13, 2014
+* Improve retry extensions
+
 ### 0.0.4-alpha - May 27, 2014
 * Fix support for non-public tables in IMemDb
 
