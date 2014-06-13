@@ -7,10 +7,19 @@ open FsUnit
 open Nessos.Thespian
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Tests.TestDefinitions
+open Nessos.Thespian.Tests.TestDefinitions.Remote
 
 [<TestFixture>]
-type ``Bidirectional Tcp communication``() =
-  inherit CommunicationTests()
+type ``Collocated BTcp``() =
+  inherit ``Collocated Communication``()
 
   override __.PublishActorPrimary(actor: Actor<'T>) = actor |> Actor.publish [Protocols.btcp()]
   override __.RefPrimary(actor: Actor<'T>) = actor.Ref.[BTCP]
+
+
+[<TestFixture>]
+type ``AppDomain BTcp``() =
+  inherit ``AppDomain Communication``<BtcpActorManagerFactory>()
+
+  override __.GetAppDomainManager(?appDomainName: string) = new AppDomainManager<BtcpActorManagerFactory>(?appDomainName = appDomainName)
+

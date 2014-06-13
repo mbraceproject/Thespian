@@ -68,3 +68,79 @@ module Behaviors =
       | TestAsync s -> return s
       | TestSync(R reply, s') -> reply (Value s); return s'
     }
+
+module Remote =
+  open System.Reflection
+  open Nessos.Thespian.Remote
+
+  [<AbstractClass>]
+  type ActorManager() =
+    inherit MarshalByRefObject()
+    abstract Init: unit -> unit
+    abstract Fini: unit -> unit
+    
+    default __.Init() = ()
+    default __.Fini() = ()
+
+  [<AbstractClass>]
+  type ActorManager<'T>(behavior: Actor<'T> -> Async<unit>, ?name: string) =
+    inherit ActorManager()
+    let actor = Actor.bind behavior |> fun a -> if name.IsSome then Actor.rename name.Value a else a
+
+    abstract Actor: Actor<'T>
+    abstract Publish: unit -> ActorRef<'T>
+    abstract Start: unit -> unit
+    abstract Stop: unit -> unit
+
+    default __.Actor = actor
+    default __.Start() = actor.Start()
+    default __.Stop() = actor.Stop()
+
+
+  type UtcpActorManager<'T>(behavior: Actor<'T> -> Async<unit>, ?name: string) =
+    inherit ActorManager<'T>(behavior, ?name = name)
+    override self.Publish() = self.Actor |> Actor.publish [Protocols.utcp()] |> Actor.ref
+
+  type BtcpActorManager<'T>(behavior: Actor<'T> -> Async<unit>, ?name: string) =
+    inherit ActorManager<'T>(behavior, ?name = name)
+    override self.Publish() = self.Actor |> Actor.publish [Protocols.btcp()] |> Actor.ref
+
+  [<AbstractClass>]
+  type ActorManagerFactory() =
+    inherit MarshalByRefObject()
+    abstract CreateActorManager: (Actor<'T> -> Async<unit>) * ?name: string -> ActorManager<'T>
+    abstract Fini: unit -> unit
+
+  type UtcpActorManagerFactory() =
+    inherit ActorManagerFactory()
+    let mutable managers = []
+    override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
+      let manager = new UtcpActorManager<'T>(behavior, ?name = name)
+      managers <- (manager :> ActorManager)::managers
+      manager :> ActorManager<'T>
+    override __.Fini() = for manager in managers do manager.Fini()
+
+  type BtcpActorManagerFactory() =
+    inherit ActorManagerFactory()
+    let mutable managers = []
+    override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
+      let manager = new BtcpActorManager<'T>(behavior, ?name = name)
+      managers <- (manager :> ActorManager)::managers
+      manager :> ActorManager<'T>
+    override __.Fini() = for manager in managers do manager.Fini()
+  
+  type AppDomainManager<'T when 'T :> ActorManagerFactory>(?appDomainName: string) =
+    let appDomainName = defaultArg appDomainName "testDomain"
+    let appDomain =
+      let currentDomain = AppDomain.CurrentDomain
+      let appDomainSetup = new AppDomainSetup()
+      appDomainSetup.ApplicationBase <- currentDomain.BaseDirectory
+      let evidence = new Security.Policy.Evidence(currentDomain.Evidence)
+      AppDomain.CreateDomain(appDomainName, evidence, appDomainSetup)
+
+    let factory =
+      appDomain.CreateInstance(Assembly.GetExecutingAssembly().FullName, typeof<'T>.FullName).Unwrap() |> unbox<'T>
+
+    member __.Factory = factory
+
+    interface IDisposable with override __.Dispose() = AppDomain.Unload(appDomain)

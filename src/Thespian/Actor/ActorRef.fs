@@ -80,7 +80,7 @@ and [<Serializable; AbstractClass>] ActorRef =
     {    
       name = info.GetString("name")
       messageType = info.GetValue("messageType", typeof<Type>) :?> Type
-      protocols = info.GetValue("protocols", typeof<IProtocolFactory[]>) :?> IProtocolFactory[] |> Array.map (fun configuration -> configuration.ProtocolName)
+      protocols = info.GetValue("protocolFactories", typeof<IProtocolFactory[]>) :?> IProtocolFactory[] |> Array.map (fun factory -> factory.ProtocolName)
     }
 
   abstract MessageType: Type

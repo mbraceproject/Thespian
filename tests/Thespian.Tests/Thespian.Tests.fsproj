@@ -62,6 +62,7 @@
     <Compile Include="MailboxPrimaryProtocolTests.fs" />
     <Compile Include="ObservablePrimaryProtocolTests.fs" />
     <Compile Include="CommunicationTests.fs" />
+    <Compile Include="AppDomainCommunicationTests.fs" />
     <Compile Include="InMemoryCommunicationTests.fs" />
     <Compile Include="UtcpCommunicationTests.fs" />
     <Compile Include="BtcpCommunicationTests.fs" />
