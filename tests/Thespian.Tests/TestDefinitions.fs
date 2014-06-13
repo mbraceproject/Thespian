@@ -50,7 +50,7 @@ module PrimitiveBehaviors =
     async {
       let! m = self.Receive()
       match m with
-      | TestSync(R reply, _) -> reply nothing; failwith "Dead sync"
+      | TestSync(R reply, _) -> reply nothing; failwith "Dead sync"; return! failing self
       | _ -> return! failing self
     }
 

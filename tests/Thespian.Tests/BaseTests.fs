@@ -381,6 +381,8 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
   member __.``Actor failure``() =
     use actor = Actor.bind PrimitiveBehaviors.failing |> Actor.start
     !actor <!= fun ch -> TestSync(ch, ())
+    //do some work
+    System.Threading.Thread.Sleep(500)
     !actor <-- TestAsync()
 
   [<Test>]
@@ -402,6 +404,8 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
     use d = actor.Log |> Observable.subscribe (function Error, _, :? ActorFailedException -> caught := true | _ -> caught := false)
 
     !actor <!= fun ch -> TestSync(ch, ())
+    //do some work
+    System.Threading.Thread.Sleep(500)
     TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
 
     caught.Value |> should equal true
