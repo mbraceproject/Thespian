@@ -15,7 +15,7 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   [<Test>]
   member self.``Post via ref from appdomain``() =
     use appDomainManager = self.GetAppDomainManager()
-    let actorManager = appDomainManager.Factory.CreateActorManager(FSharpFunc.ToConverter <| Behavior.stateful 0 Behaviors.state)
+    let actorManager = appDomainManager.Factory.CreateActorManager(fun a -> Behavior.stateful 0 Behaviors.state a)
     let actorRef = actorManager.Publish()
     actorManager.Start()
 
