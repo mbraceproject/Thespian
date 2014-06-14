@@ -17,6 +17,7 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
     use appDomainManager = self.GetAppDomainManager()
     let actorManager = appDomainManager.Factory.CreateActorManager(Behavior.stateful 0 Behaviors.state)
     let actorRef = actorManager.Publish()
+    actorManager.Start()
 
     actorRef <-- TestAsync 42
     let result = actorRef <!= fun ch -> TestSync(ch, 43)

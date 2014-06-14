@@ -85,25 +85,36 @@ module Remote =
   [<AbstractClass>]
   type ActorManager<'T>(behavior: Actor<'T> -> Async<unit>, ?name: string) =
     inherit ActorManager()
-    let actor = Actor.bind behavior |> fun a -> if name.IsSome then Actor.rename name.Value a else a
+    [<VolatileField>]
+    let mutable actor = Actor.bind behavior |> fun a -> if name.IsSome then Actor.rename name.Value a else a
 
     abstract Actor: Actor<'T>
+    abstract SetActor: Actor<'T> -> unit
+    abstract Ref: ActorRef<'T>
     abstract Publish: unit -> ActorRef<'T>
     abstract Start: unit -> unit
     abstract Stop: unit -> unit
 
     default __.Actor = actor
+    default __.SetActor(actor': Actor<'T>) = actor <- actor'
+    default __.Ref = actor.Ref
     default __.Start() = actor.Start()
     default __.Stop() = actor.Stop()
 
 
   type UtcpActorManager<'T>(behavior: Actor<'T> -> Async<unit>, ?name: string) =
     inherit ActorManager<'T>(behavior, ?name = name)
-    override self.Publish() = self.Actor |> Actor.publish [Protocols.utcp()] |> Actor.ref
+    override self.Publish() =
+      let actor = self.Actor |> Actor.publish [Protocols.utcp()]
+      self.SetActor(actor)
+      actor.Ref
 
   type BtcpActorManager<'T>(behavior: Actor<'T> -> Async<unit>, ?name: string) =
     inherit ActorManager<'T>(behavior, ?name = name)
-    override self.Publish() = self.Actor |> Actor.publish [Protocols.btcp()] |> Actor.ref
+    override self.Publish() =
+      let actor = self.Actor |> Actor.publish [Protocols.btcp()]
+      self.SetActor(actor)
+      actor.Ref
 
   [<AbstractClass>]
   type ActorManagerFactory() =
@@ -116,6 +127,7 @@ module Remote =
     let mutable managers = []
     override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
       let manager = new UtcpActorManager<'T>(behavior, ?name = name)
+      manager.Init()
       managers <- (manager :> ActorManager)::managers
       manager :> ActorManager<'T>
     override __.Fini() = for manager in managers do manager.Fini()
@@ -125,6 +137,7 @@ module Remote =
     let mutable managers = []
     override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
       let manager = new BtcpActorManager<'T>(behavior, ?name = name)
+      manager.Init()
       managers <- (manager :> ActorManager)::managers
       manager :> ActorManager<'T>
     override __.Fini() = for manager in managers do manager.Fini()
@@ -143,4 +156,7 @@ module Remote =
 
     member __.Factory = factory
 
-    interface IDisposable with override __.Dispose() = AppDomain.Unload(appDomain)
+    interface IDisposable with
+      override __.Dispose() =
+        factory.Fini()
+        AppDomain.Unload(appDomain)
