@@ -102,7 +102,7 @@ module Remote =
     default __.Stop() = actor.Stop()
 
 
-  type UtcpActorManager<'T>(behavior: Actor<'T> -> Async<unit>, ?name: string) =
+  type UtcpActorManager<'T>(behavior: Actor<'T> ->  Async<unit>, ?name: string) =
     inherit ActorManager<'T>(behavior, ?name = name)
     override self.Publish() =
       let actor = self.Actor |> Actor.publish [Protocols.utcp()]
@@ -119,14 +119,14 @@ module Remote =
   [<AbstractClass>]
   type ActorManagerFactory() =
     inherit MarshalByRefObject()
-    abstract CreateActorManager: (Actor<'T> -> Async<unit>) * ?name: string -> ActorManager<'T>
+    abstract CreateActorManager: Converter<Actor<'T>, Async<unit>> * ?name: string -> ActorManager<'T>
     abstract Fini: unit -> unit
 
   type UtcpActorManagerFactory() =
     inherit ActorManagerFactory()
     let mutable managers = []
-    override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
-      let manager = new UtcpActorManager<'T>(behavior, ?name = name)
+    override __.CreateActorManager(behavior: Converter<Actor<'T>, Async<unit>>, ?name: string) =
+      let manager = new UtcpActorManager<'T>(FSharpFunc.FromConverter behavior, ?name = name)
       manager.Init()
       managers <- (manager :> ActorManager)::managers
       manager :> ActorManager<'T>
@@ -135,8 +135,8 @@ module Remote =
   type BtcpActorManagerFactory() =
     inherit ActorManagerFactory()
     let mutable managers = []
-    override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
-      let manager = new BtcpActorManager<'T>(behavior, ?name = name)
+    override __.CreateActorManager(behavior: Converter<Actor<'T>,Async<unit>>, ?name: string) =
+      let manager = new BtcpActorManager<'T>(FSharpFunc.FromConverter behavior, ?name = name)
       manager.Init()
       managers <- (manager :> ActorManager)::managers
       manager :> ActorManager<'T>
