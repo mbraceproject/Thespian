@@ -84,9 +84,6 @@ type ProtocolMessageStream(msgId: MsgId, stream: ProtocolNetworkStream, timeout:
     override self.Dispose() = self.Dispose()
 
 
-let mutable defaultReplyReceiveTimeout = 10000
-
-
 //currently used as base for btcp deserialization contexts
 type DeserializationContext() =
   let mutable maxReplyChannelTimeout = 0
@@ -103,7 +100,7 @@ type ReplyChannel =
 
   new (actorId: TcpActorId, msgId: MsgId) =
     {
-      timeout = defaultReplyReceiveTimeout
+      timeout = Default.ReplyReceiveTimeout
       actorId = actorId
       msgId = msgId
     }
@@ -411,9 +408,11 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
   member  __.TryPostWithReply(msgF: IReplyChannel<'R> -> 'T, timeout: int) =
     let msgId = MsgId.NewGuid()
     let rc = new ReplyChannel<'R>(localListenerAddress, actorId, msgId)
+    let initTimeout = rc.Timeout
     let msg = msgF (new ReplyChannelProxy<'R>(rc))
+    let timeout' = if initTimeout <> rc.Timeout then rc.Timeout else timeout
     async {
-      let! resposne = postMessageWithReply msgId msg timeout
+      let! resposne = postMessageWithReply msgId msg timeout'
       match resposne with
       | Some (Value v) -> return Some (v :?> 'R)
       | Some (Exception e) -> return! Async.Raise (new MessageHandlingException("Remote Actor threw exception while handling message.", actorId, e))

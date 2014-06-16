@@ -340,9 +340,11 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
   member __.TryPostWithReply(msgF: IReplyChannel<'R> -> 'T, timeout: int) =
     let msgId = MsgId.NewGuid()
     let rc = new ReplyChannel<'R>(actorId, msgId)
+    let initTimeout = rc.Timeout
     let msg = msgF (new ReplyChannelProxy<'R>(rc))
+    let timeout' = if initTimeout <> rc.Timeout then rc.Timeout else timeout
     async {
-      let! response = postMessageWithReply msgId msg timeout
+      let! response = postMessageWithReply msgId msg timeout'
       match response with
       | Some(Value v) -> return Some (v :?> 'R)
       | Some(Exception e) -> return! Async.Raise (new MessageHandlingException("Remote Actor threw exception while handling message.", e))

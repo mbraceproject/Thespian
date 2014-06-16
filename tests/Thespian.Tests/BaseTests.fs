@@ -9,12 +9,19 @@ open Nessos.Thespian.Tests.TestDefinitions
 
 [<AbstractClass>]
 type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
+  let mutable defaultPrimaryProtocolFactory = Unchecked.defaultof<IPrimaryProtocolFactory>
+  
   abstract PrimaryProtocolFactory: IPrimaryProtocolFactory
   default __.PrimaryProtocolFactory = primaryProtocolFactory
 
   [<TestFixtureSetUp>]
   member self.SetUp() =
+    defaultPrimaryProtocolFactory <- Actor.DefaultPrimaryProtocolFactory
     Actor.DefaultPrimaryProtocolFactory <- self.PrimaryProtocolFactory
+
+  [<TestFixtureTearDown>]
+  member self.TearDown() =
+    Actor.DefaultPrimaryProtocolFactory <- defaultPrimaryProtocolFactory
   
   [<Test>]
   member __.``Primitive actor bind - actor name``() =
@@ -153,6 +160,7 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
     use actor = Actor.bind PrimitiveBehaviors.selfStop |> Actor.start
 
     !actor <!= fun ch -> TestSync(ch, ())
+    System.Threading.Thread.Sleep(500)
 
     TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
 

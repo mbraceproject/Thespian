@@ -69,6 +69,16 @@ module Behaviors =
       | TestSync(R reply, s') -> reply (Value s); return s'
     }
 
+  let delayedState (s: int) (m: TestMessage<int, int>) =
+    async {
+      match m with
+      | TestAsync s -> return s
+      | TestSync(R reply, t) ->
+        do! Async.Sleep t
+        reply <| Value s
+        return s
+    }
+
 module Remote =
   open System.Reflection
   open Nessos.Thespian.Remote

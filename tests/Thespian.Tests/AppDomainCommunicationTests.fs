@@ -23,3 +23,14 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
     let result = actorRef <!= fun ch -> TestSync(ch, 43)
     result |> should equal 42
 
+  [<Test>]
+  [<ExpectedException(typeof<TimeoutException>)>]
+  [<Timeout(60000)>] //make sure the default timeout is less than the test case timeout
+  member self.``Post with reply with no timeout (default timeout)``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager(PrimitiveBehaviors.nill)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+    
+    actorRef <!= fun ch -> TestSync(ch, ())
+

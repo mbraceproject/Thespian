@@ -22,3 +22,9 @@ type ``In-memory``() =
     let serializer = Serialization.defaultSerializer
     serializer.Serialize(actor.Ref) |> ignore
 
+[<TestFixture>]
+type ``In-memory (observable)``() =
+  inherit ``In-memory``()
+
+  override __.PrimaryProtocolFactory = new ObservableTestUtils.ProtocolFactory() :> IPrimaryProtocolFactory
+

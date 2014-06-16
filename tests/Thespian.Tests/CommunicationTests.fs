@@ -9,9 +9,21 @@ open Nessos.Thespian.Tests.TestDefinitions
 
 [<AbstractClass>]
 type ``Collocated Communication``() =
-
+  let mutable defaultPrimaryProtocolFactory = Unchecked.defaultof<IPrimaryProtocolFactory>
+  
+  abstract PrimaryProtocolFactory: IPrimaryProtocolFactory
+  default __.PrimaryProtocolFactory = new MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory
   abstract PublishActorPrimary: Actor<'T> -> Actor<'T>
   abstract RefPrimary: Actor<'T> -> ActorRef<'T>
+
+  [<TestFixtureSetUp>]
+  member self.SetUp() =
+    defaultPrimaryProtocolFactory <- Actor.DefaultPrimaryProtocolFactory
+    Actor.DefaultPrimaryProtocolFactory <- self.PrimaryProtocolFactory
+
+  [<TestFixtureTearDown>]
+  member self.TearDown() =
+    Actor.DefaultPrimaryProtocolFactory <- defaultPrimaryProtocolFactory
   
   [<Test>]
   member self.``Post method``() =
@@ -19,6 +31,7 @@ type ``Collocated Communication``() =
     use actor = Actor.bind <| Behavior.stateless (Behaviors.refCell cell)
                 |> self.PublishActorPrimary
                 |> Actor.start
+
 
     self.RefPrimary(actor).Post(TestAsync 42)
     //do something for a while
@@ -60,10 +73,37 @@ type ``Collocated Communication``() =
   [<Test>]
   [<ExpectedException(typeof<TimeoutException>)>]
   [<Timeout(60000)>] //make sure the default timeout is less than the test case timeout
-  member self.``Post with reply with no timeout (default timeout)``() =
+  member self.``Post with reply method with no timeout (default timeout)``() =
     use actor = Actor.bind PrimitiveBehaviors.nill |> self.PublishActorPrimary |> Actor.start
     self.RefPrimary(actor) <!= fun ch -> TestSync(ch, ())
-    
+
+  [<Test>]
+  member self.``Post with reply method with timeout (in-time)``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor) <-- TestAsync 42
+    let r = Async.RunSynchronously <| self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch, 43)), 4000)
+    r |> should equal 42
+
+  [<Test>]
+  [<ExpectedException(typeof<TimeoutException>)>]
+  member self.``Post with reply method timeout (fluid) on reply channel overrides method timeout arg``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor) <-- TestAsync 42
+
+    //the actor will stall for Default.ReplyReceiveTimeout,
+    //the reply timeout specified by the method arg is Default.ReplyReceiveTimeout * 2
+    //enough to get back the reply
+    //the timeout is overriden by setting the reply channel timeout to Default.ReplyReceiveTimeout/2
+    //thus we expect this to timeout
+    self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout/2), Default.ReplyReceiveTimeout)), Default.ReplyReceiveTimeout * 2)
+    |> Async.Ignore
+    |> Async.RunSynchronously
 
 
 [<AbstractClass>]

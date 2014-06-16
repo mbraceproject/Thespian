@@ -4,7 +4,6 @@ open System
 open System.Threading
 
 let ProtocolName = "mailbox"
-let mutable defaultReplyReceiveTimeout = 10000
 
 [<Serializable>]
 type MailboxActorId(name: string) =
@@ -12,7 +11,7 @@ type MailboxActorId(name: string) =
   override actorId.ToString() = name
 
 type MailboxReplyChannel<'T>(asyncReplyChannel: AsyncReplyChannel<Reply<'T>> option) =
-  let mutable timeout = defaultReplyReceiveTimeout
+  let mutable timeout = Default.ReplyReceiveTimeout
   let mutable asyncRc = asyncReplyChannel
 
   member __.Timeout with get() = timeout and set(timeout': int) = timeout <- timeout'
@@ -123,7 +122,20 @@ and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
     override __.PostWithReply(messageF: IReplyChannel<'R> -> 'T, timeout: int) =
       protectMailbox (fun mailbox ->
         async {
-          let! reply = mailbox.PostAndAsyncReply<Reply<'R>>((fun asyncReplyChannel -> messageF <| ReplyChannelProxy<_>(MailboxReplyChannel<_>(Some asyncReplyChannel).WithTimeout(timeout))), timeout)
+          //we run the message constructor with an empty channel at first
+          //so that we can get any timeout override
+          let mailboxChannel = new MailboxReplyChannel<_>(None)
+          let initTimeout = mailboxChannel.Timeout
+          let replyChannel = new ReplyChannelProxy<_>(mailboxChannel)
+          let message = messageF replyChannel
+
+          let msgF asyncReplyChannel =
+            mailboxChannel.SetAsyncReplyChannel(Some asyncReplyChannel)
+            message
+
+          let timeout' = if initTimeout <> mailboxChannel.Timeout then mailboxChannel.Timeout else timeout
+          
+          let! reply = mailbox.PostAndAsyncReply<Reply<'R>>(msgF, timeout')
                     
           return match reply with
                  | Value value -> value
@@ -132,7 +144,20 @@ and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
     override __.TryPostWithReply(messageF: IReplyChannel<'R> -> 'T, timeout: int) =
       protectMailbox (fun mailbox ->
         async {
-          let! reply = mailbox.PostAndTryAsyncReply<Reply<'R>>((fun asyncReplyChannel -> messageF(ReplyChannelProxy<_>(MailboxReplyChannel<_>(Some asyncReplyChannel).WithTimeout(timeout)))), timeout)
+          //we run the message constructor with an empty channel at first
+          //so that we can get any timeout override
+          let mailboxChannel = new MailboxReplyChannel<_>(None)
+          let initTimeout = mailboxChannel.Timeout
+          let replyChannel = new ReplyChannelProxy<_>(mailboxChannel)
+          let message = messageF replyChannel
+
+          let msgF asyncReplyChannel =
+            mailboxChannel.SetAsyncReplyChannel(Some asyncReplyChannel)
+            message
+
+          let timeout' = if initTimeout <> mailboxChannel.Timeout then mailboxChannel.Timeout else timeout
+          
+          let! reply = mailbox.PostAndTryAsyncReply<Reply<'R>>(msgF, timeout')
 
           return match reply with
                  | Some(Value value) -> Some value
