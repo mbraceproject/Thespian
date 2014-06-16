@@ -65,6 +65,9 @@ and internal ReplyChannelUtils private () =
         override __.AsyncReply(reply) = replyChannel.AsyncReply(match reply with Value value -> Value(mapF value) | Exception e -> Reply.Exception e)
     }
 
+and Default() =
+  static member val ReplyReceiveTimeout = 10000 with get, set
+
 and [<Serializable; AbstractClass>] ActorRef =
   val private name: string
   val private messageType: Type
@@ -183,12 +186,12 @@ and [<Serializable>] ActorRef<'T> =
 
   abstract PostWithReply: (IReplyChannel<'R> -> 'T) * ?timeout: int -> Async<'R>
   default self.PostWithReply(msgF: (IReplyChannel<'R> -> 'T), ?timeout: int): Async<'R> =
-    let timeout = defaultArg timeout Timeout.Infinite
+    let timeout = defaultArg timeout Default.ReplyReceiveTimeout
     self.defaultProtocol.PostWithReply(msgF, timeout)
 
   abstract TryPostWithReply: (IReplyChannel<'R> -> 'T) * ?timeout: int -> Async<'R option>
   default self.TryPostWithReply(msgF: (IReplyChannel<'R> -> 'T), ?timeout: int): Async<'R option> =
-    let timeout = defaultArg timeout Timeout.Infinite
+    let timeout = defaultArg timeout Default.ReplyReceiveTimeout
     self.defaultProtocol.TryPostWithReply(msgF, timeout)
 
   override self.PostUntyped(msg: obj): unit = self.Post(unbox msg)

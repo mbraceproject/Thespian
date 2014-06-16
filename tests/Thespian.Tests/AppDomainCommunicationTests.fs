@@ -13,7 +13,7 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   abstract GetAppDomainManager: ?appDomainName: string -> AppDomainManager<'T>
 
   [<Test>]
-  member self.``Post via ref from appdomain``() =
+  member self.``Post via ref``() =
     use appDomainManager = self.GetAppDomainManager()
     let actorManager = appDomainManager.Factory.CreateActorManager(fun a -> Behavior.stateful 0 Behaviors.state a)
     let actorRef = actorManager.Publish()

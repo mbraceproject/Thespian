@@ -394,6 +394,7 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
     actor.Start()
     !actor <-- TestAsync()
     !actor <!= fun ch -> TestSync(ch, ())
+    System.Threading.Thread.Sleep(500)
     TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
 
   [<Test>]

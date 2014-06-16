@@ -11,7 +11,7 @@ open Nessos.Thespian.Tests.TestDefinitions.Remote
 
 [<TestFixture>]
 type ``Collocated UTcp``() =
-  inherit ``Collocated Communication``()
+  inherit ``Collocated Remote Communication``()
 
   override __.PublishActorPrimary(actor: Actor<'T>) = actor |> Actor.publish [Protocols.utcp()]
   override __.RefPrimary(actor: Actor<'T>) = actor.Ref.[UTCP]
