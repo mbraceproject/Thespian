@@ -28,7 +28,8 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   [<Timeout(60000)>] //make sure the default timeout is less than the test case timeout
   member self.``Post with reply with no timeout (default timeout)``() =
     use appDomainManager = self.GetAppDomainManager()
-    let actorManager = appDomainManager.Factory.CreateActorManager(fun a -> PrimitiveBehaviors.nill a)
+    let behavior a = PrimitiveBehaviors.nill a
+    let actorManager = appDomainManager.Factory.CreateActorManager(behavior)
     let actorRef = actorManager.Publish()
     actorManager.Start()
     
