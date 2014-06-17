@@ -34,8 +34,7 @@ type ``Collocated Communication``() =
 
 
     self.RefPrimary(actor).Post(TestAsync 42)
-    //do something for a while
-    System.Threading.Thread.Sleep(1000)
+    self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
     cell.Value |> should equal 42
 
   [<Test>]
@@ -46,8 +45,7 @@ type ``Collocated Communication``() =
                 |> Actor.start
 
     self.RefPrimary(actor) <-- TestAsync 42
-    //do something for a while
-    System.Threading.Thread.Sleep(1000)
+    self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
     cell.Value |> should equal 42
 
   [<Test>]

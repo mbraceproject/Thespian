@@ -55,11 +55,11 @@ module PrimitiveBehaviors =
     }
 
 module Behaviors =
-  let refCell (cell: 'T ref) (m: TestMessage<'T, 'T>) =
+  let refCell (cell: 'T ref) (m: TestMessage<'T>) =
     async {
       match m with
       | TestAsync s -> cell := s
-      | TestSync(R reply, _) -> reply (Value cell.Value)
+      | TestSync(R reply, _) -> reply nothing
     }
 
   let state (s: 'S) (m: TestMessage<'S, 'S>) =
