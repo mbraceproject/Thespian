@@ -34,3 +34,28 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
     
     actorRef <!= fun ch -> TestSync(ch, ())
 
+
+  [<Test>]
+  [<ExpectedException(typeof<UnknownRecipientException>)>]
+  member self.``Post when stopped``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager(fun a -> PrimitiveBehaviors.nill a)
+    let actorRef = actorManager.Publish()
+
+    actorRef <-- TestAsync()
+
+  [<Test>]
+  [<ExpectedException(typeof<UnknownRecipientException>)>]
+  member self.``Post when started, stop and post``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager(fun a -> Behavior.stateful 0 Behaviors.state a)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+
+    actorRef <-- TestAsync 42
+    let r = actorRef <!= fun ch -> TestSync(ch, 43)
+    r |> should equal 42
+
+    actorManager.Stop()
+    actorRef <-- TestAsync 0
+

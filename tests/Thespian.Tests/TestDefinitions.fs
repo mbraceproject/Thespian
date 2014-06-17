@@ -111,6 +111,8 @@ module Remote =
     default __.Start() = actor.Start()
     default __.Stop() = actor.Stop()
 
+    override __.Fini() = __.Stop()
+
 
   type UtcpActorManager<'T>(behavior: Actor<'T> ->  Async<unit>, ?name: string) =
     inherit ActorManager<'T>(behavior, ?name = name)
@@ -151,15 +153,28 @@ module Remote =
       managers <- (manager :> ActorManager)::managers
       manager :> ActorManager<'T>
     override __.Fini() = for manager in managers do manager.Fini()
-  
-  type AppDomainManager<'T when 'T :> ActorManagerFactory>(?appDomainName: string) =
-    let appDomainName = defaultArg appDomainName "testDomain"
-    let appDomain =
+
+  open System.Collections.Generic
+
+  type AppDomainPool() =
+    static let appDomains = new Dictionary<string, AppDomain>()
+
+    static member CreateDomain(name: string) =
       let currentDomain = AppDomain.CurrentDomain
       let appDomainSetup = new AppDomainSetup()
       appDomainSetup.ApplicationBase <- currentDomain.BaseDirectory
       let evidence = new Security.Policy.Evidence(currentDomain.Evidence)
-      AppDomain.CreateDomain(appDomainName, evidence, appDomainSetup)
+      let a = AppDomain.CreateDomain(name, evidence, appDomainSetup)
+      appDomains.Add(name, a)
+      a
+
+    static member GetOrCreate(name: string) =
+      let exists, appdomain = appDomains.TryGetValue(name)
+      if exists then appdomain else AppDomainPool.CreateDomain(name)
+  
+  type AppDomainManager<'T when 'T :> ActorManagerFactory>(?appDomainName: string) =
+    let appDomainName = defaultArg appDomainName "testDomain"
+    let appDomain = AppDomainPool.GetOrCreate(appDomainName)
 
     let factory =
       appDomain.CreateInstance(Assembly.GetExecutingAssembly().FullName, typeof<'T>.FullName).Unwrap() |> unbox<'T>
@@ -167,6 +182,4 @@ module Remote =
     member __.Factory = factory
 
     interface IDisposable with
-      override __.Dispose() =
-        factory.Fini()
-        AppDomain.Unload(appDomain)
+      override __.Dispose() = factory.Fini()

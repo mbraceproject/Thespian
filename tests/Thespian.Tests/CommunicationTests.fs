@@ -159,3 +159,17 @@ type ``Collocated Remote Communication``() =
 
     actor.Stop()
     self.RefPrimary(actor) <-- TestAsync 0
+
+open Nessos.Thespian.Remote
+
+[<AbstractClass>]
+type ``Tcp communication``() =
+  inherit ``Collocated Remote Communication``()
+
+  abstract PublishActorNonExistingListener: Actor<'T> -> Actor<'T>
+
+  [<Test>]
+  [<ExpectedException(typeof<TcpProtocolConfigurationException>)>]
+  member self.``Publish protocol on non-existing listener``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill |> self.PublishActorNonExistingListener
+    ()
