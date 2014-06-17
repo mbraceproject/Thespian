@@ -12,10 +12,14 @@ open Nessos.Thespian.Tests.TestDefinitions.Remote
 type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   abstract GetAppDomainManager: ?appDomainName: string -> AppDomainManager<'T>
 
+  member __.WrapBehavior(behavior: Actor<'T> -> Async<unit>) =
+    let serializer = Serialization.defaultSerializer
+    serializer.Serialize(behavior)
+
   [<Test>]
   member self.``Post via ref``() =
     use appDomainManager = self.GetAppDomainManager()
-    let actorManager = appDomainManager.Factory.CreateActorManager(fun a -> Behavior.stateful 0 Behaviors.state a)
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(BehaviorValue.Create <| Behavior.stateful 0 Behaviors.state)
     let actorRef = actorManager.Publish()
     actorManager.Start()
 
@@ -28,8 +32,7 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   [<Timeout(60000)>] //make sure the default timeout is less than the test case timeout
   member self.``Post with reply with no timeout (default timeout)``() =
     use appDomainManager = self.GetAppDomainManager()
-    let behavior a = PrimitiveBehaviors.nill a
-    let actorManager = appDomainManager.Factory.CreateActorManager(behavior)
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<unit, unit>>(BehaviorValue.Create PrimitiveBehaviors.nill)
     let actorRef = actorManager.Publish()
     actorManager.Start()
     
@@ -40,7 +43,7 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   [<ExpectedException(typeof<UnknownRecipientException>)>]
   member self.``Post when stopped``() =
     use appDomainManager = self.GetAppDomainManager()
-    let actorManager = appDomainManager.Factory.CreateActorManager(fun a -> PrimitiveBehaviors.nill a)
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<unit, unit>>(BehaviorValue.Create PrimitiveBehaviors.nill)
     let actorRef = actorManager.Publish()
 
     actorRef <-- TestAsync()
@@ -49,7 +52,7 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   [<ExpectedException(typeof<UnknownRecipientException>)>]
   member self.``Post when started, stop and post``() =
     use appDomainManager = self.GetAppDomainManager()
-    let actorManager = appDomainManager.Factory.CreateActorManager(fun a -> Behavior.stateful 0 Behaviors.state a)
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(BehaviorValue.Create <| Behavior.stateful 0 Behaviors.state)
     let actorRef = actorManager.Publish()
     actorManager.Start()
 

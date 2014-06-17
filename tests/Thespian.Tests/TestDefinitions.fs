@@ -128,16 +128,27 @@ module Remote =
       self.SetActor(actor)
       actor.Ref
 
+  type BehaviorValue<'T> = Behavior of byte[]
+  with
+    static member Create(behavior: Actor<'T> -> Async<unit>) =
+      let serializer = Serialization.defaultSerializer
+      Behavior(serializer.Serialize<Actor<'T> -> Async<unit>>(behavior))
+    member self.Unwrap() =
+      let (Behavior payload) = self
+      let serializer = Serialization.defaultSerializer
+      serializer.Deserialize<Actor<'T> -> Async<unit>>(payload)
+
   [<AbstractClass>]
   type ActorManagerFactory() =
     inherit MarshalByRefObject()
-    abstract CreateActorManager: (Actor<'T> -> Async<unit>) * ?name: string -> ActorManager<'T>
+    abstract CreateActorManager: BehaviorValue<'T> * ?name: string -> ActorManager<'T>
     abstract Fini: unit -> unit
 
   type UtcpActorManagerFactory() =
     inherit ActorManagerFactory()
     let mutable managers = []
-    override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
+    override __.CreateActorManager(b: BehaviorValue<'T>, ?name: string) =
+      let behavior = b.Unwrap()
       let manager = new UtcpActorManager<'T>(behavior, ?name = name)
       manager.Init()
       managers <- (manager :> ActorManager)::managers
@@ -147,7 +158,8 @@ module Remote =
   type BtcpActorManagerFactory() =
     inherit ActorManagerFactory()
     let mutable managers = []
-    override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
+    override __.CreateActorManager(b: BehaviorValue<'T>, ?name: string) =
+      let behavior = b.Unwrap()
       let manager = new BtcpActorManager<'T>(behavior, ?name = name)
       manager.Init()
       managers <- (manager :> ActorManager)::managers
