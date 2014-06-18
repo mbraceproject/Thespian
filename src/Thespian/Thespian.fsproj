@@ -96,6 +96,7 @@
     <Reference Include="FsPickler">
       <HintPath>..\..\packages\FsPickler.0.9.4-alpha\lib\net45\FsPickler.dll</HintPath>
     </Reference>
+    <Reference Include="System.Numerics" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
