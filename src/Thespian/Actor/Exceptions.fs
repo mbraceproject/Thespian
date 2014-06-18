@@ -83,9 +83,14 @@ type ThespianSerializationException =
     { inherit ThespianException(message, actorId, innerException)
       serializationOperation = operation
     }
+  private new (info: SerializationInfo, context: StreamingContext) =
+    { inherit ThespianException(info, context)
+      serializationOperation = info.GetValue("serializationOperation", typeof<SerializationOperation>) :?> SerializationOperation
+    }
 
   interface ISerializable with
     override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
+      info.AddValue("serializationOperation", self.serializationOperation)
       base.GetObjectData(info, context)
 
 
