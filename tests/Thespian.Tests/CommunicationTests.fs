@@ -77,13 +77,26 @@ type ``Collocated Communication``() =
 
   [<Test>]
   member self.``Post with reply method with timeout (in-time)``() =
-    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
                 |> self.PublishActorPrimary
                 |> Actor.start
 
     self.RefPrimary(actor) <-- TestAsync 42
-    let r = Async.RunSynchronously <| self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch, 43)), 4000)
+    
+    let r = self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout/4)), Default.ReplyReceiveTimeout/2)
+            |> Async.RunSynchronously
     r |> should equal 42
+
+  [<Test>]
+  [<ExpectedException(typeof<TimeoutException>)>]
+  member self.``Post with reply method with timeout``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                |> self.PublishActorPrimary
+                |> Actor.start
+    
+    self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout)), Default.ReplyReceiveTimeout/4)
+    |> Async.Ignore
+    |> Async.RunSynchronously
 
   [<Test>]
   [<ExpectedException(typeof<TimeoutException>)>]

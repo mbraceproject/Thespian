@@ -12,15 +12,10 @@ open Nessos.Thespian.Tests.TestDefinitions.Remote
 type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   abstract GetAppDomainManager: ?appDomainName: string -> AppDomainManager<'T>
 
-  member __.WrapBehavior(behavior: Actor<'T> -> Async<unit>) =
-    let serializer = Serialization.defaultSerializer
-    serializer.Serialize(behavior)
-
   [<Test>]
   member self.``Post via ref``() =
     use appDomainManager = self.GetAppDomainManager()
-    let f: Actor<TestMessage<int, int>> -> Async<unit> = Behavior.stateful 0 Behaviors.state
-    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(BehaviorValue.Create<TestMessage<int, int>>(f))
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(BehaviorValue.Create<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.state))
     let actorRef = actorManager.Publish()
     actorManager.Start()
 
@@ -39,6 +34,29 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
     
     actorRef <!= fun ch -> TestSync(ch, ())
 
+  [<Test>]
+  member self.``Post with reply method with timeout (in-time)``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(BehaviorValue.Create <| Behavior.stateful 0 Behaviors.delayedState)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+
+    actorRef <-- TestAsync 42
+    let r = actorRef.PostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout/4)), Default.ReplyReceiveTimeout/2)
+            |> Async.RunSynchronously
+    r |> should equal 42
+
+  [<Test>]
+  [<ExpectedException(typeof<TimeoutException>)>]
+  member self.``Post with reply method with timeout``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(BehaviorValue.Create <| Behavior.stateful 0 Behaviors.delayedState)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+
+    actorRef.PostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout)), Default.ReplyReceiveTimeout/4)
+    |> Async.Ignore
+    |> Async.RunSynchronously
 
   [<Test>]
   [<ExpectedException(typeof<UnknownRecipientException>)>]
