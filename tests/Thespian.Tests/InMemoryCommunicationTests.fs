@@ -15,7 +15,7 @@ type ``In-memory``() =
   override __.RefPrimary(a: Actor<'T>) = a.Ref
 
   [<Test>]
-  [<ExpectedException(typeof<SerializationException>)>]
+  [<ExpectedException(typeof<ThespianSerializationException>)>]
   member self.``Non-publish actor.Ref serialization failure``() =
     use actor = Actor.bind PrimitiveBehaviors.nill
 

@@ -70,9 +70,6 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="FsPickler">
-      <HintPath>..\..\packages\FsPickler.0.8.6.2\lib\net45\FsPickler.dll</HintPath>
-    </Reference>
     <Reference Include="FsUnit.NUnit">
       <HintPath>..\..\packages\FsUnit.1.2.1.0\Lib\Net40\FsUnit.NUnit.dll</HintPath>
     </Reference>
@@ -86,6 +83,9 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <Reference Include="FsPickler">
+      <HintPath>..\..\packages\FsPickler.0.9.4-alpha\lib\net45\FsPickler.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Thespian\Thespian.fsproj">

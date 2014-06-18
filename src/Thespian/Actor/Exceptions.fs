@@ -57,6 +57,38 @@ type ThespianException =
     override self.GetObjectData(info: SerializationInfo, context: StreamingContext) = self.GetObjectData(info, context)
 
 
+type SerializationOperation =
+  | Serialization = 0
+  | Deserialization = 1
+
+[<Sealed; Serializable>]
+type ThespianSerializationException =
+  inherit ThespianException
+
+  val private serializationOperation: SerializationOperation
+
+  new (message: string, operation: SerializationOperation) =
+    { inherit ThespianException(message)
+      serializationOperation = operation
+    }
+  new (message: string, operation: SerializationOperation, innerException: Exception) =
+    { inherit ThespianException(message, innerException)
+      serializationOperation = operation
+    }
+  new (message: string, operation: SerializationOperation, actorName: string, innerException: Exception) =
+    { inherit ThespianException(message, actorName, innerException)
+      serializationOperation = operation
+    }
+  new (message: string, operation: SerializationOperation, actorId: ActorId, innerException: Exception) =
+    { inherit ThespianException(message, actorId, innerException)
+      serializationOperation = operation
+    }
+
+  interface ISerializable with
+    override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
+      base.GetObjectData(info, context)
+
+
 [<Sealed; Serializable>]
 type MessageHandlingException =
   inherit ThespianException

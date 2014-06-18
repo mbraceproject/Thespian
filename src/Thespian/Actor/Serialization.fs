@@ -49,30 +49,34 @@ type IMessageSerializer =
 //       else
 //         formatter.Deserialize(memoryStream) :?> 'T
 
-type FsPicklerSerializer(?pickler : FsPickler) =
+type BinaryPicklerSerializer(?pickler : BinaryPickler) =
         
   let pickler =
     match pickler with 
-    | None -> new FsPickler()
+    | None -> FsPickler.CreateBinary()
     | Some p -> p
 
   member __.Serialize<'T> (value:'T, ?context) = pickler.Pickle<'T>(value, ?streamingContext = context)
   member __.Deserialize<'T> (data:byte[], ?context) = pickler.UnPickle<'T>(data, ?streamingContext = context)
 
   interface IMessageSerializer with
-    override __.Name = "FsPickler"
+    override __.Name = "FsPickler.Binary"
 
-    override self.Serialize<'T> (value:'T, ?context) = self.Serialize<'T>(value, ?context = context)
-    override self.Deserialize<'T> (data:byte[], ?context) = self.Deserialize<'T>(data, ?context = context)
+    override self.Serialize<'T> (value:'T, ?context) =
+      try self.Serialize<'T>(value, ?context = context)
+      with e -> raise <| new ThespianSerializationException(sprintf "Failed to serialize value of type %A" typeof<'T>.Name, SerializationOperation.Serialization, e)
+    override self.Deserialize<'T> (data:byte[], ?context) =
+      try self.Deserialize<'T>(data, ?context = context)
+      with e -> raise <| new ThespianSerializationException(sprintf "Failed to deserialize value with expected type %A" typeof<'T>.Name, SerializationOperation.Deserialization, e)
 
 
-let mutable defaultSerializer = new FsPicklerSerializer() :> IMessageSerializer
+let mutable defaultSerializer = new BinaryPicklerSerializer() :> IMessageSerializer
 
         
 //NOTE!! OBSOLETE
 type SerializerRegistry private () =
   static let defaultSerializerName = String.Empty
-  static let originalDefaultSerializer = new FsPicklerSerializer() :> IMessageSerializer
+  static let originalDefaultSerializer = new BinaryPicklerSerializer() :> IMessageSerializer
   static let serializerMap = Atom.atom Map.empty<string, IMessageSerializer>
   static let init () =
     serializerMap.Swap(fun _ -> 
