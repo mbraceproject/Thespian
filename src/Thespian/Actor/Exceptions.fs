@@ -51,6 +51,7 @@ type ThespianException =
 
   override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
     info.AddValue("actorName", self.actorName)
+    info.AddValue("actorId", self.ActorId)
     base.GetObjectData(info, context)
 
   interface ISerializable with
