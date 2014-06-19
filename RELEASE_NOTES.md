@@ -1,3 +1,6 @@
+### 0.0.6-alpha - Jun 19, 2014
+* Fix ActorRef comparison
+
 ### 0.0.5-alpha - Jun 13, 2014
 * Improve retry extensions
 
