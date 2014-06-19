@@ -141,14 +141,13 @@ module Remote =
   [<AbstractClass>]
   type ActorManagerFactory() =
     inherit MarshalByRefObject()
-    abstract CreateActorManager: BehaviorValue<'T> * ?name: string -> ActorManager<'T>
+    abstract CreateActorManager: (Actor<'T> -> Async<unit>) * ?name: string -> ActorManager<'T>
     abstract Fini: unit -> unit
 
   type UtcpActorManagerFactory() =
     inherit ActorManagerFactory()
     let mutable managers = []
-    override __.CreateActorManager(b: BehaviorValue<'T>, ?name: string) =
-      let behavior = b.Unwrap()
+    override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
       let manager = new UtcpActorManager<'T>(behavior, ?name = name)
       manager.Init()
       managers <- (manager :> ActorManager)::managers
@@ -158,8 +157,7 @@ module Remote =
   type BtcpActorManagerFactory() =
     inherit ActorManagerFactory()
     let mutable managers = []
-    override __.CreateActorManager(b: BehaviorValue<'T>, ?name: string) =
-      let behavior = b.Unwrap()
+    override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
       let manager = new BtcpActorManager<'T>(behavior, ?name = name)
       manager.Init()
       managers <- (manager :> ActorManager)::managers
