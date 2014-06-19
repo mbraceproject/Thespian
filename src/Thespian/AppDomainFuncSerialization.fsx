@@ -7,8 +7,8 @@ open Nessos.Thespian
 open Nessos.Thespian.Tests.TestDefinitions
 open Nessos.Thespian.Tests.TestDefinitions.Remote
 
-//let appDomainManager = new AppDomainManager<UtcpActorManagerFactory>("TestDomain")
-let f: Actor<TestMessage<int, int>> -> Async<unit> = Behavior.stateful 0 Behaviors.state
+let appDomainManager = new AppDomainManager<UtcpActorManagerFactory>("TestDomain")
+//let f: Actor<TestMessage<int, int>> -> Async<unit> = Behavior.stateful 0 Behaviors.state
 //let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(BehaviorValue.Create<TestMessage<int, int>>(f))
 
 let bin = BehaviorValue.Create<TestMessage<int, int>>(f)
