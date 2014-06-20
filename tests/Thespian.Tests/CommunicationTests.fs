@@ -92,7 +92,7 @@ type ``Collocated Communication``() =
 
     self.RefPrimary(actor) <-- TestAsync 42
     
-    let r = self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout/4)), Default.ReplyReceiveTimeout/2)
+    let r = self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout/4)), Default.ReplyReceiveTimeout*4)
             |> Async.RunSynchronously
     r |> should equal 42
 
@@ -103,7 +103,7 @@ type ``Collocated Communication``() =
                 |> self.PublishActorPrimary
                 |> Actor.start
     
-    self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout)), Default.ReplyReceiveTimeout/4)
+    self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout*4)), Default.ReplyReceiveTimeout/4)
     |> Async.Ignore
     |> Async.RunSynchronously
 
@@ -114,7 +114,7 @@ type ``Collocated Communication``() =
                 |> self.PublishActorPrimary
                 |> Actor.start
     
-    self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout/4), Default.ReplyReceiveTimeout)
+    self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout/4), Default.ReplyReceiveTimeout*4)
     |> Async.Ignore
     |> Async.RunSynchronously
 
@@ -125,7 +125,7 @@ type ``Collocated Communication``() =
                 |> self.PublishActorPrimary
                 |> Actor.start
     
-    self.RefPrimary(actor) <!- fun ch -> ch.Timeout <- Default.ReplyReceiveTimeout/4; TestSync(ch, Default.ReplyReceiveTimeout)
+    self.RefPrimary(actor) <!- fun ch -> ch.Timeout <- Default.ReplyReceiveTimeout/4; TestSync(ch, Default.ReplyReceiveTimeout*4)
     |> Async.Ignore
     |> Async.RunSynchronously
 
@@ -143,7 +143,7 @@ type ``Collocated Communication``() =
     //enough to get back the reply
     //the timeout is overriden by setting the reply channel timeout to Default.ReplyReceiveTimeout/2
     //thus we expect this to timeout
-    self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout/2), Default.ReplyReceiveTimeout)), Default.ReplyReceiveTimeout * 2)
+    self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout/4), Default.ReplyReceiveTimeout)), Default.ReplyReceiveTimeout*4)
     |> Async.Ignore
     |> Async.RunSynchronously
 
@@ -156,12 +156,7 @@ type ``Collocated Communication``() =
 
     self.RefPrimary(actor) <-- TestAsync 42
 
-    //the actor will stall for Default.ReplyReceiveTimeout,
-    //the reply timeout specified by the method arg is Default.ReplyReceiveTimeout * 2
-    //enough to get back the reply
-    //the timeout is overriden by setting the reply channel timeout to Default.ReplyReceiveTimeout/2
-    //thus we expect this to timeout
-    self.RefPrimary(actor).PostWithReply((fun ch -> ch.Timeout <- Default.ReplyReceiveTimeout/2; TestSync(ch, Default.ReplyReceiveTimeout)), Default.ReplyReceiveTimeout * 2)
+    self.RefPrimary(actor).PostWithReply((fun ch -> ch.Timeout <- Default.ReplyReceiveTimeout/4; TestSync(ch, Default.ReplyReceiveTimeout)), Default.ReplyReceiveTimeout*4)
     |> Async.Ignore
     |> Async.RunSynchronously
 
