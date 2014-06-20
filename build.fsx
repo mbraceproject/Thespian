@@ -113,7 +113,7 @@ Target "RunTests" (fun _ ->
     |> NUnit (fun p ->
         { p with
             DisableShadowCopy = true
-            TimeOut = TimeSpan.FromMinutes 20.
+            TimeOut = TimeSpan.FromMinutes 60.
             OutputFile = "TestResults.xml" })
 )
 
@@ -122,7 +122,7 @@ Target "RunTestsDebug" (fun _ ->
     |> NUnit (fun p ->
         { p with
             DisableShadowCopy = true
-            TimeOut = TimeSpan.FromMinutes 20.
+            TimeOut = TimeSpan.FromMinutes 60.
             OutputFile = "TestResults.xml" })
 )
 
