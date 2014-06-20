@@ -171,14 +171,28 @@ module Remote =
 
     static member CreateDomain(name: string) =
       let currentDomain = AppDomain.CurrentDomain
-      let appDomainSetup = new AppDomainSetup()
-//      printfn "BaseDirectory: %A" currentDomain.BaseDirectory
-      appDomainSetup.ApplicationBase <- currentDomain.BaseDirectory
-      appDomainSetup.DisallowBindingRedirects <- false
+      let appDomainSetup = currentDomain.SetupInformation
       let evidence = new Security.Policy.Evidence(currentDomain.Evidence)
       let a = AppDomain.CreateDomain(name, evidence, appDomainSetup)
       appDomains.Add(name, a)
       a
+
+    static member RedirectAssemly(shortName: string, targetVersion: Version, publicKeyToken: string) =
+      let rec h = new ResolveEventHandler(handler)
+      and handler (sender: obj) (args: ResolveEventArgs) =
+        let requestedAssembly = new AssemblyName(args.Name)
+        if requestedAssembly.Name = shortName then
+          printfn "Requesting assembly load of %s loaded by %s" args.Name (if args.RequestingAssembly = null then "(unknown)" else args.RequestingAssembly.FullName)
+          requestedAssembly.Version <- targetVersion
+          requestedAssembly.SetPublicKeyToken((new AssemblyName("x, PulicKeyToken=" + publicKeyToken)).GetPublicKeyToken())
+          requestedAssembly.CultureInfo <- System.Globalization.CultureInfo.InvariantCulture
+          AppDomain.CurrentDomain.remove_AssemblyResolve(h)
+          Assembly.Load(requestedAssembly)
+        else Unchecked.defaultof<Assembly>
+
+      AppDomain.CurrentDomain.add_AssemblyResolve(h)
+
+          
 
     static member GetOrCreate(name: string) =
       let exists, appdomain = appDomains.TryGetValue(name)
