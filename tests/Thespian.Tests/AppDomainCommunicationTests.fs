@@ -15,7 +15,7 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   [<TearDown>]
   member __.TestTearDown() =
     let memoryUsage = GC.GetTotalMemory(true)
-    printfn "Total Memory = %A" memoryUsage
+    printfn "Total Memory = %d bytes" memoryUsage
 
   [<Test>]
   member self.``Post via ref``() =

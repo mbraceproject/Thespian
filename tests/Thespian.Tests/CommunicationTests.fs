@@ -28,7 +28,7 @@ type ``Collocated Communication``() =
   [<TearDown>]
   member __.TestTearDown() =
     let memoryUsage = GC.GetTotalMemory(true)
-    printfn "Total Memory = %A" memoryUsage
+    printfn "Total Memory = %d bytes" memoryUsage
   
   [<Test>]
   member self.``Post method``() =
@@ -75,7 +75,6 @@ type ``Collocated Communication``() =
 
   [<Test>]
   [<ExpectedException(typeof<TimeoutException>)>]
-  [<Timeout(60000)>] //make sure the default timeout is less than the test case timeout
   member self.``Post with reply method with no timeout (default timeout)``() =
     use actor = Actor.bind PrimitiveBehaviors.nill |> self.PublishActorPrimary |> Actor.start
     self.RefPrimary(actor).PostWithReply(fun ch -> TestSync(ch, ()))
@@ -84,7 +83,6 @@ type ``Collocated Communication``() =
 
   [<Test>]
   [<ExpectedException(typeof<TimeoutException>)>]
-  [<Timeout(60000)>] //make sure the default timeout is less than the test case timeout
   member self.``Post with reply operator with no timeout (default timeout)``() =
     use actor = Actor.bind PrimitiveBehaviors.nill |> self.PublishActorPrimary |> Actor.start
     self.RefPrimary(actor) <!= fun ch -> TestSync(ch, ())

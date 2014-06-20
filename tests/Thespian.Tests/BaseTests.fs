@@ -17,7 +17,7 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
   [<TearDown>]
   member __.TestTearDown() =
     let memoryUsage = GC.GetTotalMemory(true)
-    printfn "Total Memory = %A" memoryUsage
+    printfn "Total Memory = %d bytes" memoryUsage
 
   [<TestFixtureSetUp>]
   member self.SetUp() =
