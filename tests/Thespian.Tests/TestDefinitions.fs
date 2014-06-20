@@ -172,7 +172,8 @@ module Remote =
     static member CreateDomain(name: string) =
       let currentDomain = AppDomain.CurrentDomain
       let appDomainSetup = new AppDomainSetup()
-      appDomainSetup.ApplicationBase <- currentDomain.BaseDirectory
+      appDomainSetup.DisallowBindingRedirects <- false
+      //appDomainSetup.ApplicationBase <- currentDomain.BaseDirectory
       let evidence = new Security.Policy.Evidence(currentDomain.Evidence)
       let a = AppDomain.CreateDomain(name, evidence, appDomainSetup)
       appDomains.Add(name, a)
