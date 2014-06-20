@@ -12,6 +12,11 @@ open Nessos.Thespian.Tests.TestDefinitions.Remote
 type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   abstract GetAppDomainManager: ?appDomainName: string -> AppDomainManager<'T>
 
+  [<TearDown>]
+  member __.TestTearDown() =
+    let memoryUsage = GC.GetTotalMemory(true)
+    printfn "Total Memory = %A" memoryUsage
+
   [<Test>]
   member self.``Post via ref``() =
     use appDomainManager = self.GetAppDomainManager()

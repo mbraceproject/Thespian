@@ -24,6 +24,11 @@ type ``Collocated Communication``() =
   [<TestFixtureTearDown>]
   member self.TearDown() =
     Actor.DefaultPrimaryProtocolFactory <- defaultPrimaryProtocolFactory
+
+  [<TearDown>]
+  member __.TestTearDown() =
+    let memoryUsage = GC.GetTotalMemory(true)
+    printfn "Total Memory = %A" memoryUsage
   
   [<Test>]
   member self.``Post method``() =

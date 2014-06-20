@@ -14,6 +14,11 @@ type PrimaryProtocolTests(primaryProtocolFactory: IPrimaryProtocolFactory) =
   abstract PrimaryProtocolFactory: IPrimaryProtocolFactory
   default __.PrimaryProtocolFactory = primaryProtocolFactory
 
+  [<TearDown>]
+  member __.TestTearDown() =
+    let memoryUsage = GC.GetTotalMemory(true)
+    printfn "Total Memory = %A" memoryUsage
+
   [<TestFixtureSetUp>]
   member self.SetUp() =
     defaultPrimaryProtocolFactory <- Actor.DefaultPrimaryProtocolFactory
