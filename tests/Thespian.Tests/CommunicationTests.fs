@@ -163,6 +163,78 @@ type ``Collocated Communication``() =
     |> Async.Ignore
     |> Async.RunSynchronously
 
+  [<Test>]
+  member self.``Try post with reply``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor) <-- TestAsync 42
+    let r = self.RefPrimary(actor).TryPostWithReply(fun ch -> TestSync(ch, 43))
+            |> Async.RunSynchronously
+
+    r |> should equal (Some 42)
+
+  [<Test>]
+  member self.``Try post with reply with timeout (in time)``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor) <-- TestAsync 42
+    let r = self.RefPrimary(actor).TryPostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout/4)), Default.ReplyReceiveTimeout*4)
+            |> Async.RunSynchronously
+
+    r |> should equal (Some 42)
+
+  [<Test>]
+  member self.``Try post with reply with timeout (time-out)``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor) <-- TestAsync 42
+    let r = self.RefPrimary(actor).TryPostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout*4)), Default.ReplyReceiveTimeout/4)
+            |> Async.RunSynchronously
+
+    r |> should equal None
+    
+  [<Test>]
+  member self.``Try post with reply with no timeout (default timeout)``() =
+    use actor = Actor.bind <| PrimitiveBehaviors.nill
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    let r = self.RefPrimary(actor).TryPostWithReply(fun ch -> TestSync(ch, ()))
+            |> Async.Ignore
+            |> Async.RunSynchronously
+
+    r |> should equal None
+
+  [<Test>]
+  member self.``Try post with reply with timeout on reply channel (fluid) overrides timeout arg``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor) <-- TestAsync 42
+    let r = self.RefPrimary(actor).TryPostWithReply((fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout/4), Default.ReplyReceiveTimeout*4)), Default.ReplyReceiveTimeout*8)
+            |> Async.RunSynchronously
+
+    r |> should equal None
+
+  [<Test>]
+  member self.``Try post with reply with timeout on reply channel (property set) overrides timeout arg``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor) <-- TestAsync 42
+    let r = self.RefPrimary(actor).TryPostWithReply((fun ch -> ch.Timeout <- Default.ReplyReceiveTimeout/4; TestSync(ch, Default.ReplyReceiveTimeout*4)), Default.ReplyReceiveTimeout*8)
+            |> Async.RunSynchronously
+
+    r |> should equal None
+
 
 [<AbstractClass>]
 type ``Collocated Remote Communication``() =
