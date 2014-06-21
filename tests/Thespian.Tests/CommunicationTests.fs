@@ -25,10 +25,10 @@ type ``Collocated Communication``() =
   member self.TearDown() =
     Actor.DefaultPrimaryProtocolFactory <- defaultPrimaryProtocolFactory
 
-  [<TearDown>]
-  member __.TestTearDown() =
-    let memoryUsage = GC.GetTotalMemory(true)
-    printfn "Total Memory = %d bytes" memoryUsage
+  // [<TearDown>]
+  // member __.TestTearDown() =
+  //   let memoryUsage = GC.GetTotalMemory(true)
+  //   printfn "Total Memory = %d bytes" memoryUsage
   
   [<Test>]
   member self.``Post method``() =
@@ -290,6 +290,21 @@ type ``Collocated Remote Communication``() =
 
     actor.Stop()
     self.RefPrimary(actor) <-- TestAsync 0
+
+  [<Test>]
+  member self.``Posts with server connection timeout``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor) <-- TestAsync 42
+
+    //after 8 seconds the server resets the connection
+    System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10.0))
+
+    let r = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 43)
+    r |> should equal 42
+    
 
 open Nessos.Thespian.Remote
 

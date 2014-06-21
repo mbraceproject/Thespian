@@ -12,10 +12,10 @@ open Nessos.Thespian.Tests.TestDefinitions.Remote
 type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   abstract GetAppDomainManager: ?appDomainName: string -> AppDomainManager<'T>
 
-  [<TearDown>]
-  member __.TestTearDown() =
-    let memoryUsage = GC.GetTotalMemory(true)
-    printfn "Total Memory = %d bytes" memoryUsage
+  // [<TearDown>]
+  // member __.TestTearDown() =
+  //   let memoryUsage = GC.GetTotalMemory(true)
+  //   printfn "Total Memory = %d bytes" memoryUsage
 
   [<Test>]
   member self.``Post via ref``() =
@@ -160,4 +160,16 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
 
     actorManager.Stop()
     actorRef <-- TestAsync 0
+
+  [<Test>]
+  member self.``Posts with server connection timeout``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.state)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+
+    actorRef <-- TestAsync 42
+    System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10.0))
+    let r = actorRef <!= fun ch -> TestSync(ch, 43)
+    r |> should equal 42
 
