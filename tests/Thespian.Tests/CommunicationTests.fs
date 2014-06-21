@@ -37,7 +37,6 @@ type ``Collocated Communication``() =
                 |> self.PublishActorPrimary
                 |> Actor.start
 
-
     self.RefPrimary(actor).Post(TestAsync 42)
     self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
     cell.Value |> should equal 42

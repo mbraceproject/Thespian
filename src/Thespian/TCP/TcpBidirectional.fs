@@ -393,7 +393,11 @@ and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRe
         //forward message
         primary <-- msg
         //wait until all reply channels have been writen to
-        let! r = protocolMessageStream.AsyncWaitForDisposal(context.MaxReplyChannelTimeout)
+        //note: the client is also waiting on the reply channels
+        //if the timeout here is the same as the reply channel timeout
+        //then the client might see a connection reset before detecting the timeout
+        //thus, the timeout here must be bigger
+        let! r = protocolMessageStream.AsyncWaitForDisposal(context.MaxReplyChannelTimeout * 2)
         match r with
         | Some _ -> return true
         | None -> protocolStream.NetworkStream.FaultDispose(); return false
