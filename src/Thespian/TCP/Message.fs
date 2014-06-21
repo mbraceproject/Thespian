@@ -115,21 +115,19 @@ type ProtocolNetworkStream(tcpClient: TcpClient, ?keepOpen: bool) =
     else Async.TryFromBeginEnd(buffer, offset, size, self.BeginRead, self.EndRead, timeout, self.FaultDispose)
 
   member self.TryAsyncRead(count: int, timeout: int): Async<byte[] option> =
-    let rec tryAsyncRead (buffer: byte[], bytesRead: int) =
-      async {
-        if bytesRead >= count then return Some()
-        else
-          let! r = self.TryAsyncRead(buffer, bytesRead, (count - bytesRead), timeout)
-          match r with
-          | Some bytesRead' -> return! tryAsyncRead (buffer, bytesRead + bytesRead')
-          | None -> return None
-      }
     async {
       let buffer = Array.zeroCreate count
-      let! r = tryAsyncRead (buffer, 0)
-      match r with
-      | Some() -> return Some buffer
-      | None -> return None
+      let i = ref 0
+      while i.Value >= 0 && i.Value < count do
+        let! n = self.TryAsyncRead(buffer, i.Value, count - i.Value, timeout)
+        match n with
+        | Some i' ->
+          i := i.Value + i'
+          if i' = 0 then return! Async.Raise <| new EndOfStreamException("Reached end of stream before reading all requested data.")
+        | None -> i := -1
+
+      if i.Value = -1 then return None
+      else return Some buffer
     }
 
   member self.TryAsyncWrite(buffer: byte[], timeout: int, ?offset: int, ?count: int): Async<unit option> =
