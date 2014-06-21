@@ -19,7 +19,7 @@ type TcpProtocolListener(ipEndPoint: IPEndPoint, ?backLog: int, ?concurrentAccep
   //default configuration
   let backLog = defaultArg backLog 50
   let concurrentAccepts = defaultArg concurrentAccepts 10
-  let connectionTimeout = defaultArg connectionTimeout (int <| TimeSpan.FromSeconds(60.0).TotalMilliseconds)
+  let connectionTimeout = defaultArg connectionTimeout (int <| TimeSpan.FromSeconds(5.0).TotalMilliseconds)
   let maxWaitingConnections = defaultArg maxWaitingConnections 15
 
   let openConnections = ref 0
