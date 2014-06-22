@@ -211,6 +211,42 @@ type ``Collocated Communication``() =
     |> Async.RunSynchronously
 
   [<Test>]
+  member self.``Untyped post with reply method``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                |> self.PublishActorPrimary
+                |> Actor.start
+    let actorRef = self.RefPrimary(actor) :> ActorRef
+
+    self.RefPrimary(actor).Post(TestAsync 42)
+    let r = Async.RunSynchronously <| actorRef.PostWithReplyUntyped(fun ch -> TestSync(ch |> ReplyChannel.map unbox, 43) |> box)
+    r |> should equal 42
+
+  [<Test>]
+  member self.``Untyped post with reply method with timeout (in-time)``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                |> self.PublishActorPrimary
+                |> Actor.start
+    let actorRef = self.RefPrimary(actor) :> ActorRef
+
+    self.RefPrimary(actor) <-- TestAsync 42
+    
+    let r = actorRef.PostWithReplyUntyped((fun ch -> TestSync(ch |> ReplyChannel.map unbox, Default.ReplyReceiveTimeout/4) |> box), Default.ReplyReceiveTimeout*4)
+            |> Async.RunSynchronously
+    r |> should equal 42
+
+  [<Test>]
+  [<ExpectedException(typeof<TimeoutException>)>]
+  member self.``Untyped post with reply method with timeout``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                |> self.PublishActorPrimary
+                |> Actor.start
+    let actorRef = self.RefPrimary(actor) :> ActorRef
+    
+    actorRef.PostWithReplyUntyped((fun ch -> TestSync(ch |> ReplyChannel.map unbox, Default.ReplyReceiveTimeout*4) |> box), Default.ReplyReceiveTimeout/4)
+    |> Async.Ignore
+    |> Async.RunSynchronously
+
+  [<Test>]
   member self.``Try post with reply``() =
     use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
                 |> self.PublishActorPrimary
