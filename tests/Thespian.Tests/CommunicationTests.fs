@@ -83,7 +83,7 @@ type ``Collocated Communication``() =
 
     let actorRef = self.RefPrimary(actor) :> ActorRef
 
-    actorRef.PostUntyped(TestAsync 42)
+    actorRef.PostUntyped(TestAsync 42 : TestMessage<int>)
     self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
     cell.Value |> should equal 42
 
@@ -96,7 +96,7 @@ type ``Collocated Communication``() =
 
     let actorRef = self.RefPrimary(actor) :> ActorRef
 
-    Async.RunSynchronously <| actorRef.AsyncPostUntyped(TestAsync 42)
+    Async.RunSynchronously <| actorRef.AsyncPostUntyped(TestAsync 42 : TestMessage<int>)
     self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
     cell.Value |> should equal 42
 
@@ -217,8 +217,8 @@ type ``Collocated Communication``() =
                 |> Actor.start
     let actorRef = self.RefPrimary(actor) :> ActorRef
 
-    self.RefPrimary(actor).Post(TestAsync 42)
-    let r = Async.RunSynchronously <| actorRef.PostWithReplyUntyped(fun ch -> TestSync(ch |> ReplyChannel.map unbox, 43) |> box)
+    self.RefPrimary(actor).Post(TestAsync 42 : TestMessage<int, int>)
+    let r = Async.RunSynchronously <| actorRef.PostWithReplyUntyped(fun ch -> (TestSync(ch |> ReplyChannel.map box, 43) : TestMessage<int, int>) |> box)
     r |> should equal 42
 
   [<Test>]
@@ -230,7 +230,7 @@ type ``Collocated Communication``() =
 
     self.RefPrimary(actor) <-- TestAsync 42
     
-    let r = actorRef.PostWithReplyUntyped((fun ch -> TestSync(ch |> ReplyChannel.map unbox, Default.ReplyReceiveTimeout/4) |> box), Default.ReplyReceiveTimeout*4)
+    let r = actorRef.PostWithReplyUntyped((fun ch -> (TestSync(ch |> ReplyChannel.map box, Default.ReplyReceiveTimeout/4) : TestMessage<int, int>) |> box), Default.ReplyReceiveTimeout*4)
             |> Async.RunSynchronously
     r |> should equal 42
 
@@ -242,7 +242,7 @@ type ``Collocated Communication``() =
                 |> Actor.start
     let actorRef = self.RefPrimary(actor) :> ActorRef
     
-    actorRef.PostWithReplyUntyped((fun ch -> TestSync(ch |> ReplyChannel.map unbox, Default.ReplyReceiveTimeout*4) |> box), Default.ReplyReceiveTimeout/4)
+    actorRef.PostWithReplyUntyped((fun ch -> (TestSync(ch |> ReplyChannel.map box, Default.ReplyReceiveTimeout*4) : TestMessage<int, int>) |> box), Default.ReplyReceiveTimeout/4)
     |> Async.Ignore
     |> Async.RunSynchronously
 
@@ -314,6 +314,45 @@ type ``Collocated Communication``() =
 
     self.RefPrimary(actor) <-- TestAsync 42
     let r = self.RefPrimary(actor).TryPostWithReply((fun ch -> ch.Timeout <- Default.ReplyReceiveTimeout/4; TestSync(ch, Default.ReplyReceiveTimeout*4)), Default.ReplyReceiveTimeout*8)
+            |> Async.RunSynchronously
+
+    r |> should equal None
+
+  [<Test>]
+  member self.``Untyped try post with reply``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                |> self.PublishActorPrimary
+                |> Actor.start
+    let actorRef = self.RefPrimary(actor) :> ActorRef
+
+    self.RefPrimary(actor) <-- TestAsync 42
+    let r = actorRef.TryPostWithReplyUntyped(fun ch -> TestSync(ch |> ReplyChannel.map box, 43) |> box)
+            |> Async.RunSynchronously
+
+    r |> should equal (Some 42)
+
+  [<Test>]
+  member self.``Untyped try post with reply with timeout (in time)``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                |> self.PublishActorPrimary
+                |> Actor.start
+    let actorRef = self.RefPrimary(actor) :> ActorRef
+
+    self.RefPrimary(actor) <-- TestAsync 42
+    let r = actorRef.TryPostWithReplyUntyped((fun ch -> (TestSync(ch |> ReplyChannel.map box, Default.ReplyReceiveTimeout/4) : TestMessage<int, int>) |> box), Default.ReplyReceiveTimeout*4)
+            |> Async.RunSynchronously
+
+    r |> should equal (Some 42)
+
+  [<Test>]
+  member self.``Untyped try post with reply with timeout (time-out)``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                |> self.PublishActorPrimary
+                |> Actor.start
+    let actorRef = self.RefPrimary(actor) :> ActorRef
+
+    self.RefPrimary(actor) <-- TestAsync 42
+    let r = actorRef.TryPostWithReplyUntyped((fun ch -> (TestSync(ch |> ReplyChannel.map box, Default.ReplyReceiveTimeout*4) : TestMessage<int, int>) |> box), Default.ReplyReceiveTimeout/4)
             |> Async.RunSynchronously
 
     r |> should equal None
