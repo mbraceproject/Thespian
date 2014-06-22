@@ -42,6 +42,17 @@ type ``Collocated Communication``() =
     cell.Value |> should equal 42
 
   [<Test>]
+  member self.``Post operator``() =
+    let cell = ref 0
+    use actor = Actor.bind <| Behavior.stateless (Behaviors.refCell cell)
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor) <-- TestAsync 42
+    self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
+    cell.Value |> should equal 42
+
+  [<Test>]
   member self.``Async Post method``() =
     let cell = ref 0
     use actor = Actor.bind <| Behavior.stateless (Behaviors.refCell cell)
@@ -64,13 +75,15 @@ type ``Collocated Communication``() =
     cell.Value |> should equal 42
 
   [<Test>]
-  member self.``Post operator``() =
+  member self.``Untyped post method``() =
     let cell = ref 0
     use actor = Actor.bind <| Behavior.stateless (Behaviors.refCell cell)
                 |> self.PublishActorPrimary
                 |> Actor.start
 
-    self.RefPrimary(actor) <-- TestAsync 42
+    let actorRef = self.RefPrimary(actor) :> ActorRef
+
+    actorRef.PostUntyped(TestAsync 42)
     self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
     cell.Value |> should equal 42
 
