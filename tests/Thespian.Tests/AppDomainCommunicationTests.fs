@@ -173,3 +173,30 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
     let r = actorRef <!= fun ch -> TestSync(ch, 43)
     r |> should equal 42
 
+  [<Test>]
+  member self.``Order of posts``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestList<int>>(Behavior.stateful [] Behaviors.list)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+
+    let msgs =
+      [ for i in 1..200 -> ListPrepend i]
+      @
+      [ Delay 500]
+      @
+      [ for i in 1..200 -> ListPrepend i]
+
+    for msg in msgs do actorRef <-- msg
+
+    let result = actorRef <!= ListGet
+
+    let expected =
+      [ for i in 1..200 -> ListPrepend i]
+      @
+      [ for i in 1..200 -> ListPrepend i]
+      |> List.rev
+      |> List.map (function ListPrepend i -> i | _ -> failwith "Impossibility")
+
+    result |> should equal expected
+

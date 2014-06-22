@@ -9,6 +9,10 @@ type TestMessage<'T, 'R> =
 
 type TestMessage<'T> = TestMessage<'T, unit>
 
+type TestList<'T> =
+  | ListPrepend of 'T
+  | Delay of int
+  | ListGet of IReplyChannel<'T list>
 
 module PrimitiveBehaviors =
   let nill (self: Actor<TestMessage<unit>>) = async.Zero()
@@ -78,6 +82,19 @@ module Behaviors =
         reply <| Value s
         return s
     }
+
+  let list (l: 'T list) (m: TestList<'T>) =
+    async {
+      match m with
+      | ListPrepend v -> return v::l
+      | Delay t ->
+        do! Async.Sleep t
+        return l
+      | ListGet(R reply) ->
+        reply <| Value l
+        return l
+    }
+
 
 module Remote =
   open System.Reflection

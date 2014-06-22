@@ -42,6 +42,28 @@ type ``Collocated Communication``() =
     cell.Value |> should equal 42
 
   [<Test>]
+  member self.``Async Post method``() =
+    let cell = ref 0
+    use actor = Actor.bind <| Behavior.stateless (Behaviors.refCell cell)
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    Async.RunSynchronously (self.RefPrimary(actor) <-!- TestAsync 42)
+    self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
+    cell.Value |> should equal 42
+
+  [<Test>]
+  member self.``Async post operator``() =
+    let cell = ref 0
+    use actor = Actor.bind <| Behavior.stateless (Behaviors.refCell cell)
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    Async.RunSynchronously <| self.RefPrimary(actor).AsyncPost(TestAsync 42)
+    self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
+    cell.Value |> should equal 42
+
+  [<Test>]
   member self.``Post operator``() =
     let cell = ref 0
     use actor = Actor.bind <| Behavior.stateless (Behaviors.refCell cell)
@@ -233,6 +255,33 @@ type ``Collocated Communication``() =
             |> Async.RunSynchronously
 
     r |> should equal None
+
+  [<Test>]
+  member self.``Order of posts``() =
+    use actor = Actor.bind <| Behavior.stateful [] Behaviors.list
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    let msgs =
+      [ for i in 1..200 -> ListPrepend i]
+      @
+      [ Delay 500]
+      @
+      [ for i in 1..200 -> ListPrepend i]
+
+    for msg in msgs do self.RefPrimary(actor) <-- msg
+
+    let result = self.RefPrimary(actor) <!= ListGet
+
+    let expected =
+      [ for i in 1..200 -> ListPrepend i]
+      @
+      [ for i in 1..200 -> ListPrepend i]
+      |> List.rev
+      |> List.map (function ListPrepend i -> i | _ -> failwith "Impossibility")
+
+    result |> should equal expected
+    
 
 
 [<AbstractClass>]
