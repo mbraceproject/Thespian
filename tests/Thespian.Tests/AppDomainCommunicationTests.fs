@@ -119,7 +119,7 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
 
     actorRef <-- TestAsync 42
 
-    actorRef.PostWithReply((fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout/4), Default.ReplyReceiveTimeout)), Default.ReplyReceiveTimeout*4)
+    actorRef.PostWithReply((fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout/4), Default.ReplyReceiveTimeout*8)), Default.ReplyReceiveTimeout*4)
     |> Async.Ignore
     |> Async.RunSynchronously
 
@@ -133,7 +133,7 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
 
     actorRef <-- TestAsync 42
 
-    actorRef.PostWithReply((fun ch -> ch.Timeout <- Default.ReplyReceiveTimeout/4; TestSync(ch, Default.ReplyReceiveTimeout)), Default.ReplyReceiveTimeout*4)
+    actorRef.PostWithReply((fun ch -> ch.Timeout <- Default.ReplyReceiveTimeout/4; TestSync(ch, Default.ReplyReceiveTimeout*8)), Default.ReplyReceiveTimeout*4)
     |> Async.Ignore
     |> Async.RunSynchronously
 
