@@ -326,10 +326,10 @@ type ``Collocated Communication``() =
     let actorRef = self.RefPrimary(actor) :> ActorRef
 
     self.RefPrimary(actor) <-- TestAsync 42
-    let r = actorRef.TryPostWithReplyUntyped(fun ch -> TestSync(ch |> ReplyChannel.map box, 43) |> box)
+    let r = actorRef.TryPostWithReplyUntyped(fun ch -> (TestSync(ch |> ReplyChannel.map box, 43) : TestMessage<int, int>) |> box)
             |> Async.RunSynchronously
 
-    r |> should equal (Some 42)
+    r |> Option.map unbox<int> |> should equal (Some 42)
 
   [<Test>]
   member self.``Untyped try post with reply with timeout (in time)``() =
@@ -341,8 +341,8 @@ type ``Collocated Communication``() =
     self.RefPrimary(actor) <-- TestAsync 42
     let r = actorRef.TryPostWithReplyUntyped((fun ch -> (TestSync(ch |> ReplyChannel.map box, Default.ReplyReceiveTimeout/4) : TestMessage<int, int>) |> box), Default.ReplyReceiveTimeout*4)
             |> Async.RunSynchronously
-
-    r |> should equal (Some 42)
+    
+    r |> Option.map unbox<int> |> should equal (Some 42)
 
   [<Test>]
   member self.``Untyped try post with reply with timeout (time-out)``() =
@@ -355,7 +355,7 @@ type ``Collocated Communication``() =
     let r = actorRef.TryPostWithReplyUntyped((fun ch -> (TestSync(ch |> ReplyChannel.map box, Default.ReplyReceiveTimeout*4) : TestMessage<int, int>) |> box), Default.ReplyReceiveTimeout/4)
             |> Async.RunSynchronously
 
-    r |> should equal None
+    r |> Option.map unbox<int> |> should equal None
 
   [<Test>]
   member self.``Order of posts``() =
