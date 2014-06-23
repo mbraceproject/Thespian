@@ -387,12 +387,12 @@ and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRe
       use _ = context.ReplyWriter
       let msg = serializer.Deserialize<obj>(payload, context.GetStreamingContext()) :?> 'T
 
+      //forward message
+      primary <-- msg
+
       let! r = protocolStream.TryAsyncWriteResponse(Acknowledge msgId)
       match r with
-      | Some() ->
-        //forward message
-        primary <-- msg
-        
+      | Some() ->        
         //wait until all reply channels have been writen to
         //note: the client is also waiting on the reply channels
         //if the timeout here is the same as the reply channel timeout
