@@ -236,7 +236,14 @@ type MessageProcessor<'T> private (actorId: TcpActorId, listener: TcpProtocolLis
           return false
       | Response reply ->
         let isValid, k = clientRegistry.TryRemove msgId
-        if isValid then k reply; return true
+        if isValid then
+          k reply;
+          try
+            let! r = protocolStream.TryAsyncWriteResponse(Acknowledge msgId)
+            return Option.isSome r
+          with e ->
+            logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, new CommunicationException("Failed to respond with Acknowledgement.", actorId, e) |> box)
+            return false
         else
           try
             let! r = protocolStream.TryAsyncWriteResponse(UnknownRecipient(msgId, actorId))

@@ -2,7 +2,6 @@ namespace Nessos.Thespian.Tests
 
 open System
 open System.Net
-open System.Net.Sockets
 open NUnit.Framework
 open FsUnit
 

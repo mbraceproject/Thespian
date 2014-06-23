@@ -1,6 +1,7 @@
 namespace Nessos.Thespian.Tests
 
 open System
+open System.Threading
 open NUnit.Framework
 open FsUnit
 
@@ -211,6 +212,17 @@ type ``Collocated Communication``() =
     |> Async.RunSynchronously
 
   [<Test>]
+  member self.``Post with reply sequence``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    let r = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 42)
+    let r' = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
+    r |> should equal 0
+    r' |> should equal 42
+
+  [<Test>]
   member self.``Untyped post with reply method``() =
     use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
                 |> self.PublishActorPrimary
@@ -382,6 +394,47 @@ type ``Collocated Communication``() =
       |> List.map (function ListPrepend i -> i | _ -> failwith "Impossibility")
 
     result |> should equal expected
+
+  [<Test>]
+  member self.``Parallel posts``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.adder
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    [ for i in 1..30 -> async { self.RefPrimary(actor) <-- TestAsync i } ]
+    |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
+
+    let expected = [ for i in 1..30 -> i ] |> List.reduce (+)
+    let result = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
+    result |> should equal expected
+
+  [<Test>]
+  member self.``Parallel async posts``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.adder
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    [ for i in 1..30 -> self.RefPrimary(actor) <-!- TestAsync i ]
+    |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
+
+    let expected = [ for i in 1..30 -> i ] |> List.reduce (+)
+    let result = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
+    result |> should equal expected
+
+  [<Test>]
+  member self.``Parallel posts with reply``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    [ for i in 1..100 -> self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*2), i) ]
+    |> Async.Parallel
+    |> Async.Ignore
+    |> Async.RunSynchronously
+
+    let r = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
+    r |> should be (greaterThanOrEqualTo 1)
+    r |> should be (lessThanOrEqualTo 100)
     
 
 
@@ -440,6 +493,10 @@ type ``Collocated Remote Communication``() =
 
     actor.Stop()
     self.RefPrimary(actor) <-- TestAsync 0
+
+  // [<Test>]
+  // member self.``Parallel posts with reply with multiple deserialised refs``() =
+  //   ()
     
 
 open Nessos.Thespian.Remote
@@ -469,3 +526,36 @@ type ``Tcp communication``() =
 
     let r = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 43)
     r |> should equal 42
+
+  [<Test>]
+  member self.``Parallel async posts with server connection timeouts``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.adder
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    [ for i in 1..100 -> async {
+      if i = 21 || i = 42 || i = 84 then 
+        //sleep more than connection timeout
+        do! Async.Sleep 10000
+      do! self.RefPrimary(actor) <-!- (TestAsync i) 
+    }] |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
+
+    let expected = [for i in 1..100 -> i] |> List.reduce (+)
+    let result = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
+    result |> should equal expected
+
+  [<Test>]
+  member self.``Parallel posts with reply with server connection timeout``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    [ for i in 1..100 -> async {
+        if i = 21 || i = 42 || i = 84 then
+          do! Async.Sleep 10000
+        return! self.RefPrimary(actor) <!- fun ch -> TestSync(ch, i)
+    }] |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
+
+    let r = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
+    r |> should be (greaterThanOrEqualTo 1)
+    r |> should be (lessThanOrEqualTo 100)

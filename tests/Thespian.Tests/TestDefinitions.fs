@@ -95,6 +95,15 @@ module Behaviors =
         return l
     }
 
+  let adder (i: int) (m: TestMessage<int, int>) =
+    async {
+      match m with
+      | TestAsync i' -> return i + i'
+      | TestSync(R reply, _) ->
+        reply <| Value i
+        return i
+    }
+
 
 module Remote =
   open System.Reflection

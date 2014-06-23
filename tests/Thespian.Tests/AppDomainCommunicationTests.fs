@@ -200,3 +200,81 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
 
     result |> should equal expected
 
+  [<Test>]
+  member self.``Parallel posts``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.adder)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+
+    [ for i in 1..30 -> async { actorRef <-- TestAsync i } ]
+    |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
+
+    let expected = [ for i in 1..30 -> i ] |> List.reduce (+)
+    let result = actorRef <!= fun ch -> TestSync(ch, 0)
+    result |> should equal expected
+
+  [<Test>]
+  member self.``Parallel async posts``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.adder)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+
+    [ for i in 1..30 -> actorRef <-!- TestAsync i ]
+    |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
+
+    let expected = [ for i in 1..30 -> i ] |> List.reduce (+)
+    let result = actorRef <!= fun ch -> TestSync(ch, 0)
+    result |> should equal expected
+
+  [<Test>]
+  member self.``Parallel async posts with server connection timeouts``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.adder)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+
+    [ for i in 1..100 -> async {
+      if i = 21 || i = 42 || i = 84 then 
+        //sleep more than connection timeout
+        do! Async.Sleep 10000
+      do! actorRef <-!- (TestAsync i) 
+    }] |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
+
+    let expected = [for i in 1..100 -> i] |> List.reduce (+)
+    let result = actorRef <!= fun ch -> TestSync(ch, 0)
+    result |> should equal expected
+
+  [<Test>]
+  member self.``Parallel posts with reply``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.state)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+
+    [ for i in 1..100 -> actorRef <!- fun ch -> TestSync(ch, i) ]
+    |> Async.Parallel
+    |> Async.Ignore
+    |> Async.RunSynchronously
+
+    let r = actorRef <!= fun ch -> TestSync(ch, 0)
+    r |> should be (greaterThanOrEqualTo 1)
+    r |> should be (lessThanOrEqualTo 100)
+
+  [<Test>]
+  member self.``Parallel posts with reply with server connection timeout``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.state)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+
+    [ for i in 1..100 -> async {
+        if i = 21 || i = 42 || i = 84 then
+          do! Async.Sleep 10000
+        return! actorRef <!- fun ch -> TestSync(ch, i)
+    }] |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
+
+    let r = actorRef <!= fun ch -> TestSync(ch, 0)
+    r |> should be (greaterThanOrEqualTo 1)
+    r |> should be (lessThanOrEqualTo 100)

@@ -1,6 +1,7 @@
 namespace Nessos.Thespian.Tests
 
 open System
+open System.Net
 open NUnit.Framework
 open FsUnit
 
@@ -11,10 +12,12 @@ open Nessos.Thespian.Tests.TestDefinitions.Remote
 
 [<TestFixture>]
 type ``Collocated BTcp``() =
-  inherit ``Collocated Remote Communication``()
+  inherit ``Tcp communication``()
 
   override __.PublishActorPrimary(actor: Actor<'T>) = actor |> Actor.publish [Protocols.btcp()]
   override __.RefPrimary(actor: Actor<'T>) = actor.Ref.[BTCP]
+  override __.PublishActorNonExistingListener(actor: Actor<'T>) =
+    actor.Publish [Protocols.utcp(new IPEndPoint(IPAddress.Loopback, 3939))]
 
 
 [<TestFixture>]

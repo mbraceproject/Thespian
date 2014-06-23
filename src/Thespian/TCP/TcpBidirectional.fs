@@ -392,6 +392,7 @@ and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRe
       | Some() ->
         //forward message
         primary <-- msg
+        
         //wait until all reply channels have been writen to
         //note: the client is also waiting on the reply channels
         //if the timeout here is the same as the reply channel timeout
