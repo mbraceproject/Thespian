@@ -54,7 +54,7 @@ type ``Collocated Communication``() =
     cell.Value |> should equal 42
 
   [<Test>]
-  member self.``Async Post method``() =
+  member self.``Async post method``() =
     let cell = ref 0
     use actor = Actor.bind <| Behavior.stateless (Behaviors.refCell cell)
                 |> self.PublishActorPrimary
