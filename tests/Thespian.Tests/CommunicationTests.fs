@@ -427,7 +427,8 @@ type ``Collocated Communication``() =
                 |> self.PublishActorPrimary
                 |> Actor.start
 
-    [ for i in 1..100 -> self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*2), i) ]
+    [ for i in 1..100 -> self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*8), i) ]
+//    [ for i in 1..100 -> self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Timeout.Infinite), i) ]
     |> Async.Parallel
     |> Async.Ignore
     |> Async.RunSynchronously
