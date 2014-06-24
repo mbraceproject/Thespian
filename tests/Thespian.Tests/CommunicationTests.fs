@@ -428,7 +428,6 @@ type ``Collocated Communication``() =
                 |> Actor.start
 
     [ for i in 1..100 -> self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*8), i) ]
-//    [ for i in 1..100 -> self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Timeout.Infinite), i) ]
     |> Async.Parallel
     |> Async.Ignore
     |> Async.RunSynchronously
@@ -495,9 +494,26 @@ type ``Collocated Remote Communication``() =
     actor.Stop()
     self.RefPrimary(actor) <-- TestAsync 0
 
-  // [<Test>]
-  // member self.``Parallel posts with reply with multiple deserialised refs``() =
-  //   ()
+  [<Test>]
+  member self.``Parallel posts with reply with multiple deserialised refs``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                |> self.PublishActorPrimary
+                |> Actor.start : Actor<TestMessage<int, int>>
+
+    self.RefPrimary(actor) <-- TestAsync 42
+
+    let serializer = Serialization.defaultSerializer
+    let serializedRef = serializer.Serialize(self.RefPrimary(actor))
+    let deserializedRefs = [ for i in 1..10 -> serializer.Deserialize<ActorRef<TestMessage<int, int>>>(serializedRef) ]
+
+    let result =
+      deserializedRefs
+      |> Seq.map (fun ref -> ref <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*8), 0))
+      |> Async.Parallel
+      |> Async.RunSynchronously
+      |> Seq.reduce (+)
+
+    result |> should equal 42
     
 
 open Nessos.Thespian.Remote

@@ -278,3 +278,24 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
     let r = actorRef <!= fun ch -> TestSync(ch, 0)
     r |> should be (greaterThanOrEqualTo 1)
     r |> should be (lessThanOrEqualTo 100)
+
+
+  [<Test>]
+  member self.``Parallel posts with reply with multiple deserialised refs``() =
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.state)
+    let actorRef = actorManager.Publish()
+    actorManager.Start()
+
+    actorRef <-- TestAsync 42
+
+    let refs = [ for i in 1..10 -> actorManager.Ref ]
+
+    let result =
+      refs
+      |> Seq.map (fun ref -> ref <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*8), 0))
+      |> Async.Parallel
+      |> Async.RunSynchronously
+      |> Seq.reduce (+)
+
+    result |> should equal 42
