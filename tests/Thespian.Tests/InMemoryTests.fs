@@ -110,7 +110,7 @@
             result |> should equal 42
 
         [<Test>]
-        [<ExpectedException(typeof<System.Runtime.Serialization.SerializationException>)>]
+        [<ExpectedException(typeof<Nessos.FsPickler.FsPicklerException>)>] // warning: serialization implementation sensitive!
         member t.``Unpublished actorRef serialization``() =
             let serializer = SerializerRegistry.GetDefaultSerializer()
 

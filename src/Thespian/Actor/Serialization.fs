@@ -53,11 +53,11 @@
                     formatter.Deserialize(memoryStream) :?> 'T
 
 
-    type FsPicklerSerializer(?pickler : FsPickler) =
+    type FsPicklerSerializer(?pickler : BasePickler) =
         
         let pickler = 
             match pickler with 
-            | None -> new FsPickler()
+            | None -> FsPickler.CreateBinary() :> BasePickler
             | Some p -> p
 
         interface IMessageSerializer with
