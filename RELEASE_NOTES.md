@@ -1,3 +1,6 @@
+### 0.0.7-alpha - Jun 27, 2014
+* Update FsPickler version
+
 ### 0.0.6-alpha - Jun 19, 2014
 * Fix ActorRef comparison
 
