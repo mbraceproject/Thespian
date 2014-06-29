@@ -514,6 +514,7 @@ type ``Collocated Remote Communication``() =
       |> Seq.reduce (+)
 
     result |> should equal 42
+
     
 
 open Nessos.Thespian.Remote
