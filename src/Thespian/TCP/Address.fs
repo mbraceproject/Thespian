@@ -21,7 +21,6 @@
                 Dns.GetHostAddresses(addr) 
                     |> Seq.filter (fun addr -> addr.AddressFamily = AddressFamily.InterNetwork)
                     |> Seq.map (fun addr -> addr.ToString())
-                    |> Seq.append (seq { yield IPAddress.Loopback.ToString() })
                     |> Set.ofSeq)
 
         member __.Value = hostnameOrAddress

@@ -495,9 +495,6 @@ type ``Collocated Remote Communication``() =
     actor.Stop()
     self.RefPrimary(actor) <-- TestAsync 0
 
-  // [<Test>]
-  // member self.``Parallel posts with reply with multiple deserialised refs``() =
-  //   ()
     
 
 open Nessos.Thespian.Remote
