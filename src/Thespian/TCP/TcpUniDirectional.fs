@@ -213,7 +213,11 @@ type MessageProcessor<'T> private (actorId: TcpActorId, listener: TcpProtocolLis
   let serializer = Serialization.defaultSerializer
   let logEvent = new Event<Log>()
   let clientRegistry = new ConcurrentDictionary<MsgId, Reply<obj> -> unit>()
+  [<VolatileField>]
   let mutable refCount = 0
+  [<VolatileField>]
+  let mutable isReleased = false
+  let spinLock = SpinLock(false)
 
   //this receives serialized messages from the listener
   //deserializes and then passes processProtocolMessage for further processing
@@ -258,18 +262,34 @@ type MessageProcessor<'T> private (actorId: TcpActorId, listener: TcpProtocolLis
   member __.RegisterReplyProcessor(msgId: MsgId, replyF: Reply<obj> -> unit) = clientRegistry.TryAdd(msgId, replyF) |> ignore
   member __.UnregisterReplyProcessor(msgId: MsgId) = clientRegistry.TryRemove(msgId) |> ignore
 
-  member __.Acquire() = if Interlocked.Increment(&refCount) = 1 then listener.RegisterRecepient(actorId, processMessage)
+  member __.Acquire() =
+    let taken = ref false
+    spinLock.Enter(taken)
+    if isReleased then spinLock.Exit(); false
+    else
+      if refCount = 0 then listener.RegisterRecepient(actorId, processMessage)
+      refCount <- refCount + 1
+      spinLock.Exit()
+      true
+
   member self.AcquireAndAllocate() =
-    if processors.TryAdd(actorId, self) then self.Acquire()
+    if processors.TryAdd(actorId, self) then isReleased <- false; self.Acquire() |> ignore
     else invalidOp "Tried to acquire more than one server processor for the same actor."
+
   member __.Release() =
-    if Interlocked.Decrement(&refCount) = 0 then
-      processors.TryRemove(actorId) |> ignore
+    let taken = ref false
+    spinLock.Enter(taken)
+    if refCount = 1 then
+      isReleased <- true
       listener.UnregisterRecepient(actorId)
+      processors.TryRemove(actorId) |> ignore
+    refCount <- refCount - 1
+    spinLock.Exit()
 
   static member GetClientProcessor(actorId: TcpActorId, listener: TcpProtocolListener) =
     let p = processors.GetOrAdd(actorId, fun _ -> new MessageProcessor<'T>(actorId, listener, fun _ -> invalidOp "Tried to process a Request message in a protocol client"))
-    p.Acquire(); p
+    if p.Acquire() then p
+    else Thread.SpinWait(20); MessageProcessor<'T>.GetClientProcessor(actorId, listener)
   static member GetServerProcessor(actorId: TcpActorId, listener: TcpProtocolListener, processRequest: 'T -> unit) = new MessageProcessor<'T>(actorId, listener, processRequest)
   
   interface IDisposable with override self.Dispose() = self.Release()
