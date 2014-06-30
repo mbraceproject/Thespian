@@ -18,6 +18,8 @@ open Nessos.Thespian.DisposableExtensions
 type TcpActorId(actorName: string, protocolName: string, address: Address) =
   inherit ActorId(actorName)
 
+  let toString = protocolName + "/" + (address.ToString()) + "/" + actorName
+
   member __.ProtocolName = protocolName
   member __.Address = address
         
@@ -27,7 +29,7 @@ type TcpActorId(actorName: string, protocolName: string, address: Address) =
       compareOn (fun (aid: TcpActorId) -> (aid.ProtocolName + aid.Name), aid.Address) self otherId
     | _ -> self.ToString().CompareTo(otherActorId.ToString())
 
-  override __.ToString() = sprintf "%s/%O/%s" protocolName address actorName
+  override __.ToString() = toString
 
   member __.BinarySerialize(writer: BinaryWriter) =
     //actorName: string

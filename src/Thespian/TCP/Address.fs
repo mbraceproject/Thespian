@@ -53,6 +53,7 @@
 
     type Address(hostnameOrAddress : string, ?port : int) =
         let port = defaultArg port 0
+        let toString = hostnameOrAddress + ":" + port.ToString()
 
         static let toEndPointsAsync (hostnameOrAddress: string, port: int) = async {
             if hostnameOrAddress = IPAddress.Any.ToString() then return [new IPEndPoint(IPAddress.Any, port)]
@@ -95,11 +96,8 @@
                  
         member a.CompareTo(otherAddress: Address): int =
             compareOn (fun (ha: Address) -> HostOrAddress ha.HostnameOrAddress, ha.Port) a otherAddress
-//            let hostComparison = a.CompareHostOrAddrs(otherAddress)
-//            if hostComparison = 0 then a.Port.CompareTo(otherAddress.Port)
-//            else hostComparison
 
-        override a.ToString() = sprintf "%s:%d" a.HostnameOrAddress a.Port
+        override a.ToString() = toString
 
         member a.ToEndPoints() = 
             if a.HostnameOrAddress = IPAddress.Any.ToString() then [new IPEndPoint(IPAddress.Any, a.Port)]
