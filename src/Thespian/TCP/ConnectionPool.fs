@@ -11,20 +11,6 @@ open Nessos.Thespian
 open Nessos.Thespian.AsyncExtensions
 open Nessos.Thespian.Remote.SocketExtensions
 
-type CountdownLatch() =
-    let mutable counter = 0
-    
-    ///Set the latch
-    member self.Increment(): unit =
-        Interlocked.Increment(&counter) |> ignore
-
-    ///Reset the latch
-    member __.Decrement(): unit =
-        Interlocked.Decrement(&counter) |> ignore
-
-    ///Spin-wait until the latch is reset
-    member __.WaitToZero(): unit =
-        while (Interlocked.CompareExchange(&counter, 0, 0) <> 0) do Thread.SpinWait 20
 
 let inline private debug prefix x = ignore() //Debug.writelfc (sprintf "ConnectionPool::%s:: " prefix) x
 let inline private connectionEndPoints (client: TcpClient) =

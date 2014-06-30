@@ -30,3 +30,20 @@ namespace Nessos.Thespian
         let swap (atom : Atom<'T>) f = atom.Swap f
         let transact (atom : Atom<'T>) f : 'R = atom.Transact f
         let set (atom : Atom<'T>) t = atom.Set t
+
+    type CountdownLatch() =
+      [<VolatileField>]
+      let mutable counter = 0
+    
+      ///Set the latch
+      member self.Increment(): unit =
+          Interlocked.Increment(&counter) |> ignore
+
+      ///Reset the latch
+      member __.Decrement(): unit =
+          Interlocked.Decrement(&counter) |> ignore
+
+      ///Spin-wait until the latch is reset
+      member __.WaitToZero(): unit =
+          while (Interlocked.CompareExchange(&counter, 0, 0) <> 0) do Thread.SpinWait 20
+
