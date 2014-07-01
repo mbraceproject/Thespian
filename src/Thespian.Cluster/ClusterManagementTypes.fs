@@ -871,7 +871,7 @@ and NodeState = {
     ClusterStateLogger: Actor<ClusterStateLogger> option
     ClusterInfo: ClusterInfo option //Info about the cluster this node participates in
     ManagedClusters: Map<ClusterId, ManagedCluster> //The clusters this node is managing 
-    FinilizedClusterManagers: IDisposable list
+    FinalizedClusterManagers: IDisposable list
     EventManager: NodeEventManager
     ActivationPatterns: ActivationPattern list
     HeartBeat: IDisposable option
@@ -908,7 +908,7 @@ and NodeState = {
         ClusterStateLogger = None
         ClusterInfo = None
         ManagedClusters = Map.empty
-        FinilizedClusterManagers = []
+        FinalizedClusterManagers = []
         EventManager = nodeConfig.EventManager
         ActivationPatterns = nodeConfig.ActivationPatterns
         HeartBeat = None
@@ -1386,7 +1386,7 @@ and NodeManager =
     | StartMonitoring of ClusterId
     | FiniCluster of ClusterId
     | FiniClusterSync of IReplyChannel<unit> * ClusterId
-    | DisposeFinilizedClusters
+    | DisposeFinalizedClusters
     | DetachFromCluster
     | UpdateAltMasters of Address []
     //Initialize a cluster
