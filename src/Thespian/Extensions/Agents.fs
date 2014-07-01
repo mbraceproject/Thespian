@@ -35,7 +35,7 @@ namespace Nessos.Thespian.Agents
         member agent.Value with get() = refCell.Value
 
         member agent.Send(action: 'T -> 'T) = !actor <-- Swap action
-        member agent.SendSafe(action: 'T -> 'T) = try !actor <!= fun ch -> SafeSwap(ch, action) with MessageHandlingException(_, _, _, e) | e -> raise e
+        member agent.SendSafe(action: 'T -> 'T) = try !actor <!= fun ch -> SafeSwap(ch, action) with MessageHandlingException(_, e) | e -> raise e
 
         member agent.ReadAsync() = !actor <!- Read
         member agent.Read() = agent.ReadAsync() |> Async.RunSynchronously

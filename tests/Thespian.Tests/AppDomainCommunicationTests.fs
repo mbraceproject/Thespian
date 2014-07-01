@@ -11,6 +11,8 @@ open Nessos.Thespian.Tests.TestDefinitions.Remote
 [<AbstractClass>]
 type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   abstract GetAppDomainManager: ?appDomainName: string -> AppDomainManager<'T>
+  abstract PublishActorPrimary: Actor<'U> -> Actor<'U>
+  abstract RefPrimary: Actor<'U> -> ActorRef<'U>
 
   // [<TearDown>]
   // member __.TestTearDown() =
@@ -279,7 +281,6 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
     r |> should be (greaterThanOrEqualTo 1)
     r |> should be (lessThanOrEqualTo 100)
 
-
   [<Test>]
   member self.``Parallel posts with reply with multiple deserialised refs``() =
     use appDomainManager = self.GetAppDomainManager()
@@ -299,3 +300,32 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
       |> Seq.reduce (+)
 
     result |> should equal 42
+
+  [<Test>]
+  member self.``Parallel posts with reply with collocated and non-collocated refs``() =
+    let actor = Actor.bind <| Behavior.stateful 0 Behaviors.stateNoUpdateOnSync
+                |> self.PublishActorPrimary
+                |> Actor.start
+                
+    use appDomainManager = self.GetAppDomainManager()
+    let actorManager1 = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.stateNoUpdateOnSync)
+    let actorRef1 = actorManager1.Publish()
+    actorManager1.Start()
+
+    let actorManager2 = appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.stateNoUpdateOnSync)
+    let actorRef2 = actorManager2.Publish()
+    actorManager2.Start()
+
+    self.RefPrimary(actor) <-- TestAsync 36
+    actorRef1 <-- TestAsync 2
+    actorRef2 <-- TestAsync 40
+
+    let refs = [ self.RefPrimary(actor); actorRef1; actorRef2 ]
+    let results =
+      refs |> Seq.map (fun actorRef -> async {
+        let! r = actorRef <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*8), 0)
+        return r + 2
+      }) |> Async.Parallel
+         |> Async.RunSynchronously
+
+    results |> should equal [| 38; 4; 42 |]

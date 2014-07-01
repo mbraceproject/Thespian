@@ -392,7 +392,7 @@ module Failover =
 
                     return res |> Value |> Some
                   with
-                      | MessageHandlingException(_,_,_,e) -> return e |> Exception |> Some
+                      | MessageHandlingException(_,e) -> return e |> Exception |> Some
                       | e -> return raise e // expecting communication exception
               }
 

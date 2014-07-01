@@ -26,3 +26,5 @@ type ``AppDomain UTcp``() =
   inherit ``AppDomain Communication``<UtcpActorManagerFactory>()
 
   override __.GetAppDomainManager(?appDomainName: string) = new AppDomainManager<UtcpActorManagerFactory>(?appDomainName = appDomainName)
+  override __.PublishActorPrimary(actor: Actor<'T>) = actor |> Actor.publish [Protocols.utcp()]
+  override __.RefPrimary(actor: Actor<'T>) = actor.Ref.[UTCP]

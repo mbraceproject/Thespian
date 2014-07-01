@@ -72,7 +72,7 @@ module Observable =
 
 
   and ObservableProtocolServer<'T>(actorName: string, observable: IObservable<'T>) =
-    let observationActor = new Actor<'T>(actorName + "Observable", [| new Mailbox.MailboxProtocolServer<'T>(actorName + "Observable") :> IProtocolServer<'T> |], fun _ -> async.Zero()) //Actor.empty()
+    let observationActor = new Actor<'T>(actorName, [| new Mailbox.MailboxProtocolServer<'T>(actorName) :> IProtocolServer<'T> |], fun _ -> async.Zero())
     let actorId = new Mailbox.MailboxActorId(actorName)
     let client = new ObservableProtocolClient<'T>(actorName, observationActor.Ref)
     [<VolatileField>]

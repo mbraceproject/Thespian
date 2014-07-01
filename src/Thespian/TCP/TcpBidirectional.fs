@@ -130,7 +130,7 @@ type ReplyChannel<'T> =
   member self.AsyncReply(reply: Reply<'T>) =
     async {
       try do! self.replyWriter.Ref <!- fun ch -> ch, self.AsyncReply(reply)
-      with MessageHandlingException(_, _, _, e) -> return! Async.Raise e
+      with MessageHandlingException(_, e) -> return! Async.Raise e
            | :? ActorInactiveException -> return! Async.Raise <| new CommunicationException("Attempting to reply a second time on a closed channel.", self.ActorId)
            | e -> return! Async.Raise <| new CommunicationException("Failure occurred while trying to reply.", self.ActorId, e)
     }
@@ -347,7 +347,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
       let! response = postMessageWithReply msgId msg timeout'
       match response with
       | Some(Value v) -> return Some (v :?> 'R)
-      | Some(Exception e) -> return! Async.Raise (new MessageHandlingException("Remote Actor threw exception while handling message.", e))
+      | Some(Exception e) -> return! Async.Raise (new MessageHandlingException("Remote Actor threw exception while handling message.", actorId, e))
       | None -> return None
     }
 

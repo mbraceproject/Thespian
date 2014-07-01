@@ -73,6 +73,13 @@ module Behaviors =
       | TestSync(R reply, s') -> reply (Value s); return s'
     }
 
+  let stateNoUpdateOnSync (s: 'S) (m: TestMessage<'S, 'S>) =
+    async {
+      match m with
+      | TestAsync s -> return s
+      | TestSync(R reply, _) -> reply (Value s); return s
+    }
+
   let delayedState (s: int) (m: TestMessage<int, int>) =
     async {
       match m with
@@ -102,6 +109,20 @@ module Behaviors =
       | TestSync(R reply, _) ->
         reply <| Value i
         return i
+    }
+
+  let divider (i: int)  (m: TestMessage<int, int>) =
+    async {
+      match m with
+      | TestAsync i' -> return i'
+      | TestSync(R reply, i') ->
+        try
+          let i'' = i / i'
+          reply <| Value i'
+          return i''
+        with e ->
+          reply (Exception e)
+          return i
     }
 
 

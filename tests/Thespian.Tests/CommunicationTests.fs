@@ -223,6 +223,36 @@ type ``Collocated Communication``() =
     r' |> should equal 42
 
   [<Test>]
+  member self.``Post with reply exception response``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.divider
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor) <-- TestAsync 42
+
+    try let r = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0) in ()
+    with :? MessageHandlingException as e ->
+      let innerExceptionType = e.InnerException.GetType()
+      innerExceptionType |> should equal typeof<DivideByZeroException>
+      e.ActorId |> should equal (Some <| self.RefPrimary(actor).Id)
+      e.ActorName |> should equal actor.Name
+
+  [<Test>]
+  member self.``Try post with repy exception resposne``() =
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.divider
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    self.RefPrimary(actor) <-- TestAsync 42
+
+    try self.RefPrimary(actor).TryPostWithReply(fun ch -> TestSync(ch, 0)) |> Async.Ignore |> Async.RunSynchronously
+    with :? MessageHandlingException as e ->
+      let innerExceptionType = e.InnerException.GetType()
+      innerExceptionType |> should equal typeof<DivideByZeroException>
+      e.ActorId |> should equal (Some <| self.RefPrimary(actor).Id)
+      e.ActorName |> should equal actor.Name
+
+  [<Test>]
   member self.``Untyped post with reply method``() =
     use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
                 |> self.PublishActorPrimary

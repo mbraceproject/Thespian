@@ -268,30 +268,30 @@ type ActorConfigurationException =
 module ExceptionHelpers =
   let (|MessageHandlingException|_|) (e: exn) =
     match e with
-    | :? MessageHandlingException as e -> Some(e.Message, e.ActorId, e.ActorName, e.InnerException)
+    | :? MessageHandlingException as e -> Some(e.Message, e.InnerException)
     | _ -> None
 
   let (|CommunicationTimeoutException|_|) (e: exn) =
     match e with
-    | :? CommunicationTimeoutException as e -> Some(e.Message, e.ActorId, e.TimeoutType, e.InnerException)
+    | :? CommunicationTimeoutException as e -> Some(e.Message, e.TimeoutType, e.InnerException)
     | _ -> None
 
   let rec (|CommunicationException|_|) (e: exn) =
     match e with
-    | :? CommunicationException as e -> Some(e.Message, e.ActorId, e.ActorName, e.InnerException)
-    | MessageHandlingException(_, _, _, CommunicationException(m, id, n, inner)) -> Some(m, id, n, inner)
+    | :? CommunicationException as e -> Some(e.Message, e.InnerException)
+    | MessageHandlingException(_, CommunicationException(m, inner)) -> Some(m, inner)
     | _ -> None
 
   let rec (|UnknownRecipientException|_|) (e: exn) =
     match e with
-    | :? UnknownRecipientException as e -> Some(e.Message, e.ActorId, e.ActorName, e.InnerException)
-    | MessageHandlingException(_, _, _, UnknownRecipientException(m, id, n, inner)) -> Some(m, id, n, inner)
+    | :? UnknownRecipientException as e -> Some(e.Message, e.InnerException)
+    | MessageHandlingException(_, UnknownRecipientException(m, inner)) -> Some(m, inner)
     | _ -> None
 
   let rec (|DeliveryException|_|) (e: exn) =
     match e with
-    | :? DeliveryException as e -> Some(e.Message, e.ActorId, e.ActorName, e.InnerException)
-    | MessageHandlingException(_, _, _, DeliveryException(m, id, n, inner)) -> Some(m, id, n, inner)
+    | :? DeliveryException as e -> Some(e.Message, e.InnerException)
+    | MessageHandlingException(_, DeliveryException(m, inner)) -> Some(m, inner)
     | _ -> None
 
   let (|InnerException|_|) (e: exn) =

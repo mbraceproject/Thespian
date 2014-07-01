@@ -167,7 +167,7 @@ and SequentialClientConnectionPool(endPoint: IPEndPoint, minConnections: int, ma
         override self.AsyncAcquireConnection(tracePrefix: string): Async<PooledTcpClient> = async {
             try
                return! !processor <!- fun rc -> AcquireConnection(rc.WithTimeout(Timeout.Infinite), tracePrefix)
-            with MessageHandlingException(_, _, _, e) ->
+            with MessageHandlingException(_, e) ->
                 return! Async.Raise e
         }
 
