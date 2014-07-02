@@ -412,13 +412,13 @@ type TcpConnectionPool() =
         //debug String.Empty "Initialized MIN_CONNECTIONS=%d, MAX_CONNECTIONS=%d, RETRY_INTERVAL=%d" MIN_CONNECTIONS MAX_CONNECTIONS RETRY_INTERVAL
 
     static member Fini() =
-        debug String.Empty "Finilizing..."
+        debug String.Empty "Finalizing..."
 
         for kv in pool do
             kv.Value.Clear()
 
         pool.Clear()
-        debug String.Empty "Finilized"
+        debug String.Empty "Finalized"
         
 
     static member AsyncAcquireConnection(tracePrefix: string, endPoint: IPEndPoint) = async {
