@@ -33,14 +33,14 @@ let rec internal attempt f =
   async {
     try return! f
     with :? SocketException as e when e.SocketErrorCode = SocketError.ConnectionReset || e.SocketErrorCode = SocketError.ConnectionAborted ->
-          printfn "Reattempting..."
+//          printfn "Reattempting..."
           return! attempt f
         | :? EndOfStreamException ->
-          printfn "Reattempting..."
+//          printfn "Reattempting..."
           return! attempt f
         | :? IOException as e -> match e.InnerException with
                                  | :? SocketException as e' when e'.SocketErrorCode = SocketError.ConnectionReset || e'.SocketErrorCode = SocketError.ConnectionAborted ->
-                                   printfn "Reattempting..."                                   
+//                                   printfn "Reattempting..."                                   
                                    return! attempt f
                                  | _ -> return! Async.Raise e
   }
