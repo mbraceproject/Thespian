@@ -32,10 +32,16 @@ type ProtocolMessage<'T> =
 let rec internal attempt f =
   async {
     try return! f
-    with :? SocketException as e when e.SocketErrorCode = SocketError.ConnectionReset || e.SocketErrorCode = SocketError.ConnectionAborted -> return! attempt f
-        | :? EndOfStreamException -> return! attempt f
+    with :? SocketException as e when e.SocketErrorCode = SocketError.ConnectionReset || e.SocketErrorCode = SocketError.ConnectionAborted ->
+          printfn "Reattempting..."
+          return! attempt f
+        | :? EndOfStreamException ->
+          printfn "Reattempting..."
+          return! attempt f
         | :? IOException as e -> match e.InnerException with
-                                 | :? SocketException as e' when e'.SocketErrorCode = SocketError.ConnectionReset || e'.SocketErrorCode = SocketError.ConnectionAborted -> return! attempt f
+                                 | :? SocketException as e' when e'.SocketErrorCode = SocketError.ConnectionReset || e'.SocketErrorCode = SocketError.ConnectionAborted ->
+                                   printfn "Reattempting..."                                   
+                                   return! attempt f
                                  | _ -> return! Async.Raise e
   }
 

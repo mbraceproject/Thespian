@@ -217,6 +217,7 @@ module Remote =
     static let appDomains = new Dictionary<string, AppDomain>()
 
     static member CreateDomain(name: string) =
+//      printfn "Creating domain: %s" name
       let currentDomain = AppDomain.CurrentDomain
       let appDomainSetup = currentDomain.SetupInformation
       let evidence = new Security.Policy.Evidence(currentDomain.Evidence)

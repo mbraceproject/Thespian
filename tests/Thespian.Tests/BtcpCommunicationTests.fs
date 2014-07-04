@@ -24,6 +24,19 @@ type ``Collocated BTcp``() =
 type ``AppDomain BTcp``() =
   inherit ``AppDomain Communication``<BtcpActorManagerFactory>()
 
+  // [<TestFixtureSetUp>]
+  // member __.Init() =
+  //   let rec printConnectionPoolCounters() =
+  //     async {
+  //       printfn "%A" <| TcpProtocol.ConnectionPool.TcpConnectionPool.GetCounters()
+  //       do! Async.Sleep 1000
+  //       return! printConnectionPoolCounters()
+  //     }
+
+  //   printConnectionPoolCounters()
+  //   |> Async.Ignore
+  //   |> Async.Start
+
   override __.GetAppDomainManager(?appDomainName: string) = new AppDomainManager<BtcpActorManagerFactory>(?appDomainName = appDomainName)
   override __.PublishActorPrimary(actor: Actor<'T>) = actor |> Actor.publish [Protocols.btcp()]
   override __.RefPrimary(actor: Actor<'T>) = actor.Ref.[BTCP]

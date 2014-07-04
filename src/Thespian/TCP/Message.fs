@@ -100,9 +100,8 @@ type ProtocolNetworkStream(tcpClient: TcpClient, ?keepOpen: bool) =
   abstract FaultDispose: unit -> unit
   default self.FaultDispose() =
     self.Dispose()
-    if keepOpen then
-      if tcpClient.Client <> null then tcpClient.Client.LingerState = new LingerOption(true, 0) |> ignore
-      tcpClient.Close()
+    if keepOpen then if tcpClient.Client <> null then tcpClient.Client.LingerState = new LingerOption(true, 0) |> ignore
+    tcpClient.Close()
 
   //returns disposable that releases the socket even if keepOpen = true
   member self.Acquire() =

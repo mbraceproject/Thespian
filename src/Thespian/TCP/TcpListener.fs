@@ -32,36 +32,40 @@ type TcpProtocolListener(ipEndPoint: IPEndPoint, ?backLog: int, ?concurrentAccep
 
   let processRequest (request: ((MsgId * TcpActorId * byte[]) * ProtocolStream) option) =
     async {
-      match request with
-      | Some((msgId, actorId, payload), protocolStream) when msgId = MsgId.Empty && payload.Length = 0 ->
-        try
-          use _ = protocolStream.Acquire()
-          //protocol ping messages do not keep the connection open
-          do! Async.Ignore <| protocolStream.TryAsyncWriteResponse(Acknowledge msgId)
-        with e -> logEvent.Trigger(Warning, Protocol "tcp-listener", new SocketListenerException("Exception in connection loop.", self.LocalEndPoint, e) :> obj)
-        return false
-      | Some((msgId, actorId, payload), protocolStream) ->
-        try
-          use _ = protocolStream
-          let isValid, recepientF = recepientRegistry.TryGetValue(actorId)
-          if isValid then
-            try
-              return! recepientF (msgId, actorId, payload, protocolStream)
-            with e ->
-              let! r' = protocolStream.TryAsyncWriteResponse(Failure(msgId, e))
+      try
+        match request with
+        | Some((msgId, actorId, payload), protocolStream) when msgId = MsgId.Empty && payload.Length = 0 ->
+          try
+            use _ = protocolStream.Acquire()
+            //protocol ping messages do not keep the connection open
+            do! Async.Ignore <| protocolStream.TryAsyncWriteResponse(Acknowledge msgId)
+          with e -> logEvent.Trigger(Warning, Protocol "tcp-listener", new SocketListenerException("Exception in connection loop.", self.LocalEndPoint, e) :> obj)
+          return false
+        | Some((msgId, actorId, payload), protocolStream) ->
+          try
+            use _ = protocolStream
+            let isValid, recepientF = recepientRegistry.TryGetValue(actorId)
+            if isValid then
+              try
+                return! recepientF (msgId, actorId, payload, protocolStream)
+              with e ->
+                let! r' = protocolStream.TryAsyncWriteResponse(Failure(msgId, e))
+                match r' with
+                | Some() -> return true
+                | None -> return false
+            else
+              let! r' = protocolStream.TryAsyncWriteResponse(UnknownRecipient(msgId, actorId))
               match r' with
               | Some() -> return true
               | None -> return false
-          else
-            let! r' = protocolStream.TryAsyncWriteResponse(UnknownRecipient(msgId, actorId))
-            match r' with
-            | Some() -> return true
-            | None -> return false
-        with e ->
-          logEvent.Trigger(Warning, Protocol "tcp-listener", new SocketListenerException("Exception in connection loop.", self.LocalEndPoint, e) :> obj)
-          protocolStream.Acquire().Dispose()
-          return false
-      | None -> return false
+          with e ->
+            logEvent.Trigger(Warning, Protocol "tcp-listener", new SocketListenerException("Exception in connection loop.", self.LocalEndPoint, e) :> obj)
+            protocolStream.Acquire().Dispose()
+            return false
+        | None -> return false
+      with e ->
+        logEvent.Trigger(Warning, Protocol "tcp-listener", new SocketListenerException("Exception in connection loop.", self.LocalEndPoint, e) :> obj)
+        return false
     }
 
   let rec connectionLoop (keepOpen: bool) (tcpClient: TcpClient) =
