@@ -359,7 +359,7 @@ and private finiClusterSync (ctx: BehaviorContext<_>) (state: NodeState) (cluste
         let state' = { 
             state with 
                 ManagedClusters = state.ManagedClusters |> Map.remove clusterId 
-                FinilizedClusterManagers = (managedCluster.ClusterManager :> IDisposable)::state.FinilizedClusterManagers
+                FinalizedClusterManagers = (managedCluster.ClusterManager :> IDisposable)::state.FinalizedClusterManagers
         }
 
         ctx.LogInfo <| sprintf "%A :: Stopped..." clusterId
@@ -374,8 +374,8 @@ and private finiClusterSync (ctx: BehaviorContext<_>) (state: NodeState) (cluste
     }
 
 and private disposeClusters (state: NodeState) =
-    for disposable in state.FinilizedClusterManagers do disposable.Dispose()
-    { state with FinilizedClusterManagers = [] }
+    for disposable in state.FinalizedClusterManagers do disposable.Dispose()
+    { state with FinalizedClusterManagers = [] }
 
 and private attachToCluster (ctx: BehaviorContext<_>) (state: NodeState) clusterInfo = 
     async {
@@ -551,7 +551,7 @@ and private nodeManagerInit (ctx: BehaviorContext<NodeManager>) (state: NodeStat
                 reply (Exception e)
                 return! gotoNodeSystemFault ctx state e
 
-        | DisposeFinilizedClusters ->
+        | DisposeFinalizedClusters ->
             //ASSUME ALL EXCEPTIONS PROPERLY HANDLED AND DOCUMENTED
             try
                 let state' = disposeClusters state
@@ -1146,7 +1146,7 @@ and private nodeManagerProper (ctx: BehaviorContext<NodeManager>) (state: NodeSt
                 reply <| Exception e
                 return! gotoNodeSystemFault ctx state e
 
-        | DisposeFinilizedClusters ->
+        | DisposeFinalizedClusters ->
             //ASSUME ALL EXCEPTIONS PROPERLY HANDLED AND DOCUMENTED
             try
                 let state' = disposeClusters state
@@ -1409,7 +1409,7 @@ and nodeManagerSystemFault (ctx: BehaviorContext<NodeManager>) (state: NodeState
         | FiniCluster _ //TODO!!! Actually finilize the cluster
         | StartMonitoring _
         | StopMonitoring _
-        | DisposeFinilizedClusters _
+        | DisposeFinalizedClusters _
         | AttachToCluster _
         | DetachFromCluster
         | UpdateAltMasters _

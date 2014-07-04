@@ -1245,7 +1245,7 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
 
                 reply nothing
 
-                state.MasterNode <-- DisposeFinilizedClusters
+                state.MasterNode <-- DisposeFinalizedClusters
 
                 return! deactivations |> Seq.map ClusterDeActivateDefinition |> updateState
             with e ->
