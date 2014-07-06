@@ -472,6 +472,9 @@ type ``Collocated Communication``() =
 type ``Collocated Remote Communication``() =
   inherit ``Collocated Communication``()
 
+  abstract GetForeignProtocolPublishers: unit -> (Actor<'T> -> Actor<'T>) []
+  abstract GetForeignProtocolRefs: unit -> (Actor<'T> -> ActorRef<'T>) []
+
   [<Test>]
   member self.``Post to collocated actor through a non-collocated ref``() =
     use actor = Actor.bind PrimitiveBehaviors.nill |> self.PublishActorPrimary |> Actor.start
@@ -545,6 +548,25 @@ type ``Collocated Remote Communication``() =
 
     result |> should equal 42
 
+  [<Test>]
+  member self.``Post with foreign reply channel``() =
+    use nativeActor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                      |> self.PublishActorPrimary
+                      |> Actor.start
+    let nativeRef = self.RefPrimary(nativeActor)
+
+    let foreignPublish = self.GetForeignProtocolPublishers().[0]
+    let getForeignRef = self.GetForeignProtocolRefs().[0]
+
+    use foreignActor = Actor.bind <| Behavior.stateless (Behaviors.forward nativeRef)
+                       |> foreignPublish
+                       |> Actor.start
+    let foreignRef = getForeignRef(foreignActor)
+
+    foreignRef <-- TestAsync 42
+    let r = foreignRef <!= fun ch -> TestSync(ch, 0)
+    r |> should equal 42
+
     
 
 open Nessos.Thespian.Remote
@@ -607,3 +629,4 @@ type ``Tcp communication``() =
     let r = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
     r |> should be (greaterThanOrEqualTo 1)
     r |> should be (lessThanOrEqualTo 100)
+

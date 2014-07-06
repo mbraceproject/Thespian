@@ -18,6 +18,10 @@ type ``Collocated BTcp``() =
   override __.RefPrimary(actor: Actor<'T>) = actor.Ref.[BTCP]
   override __.PublishActorNonExistingListener(actor: Actor<'T>) =
     actor.Publish [Protocols.utcp(new IPEndPoint(IPAddress.Loopback, 3939))]
+  override __.GetForeignProtocolPublishers() =
+    [| Actor.publish [Protocols.utcp()] |]
+  override __.GetForeignProtocolRefs() =
+    [| fun (a: Actor<'T>) -> a.Ref.[UTCP] |]
 
 
 [<TestFixture>]

@@ -125,6 +125,8 @@ module Behaviors =
           return i
     }
 
+  let forward (target: ActorRef<'T>) (m: 'T) = target <-!- m
+
 
 module Remote =
   open System.Reflection
