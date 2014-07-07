@@ -1,4 +1,7 @@
-### 0.0.7-alpha - Jul 7, 2014
+### 0.0.8-alpha - Jul 7, 2014
+* Update FsPickler version
+
+### 0.0.7-alpha - Jul 4, 2014
 * Update FsPickler version
 
 ### 0.0.6-alpha - Jun 19, 2014
