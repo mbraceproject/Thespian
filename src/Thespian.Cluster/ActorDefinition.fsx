@@ -2020,7 +2020,7 @@ and nodeManagerSystemFault (ctx: BehaviorContext<NodeManager>) (state: NodeState
         | DeActivate(RR ctx r, _, _) -> reply r
         | AssumeAltMaster(RR ctx r, _) -> reply r
         | InitCluster(RR ctx r, _) -> reply r
-        | FiniCluster _ //TODO!!! Actually finilize the cluster
+        | FiniCluster _ //TODO!!! Actually finalize the cluster
         | AttachToCluster _
         | DetachFromCluster
         | UpdateAltMasters _

@@ -339,7 +339,7 @@ and private finiCluster (ctx: BehaviorContext<_>) (state: NodeState) (clusterId:
 //            for managedCluster in state.ManagedClusters |> Map.toSeq |> Seq.filter (fun (clusterId', _) -> clusterId' <> clusterId) |> Seq.map snd do
 //                !managedCluster.ClusterManager <-- KillCluster
 
-        ctx.LogInfo "CLUSTER FINILIZED."
+        ctx.LogInfo "CLUSTER FINALIZED."
 
         return state'
     }
@@ -368,7 +368,7 @@ and private finiClusterSync (ctx: BehaviorContext<_>) (state: NodeState) (cluste
 //            for managedCluster in state.ManagedClusters |> Map.toSeq |> Seq.filter (fun (clusterId', _) -> clusterId' <> clusterId) |> Seq.map snd do
 //                !managedCluster.ClusterManager <-- KillCluster
 
-        ctx.LogInfo "CLUSTER FINILIZED."
+        ctx.LogInfo "CLUSTER FINALIZED."
 
         return state'
     }
@@ -1406,7 +1406,7 @@ and nodeManagerSystemFault (ctx: BehaviorContext<NodeManager>) (state: NodeState
         | AttachToClusterSync(RR ctx r, _) -> reply r
         | SyncNodeEvents(RR ctx r) -> reply r
         | FiniClusterSync(RR ctx r, _) -> reply r
-        | FiniCluster _ //TODO!!! Actually finilize the cluster
+        | FiniCluster _ //TODO!!! Actually finalize the cluster
         | StartMonitoring _
         | StopMonitoring _
         | DisposeFinalizedClusters _
