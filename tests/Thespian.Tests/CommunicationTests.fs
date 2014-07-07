@@ -465,15 +465,20 @@ type ``Collocated Communication``() =
     let r = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
     r |> should be (greaterThanOrEqualTo 1)
     r |> should be (lessThanOrEqualTo 100)
-    
+
+
+
+[<AbstractClass>]
+type ForeignProtocolProxy() =
+  abstract Publish: Actor<'T> -> Actor<'T>
+  abstract Ref: Actor<'T> -> ActorRef<'T>
 
 
 [<AbstractClass>]
 type ``Collocated Remote Communication``() =
   inherit ``Collocated Communication``()
 
-  abstract GetForeignProtocolPublishers: unit -> (Actor<'T> -> Actor<'T>) []
-  abstract GetForeignProtocolRefs: unit -> (Actor<'T> -> ActorRef<'T>) []
+  abstract ForeignProtocols: ForeignProtocolProxy []
 
   [<Test>]
   member self.``Post to collocated actor through a non-collocated ref``() =
@@ -549,22 +554,40 @@ type ``Collocated Remote Communication``() =
     result |> should equal 42
 
   [<Test>]
-  member self.``Post with foreign reply channel``() =
+  member self.``Post with foreign reply channel``([<ValueSource("ForeignProtocols")>] foreignProxy: ForeignProtocolProxy) =
     use nativeActor = Actor.bind <| Behavior.stateful 0 Behaviors.state
                       |> self.PublishActorPrimary
                       |> Actor.start
     let nativeRef = self.RefPrimary(nativeActor)
 
-    let foreignPublish = self.GetForeignProtocolPublishers().[0]
-    let getForeignRef = self.GetForeignProtocolRefs().[0]
-
     use foreignActor = Actor.bind <| Behavior.stateless (Behaviors.forward nativeRef)
-                       |> foreignPublish
+                       |> foreignProxy.Publish
                        |> Actor.start
-    let foreignRef = getForeignRef(foreignActor)
+    let foreignRef = foreignProxy.Ref foreignActor
 
     foreignRef <-- TestAsync 42
     let r = foreignRef <!= fun ch -> TestSync(ch, 0)
+    r |> should equal 42
+
+  [<Test>]
+  member self.``Post with 2 foreign reply channels``([<ValueSource("ForeignProtocols")>] foreignProxy: ForeignProtocolProxy) =
+    use nativeActor = Actor.bind <| Behavior.stateful 0 Behaviors.multiRepliesState
+                      |> self.PublishActorPrimary
+                      |> Actor.start
+    let nativeRef = self.RefPrimary(nativeActor)
+
+    use forwarder = Actor.bind <| Behavior.stateless (Behaviors.forward nativeRef)
+                    |> foreignProxy.Publish
+                    |> Actor.start
+    let forwarderRef = foreignProxy.Ref forwarder
+
+    let proxy = Actor.bind <| Behavior.stateless (Behaviors.multiRepliesForward forwarderRef)
+                |> foreignProxy.Publish
+                |> Actor.start
+    let proxyRef = foreignProxy.Ref proxy
+
+    proxyRef <-- TestAsync 42
+    let r = proxyRef <!= fun ch -> TestSync(ch, 0)
     r |> should equal 42
 
     

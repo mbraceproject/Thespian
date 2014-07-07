@@ -333,8 +333,9 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
     new MessageSerializationContext(serializer,
       {
         new IReplyChannelFactory with
-          override f.Protocol = ProtocolName
-          override f.Create<'R>() = 
+          override __.Protocol = ProtocolName
+          override __.Filter<'U>(rc: IReplyChannel<'U>) = rc.Protocol <> ProtocolName
+          override __.Create<'R>() = 
             let newMsgId = MsgId.NewGuid()
             new ReplyChannelProxy<'R>(new ReplyChannel<'R>(localListenerAddress, actorId, newMsgId))
       })

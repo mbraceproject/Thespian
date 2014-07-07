@@ -19,10 +19,19 @@ type ``Collocated UTcp``() =
   override __.RefPrimary(actor: Actor<'T>) = actor.Ref.[UTCP]
   override __.PublishActorNonExistingListener(actor: Actor<'T>) =
     actor.Publish [Protocols.utcp(new IPEndPoint(IPAddress.Loopback, 3939))]
-  override __.GetForeignProtocolPublishers() =
-    [| Actor.publish [Protocols.btcp()] |]
-  override __.GetForeignProtocolRefs() =
-    [| fun (a: Actor<'T>) -> a.Ref.[BTCP] |]
+  override __.ForeignProtocols =
+    [|
+       //in-memory for foreign protocol
+       { new ForeignProtocolProxy() with
+           override __.Publish(a) = a
+           override __.Ref(a) = a.Ref
+           override __.ToString() = "in-memory foreign protocol" }
+       //btcp for foreign protocol
+       { new ForeignProtocolProxy() with
+           override __.Publish(a) = a |> Actor.publish [Protocols.btcp()]
+           override __.Ref(a) = a.Ref.[BTCP]
+           override __.ToString() = "btcp foreign protocol" }
+    |]
 
 
 [<TestFixture>]

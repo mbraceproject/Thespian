@@ -99,13 +99,16 @@ type ReplyChannel<'T> =
         
   val private stream: ProtocolMessageStream
   val private replyWriter: ActorRef<AsyncExecutor>
+  val private isOverride: bool
             
-  new (actorId: TcpActorId, msgId: MsgId) =
+  new (actorId: TcpActorId, msgId: MsgId, ?isOverride: bool) =
+    let isOverride = defaultArg isOverride false
     {
       inherit ReplyChannel(actorId, msgId)
       //stream is set to null because this constructor is only used at client side
       stream = Unchecked.defaultof<ProtocolMessageStream>
       replyWriter = Unchecked.defaultof<ActorRef<AsyncExecutor>>
+      isOverride = isOverride
     }
 
   internal new (info: SerializationInfo, context: StreamingContext) =
@@ -117,7 +120,10 @@ type ReplyChannel<'T> =
       inherit ReplyChannel(info, context)
       stream = stream
       replyWriter = replyWriter
+      isOverride = false
     }
+
+  member self.IsOverride = self.isOverride
 
   member self.ProtocolMessageStream =
     if self.stream <> Unchecked.defaultof<ProtocolMessageStream> then self.stream.ProtocolStream
@@ -196,14 +202,24 @@ type ReplyResultsRegistry() =
 type ProtocolClient<'T>(actorId: TcpActorId) =
   let address = actorId.Address
   let serializer = Serialization.defaultSerializer
-  let serializationContext() =
+  let foreignFilter nativeMsgId (rc: IReplyChannel) =
+    match rc with
+    | :? ReplyChannel as frc -> frc.MessageId <> nativeMsgId
+    | _ -> rc.Protocol <> ProtocolName
+  let serializationContext nativeMsgId =
     new MessageSerializationContext(serializer,
       {
         new IReplyChannelFactory with 
           override __.Protocol = ProtocolName
+          override __.Filter(rc: IReplyChannel<'U>) =
+            if rc.Protocol = ProtocolName then
+              match rc with
+              | :? ReplyChannel<'U> as rc' -> rc'.MessageId <> nativeMsgId && not rc'.IsOverride
+              | _ -> false
+            else true
           override __.Create<'R>() = 
             let newMsgId = MsgId.NewGuid()
-            new ReplyChannelProxy<'R>(new ReplyChannel<'R>(actorId, newMsgId))
+            new ReplyChannelProxy<'R>(new ReplyChannel<'R>(actorId, newMsgId, true))
       })
   let replyRegistry = new ReplyResultsRegistry()
   let logEvent = new Event<Log>()
@@ -279,7 +295,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
         let protocolStream = new ProtocolStream(msgId, connection.GetStream())
 
         //serialize message with the reply patching serialization context
-        let context = serializationContext()
+        let context = serializationContext msgId
         let serializedMessage = serializer.Serialize<obj>(msg, context.GetStreamingContext())
 
         let foreignRcHandle = setupForeignReplyChannelHandler context

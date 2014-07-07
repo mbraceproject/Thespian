@@ -247,6 +247,7 @@ and IReplyChannel<'T> =
 
 and IReplyChannelFactory =
   abstract Protocol: string
+  abstract Filter: IReplyChannel<'T> -> bool
   abstract Create: unit -> ReplyChannelProxy<'T>
 
 and MessageSerializationContext(serializer: IMessageSerializer, replyChannelFactory: IReplyChannelFactory) =
@@ -255,6 +256,7 @@ and MessageSerializationContext(serializer: IMessageSerializer, replyChannelFact
   let replyChannels = Atom.atom List.empty<IReplyChannel * IReplyChannel>
   member __.Serializer = serializer
   member __.ReplyProtocol = replyChannelFactory.Protocol
+  member __.ForeignFilter<'T>(rc: IReplyChannel<'T>) = replyChannelFactory.Filter(rc)
   member __.CreateReplyChannelOverride<'T>() = replyChannelFactory.Create<'T>()
   member __.ReplyChannelOverrides with get() = replyChannels.Value
   member __.AddReplyChannelOverride(foreignReplyChannel: IReplyChannel, nativeReplyChannel: IReplyChannel) =
@@ -281,7 +283,7 @@ and ReplyChannelProxy<'T> =
     override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
       let serializedReplyChannel =
         match context.Context with
-        | :? MessageSerializationContext as c when self.realReplyChannel.Protocol <> c.ReplyProtocol ->
+        | :? MessageSerializationContext as c when c.ForeignFilter(self.realReplyChannel) ->
           let nativeReplyChannel = c.CreateReplyChannelOverride<'T>()
           let nrc = nativeReplyChannel :> IReplyChannel<'T>
           c.AddReplyChannelOverride(self.realReplyChannel, nativeReplyChannel.realReplyChannel)

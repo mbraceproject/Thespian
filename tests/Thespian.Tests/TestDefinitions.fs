@@ -14,6 +14,10 @@ type TestList<'T> =
   | Delay of int
   | ListGet of IReplyChannel<'T list>
 
+type TestMultiReplies<'T> =
+  | MultiRepliesAsync of 'T
+  | MultiRepliesSync of IReplyChannel<unit> * IReplyChannel<'T>
+
 module PrimitiveBehaviors =
   let nill (self: Actor<TestMessage<unit>>) = async.Zero()
 
@@ -126,6 +130,20 @@ module Behaviors =
     }
 
   let forward (target: ActorRef<'T>) (m: 'T) = target <-!- m
+
+  let multiRepliesForward (target: ActorRef<TestMultiReplies<'T>>) (m: TestMessage<'T, 'T>) =
+    async {
+      match m with
+      | TestAsync v -> do! target <-!- MultiRepliesAsync v
+      | TestSync(rc, _) -> do! target <!- fun ch -> MultiRepliesSync(ch, rc)
+    }
+
+  let multiRepliesState (s: 'S) (m: TestMultiReplies<'S>) =
+    async {
+      match m with
+      | MultiRepliesAsync v -> return v
+      | MultiRepliesSync(R reply1, R reply2) -> reply1 nothing; reply2 <| Value s; return s
+    }
 
 
 module Remote =
