@@ -590,6 +590,20 @@ type ``Collocated Remote Communication``() =
     let r = proxyRef <!= fun ch -> TestSync(ch, 0)
     r |> should equal 42
 
+  [<Test>]
+  member self.``ActorRef serialization/deserialization``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    let actorRef = actor.Ref
+
+    let serializer = Serialization.defaultSerializer
+    let serializedRef = serializer.Serialize actorRef
+    let deserializedRef = serializer.Deserialize<ActorRef<TestMessage<unit>>>(serializedRef)
+
+    actorRef |> should equal deserializedRef
+
     
 
 open Nessos.Thespian.Remote
