@@ -64,14 +64,14 @@ and PipedReplyChannel<'R> internal (chanId: string, timeout: int) =
         
   let reply v =
     try
-      let client = PipeSender<Reply<'R>>(chanId)
-      client.Post(v, connectionTimeout = timeout)
+      let client = PipeSender<Reply<'R>>.GetPipeSender(chanId)
+      client.Post(v)
     with e -> raise <| CommunicationException("PipeProtocol: cannot reply.", e)
 
   let asyncReply v =
     try
-      let client = PipeSender<Reply<'R>>(chanId)
-      client.PostAsync(v, connectionTimeout = timeout)
+      let client = PipeSender<Reply<'R>>.GetPipeSender(chanId)
+      client.PostAsync(v)
     with e -> raise <| CommunicationException("PipeProtocol: cannot reply.", e)
 
   new (sI: SerializationInfo, _: StreamingContext) =
@@ -151,7 +151,7 @@ type PipeProtocolServer<'T>(pipeName: string, proc: Process, actorRef: ActorRef<
 and PipeProtocolClient<'T>(actorName: string, pipeName: string, proc: Process) =
   let actorId = new PipeActorId(pipeName, actorName)
   let serializer = Serialization.defaultSerializer
-  let sender = new PipeSender<'T * IReplyChannel * bool>(pipeName)
+  let sender = PipeSender<'T * IReplyChannel * bool>.GetPipeSender(pipeName)
 
   let post (msg: 'T) =
     async {
@@ -173,7 +173,7 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, proc: Process) =
                 
       let rc = rcr.ReplyChannel
 
-      try do! sender.PostAsync((msgB rc, rc :> _, true), connectionTimeout = timeout)
+      try do! sender.PostAsync((msgB rc, rc :> _, true))
       with e -> return! Async.Raise <| CommunicationException(sprintf "PipeProtocol: error communicating with %O" actorId, e)
 
       return! rcr.AwaitReply()

@@ -1,6 +1,7 @@
 ﻿namespace Nessos.Thespian.Remote.PipeProtocol
 
 open System
+open System.Collections.Concurrent
 open System.IO
 open System.IO.Pipes
 open System.Threading
@@ -58,18 +59,15 @@ type private Response =
 
 
 //An IObservable wrapper for one or more named pipe server objects receiving connections asynchronously
-type PipeReceiver<'T>(pipeName: string, ?singularAccept: bool, ?concurrentAccepts: int) =
+type PipeReceiver<'T>(pipeName: string, ?singularAccept: bool) =
   let singularAccept = defaultArg singularAccept false
-  let concurrentAccepts = if singularAccept then 1 else defaultArg concurrentAccepts 1
   let serializer = Serialization.defaultSerializer
 
   let receiveEvent = new Event<'T>()
   let errorEvent = new Event<exn>()
 
-  do if concurrentAccepts < 1 then invalidArg "concurrentAccepts" "must be positive value."
-
   let createServerStreamInstance _ =
-    new NamedPipeServerStream(pipeName, PipeDirection.InOut, concurrentAccepts, PipeTransmissionMode.Byte, PipeOptions.Asynchronous)
+    new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous)
 
   // avoid getting ObjectDisposedException in callback if server has already been disposed
   let awaitConnectionAsync (s: NamedPipeServerStream) =
@@ -82,12 +80,9 @@ type PipeReceiver<'T>(pipeName: string, ?singularAccept: bool, ?concurrentAccept
             else s.EndWaitForConnection r)
     }
 
-  let rec serverLoop (server: NamedPipeServerStream) =
+  let rec connectionLoop (server: NamedPipeServerStream) =
     async {
       try
-        // await connection
-        do! awaitConnectionAsync server
-
         // download request
         let! reply = 
           async {
@@ -103,51 +98,103 @@ type PipeReceiver<'T>(pipeName: string, ?singularAccept: bool, ?concurrentAccept
 
         // acknowledge reception to client
         let data = serializer.Serialize reply
-        try do! server.AsyncWriteBytes data finally server.Disconnect()
-
+        do! server.AsyncWriteBytes data
       with e -> let _ = errorEvent.TriggerAsync e in ()
 
-      if singularAccept then return ()
-      else return! serverLoop server
+      if singularAccept then
+        server.Disconnect()
+        return ()
+      else return! connectionLoop server
+    }
+
+  let serverLoop server =
+    async {
+      try
+        do! awaitConnectionAsync server
+        return! connectionLoop server
+      with e -> return errorEvent.Trigger e
     }
 
   let cts = new CancellationTokenSource()
-  let servers = [1..concurrentAccepts] |> List.map createServerStreamInstance
-  // not sure if Async.Parallel is better
-  do for server in servers do Async.Start(serverLoop server, cts.Token)
+  let server = createServerStreamInstance()
+  do Async.Start(serverLoop server, cts.Token)
 
   member __.PipeName = pipeName
   member __.Errors = errorEvent.Publish
   member __.Stop() =
     try
       cts.Cancel ()
-      for s in servers do s.Dispose()    
+      server.Dispose()    
     with _ -> ()
 
   interface IObservable<'T> with override __.Subscribe o = receiveEvent.Publish.Subscribe o
-
   interface IDisposable with override __.Dispose() = __.Stop()
 
 
 // client side implementation
-type PipeSender<'T> (pipeName: string) =
+type PipeSender<'T> private (pipeName: string) =
   let serializer = Serialization.defaultSerializer
+  let client = new NamedPipeClientStream(pipeName)
+  [<VolatileField>]
+  let mutable refCount = 0
+  [<VolatileField>]
+  let mutable isReleased = false
+  let spinLock = SpinLock(false)
+  
+  static let senders = new ConcurrentDictionary<string, PipeSender<'T>>()
 
-  member __.PostAsync(msg: 'T, ?connectionTimeout: int) =
-    let connectionTimeout = defaultArg connectionTimeout 10
+  let post (R reply, msg: 'T) =
     async {
-      use client = new NamedPipeClientStream(pipeName)
-      do client.Connect(connectionTimeout)
+      try
+        let data = serializer.Serialize<'T>(msg)
+        do! client.AsyncWriteBytes data
 
-      let data = serializer.Serialize<'T>(msg)
-      do! client.AsyncWriteBytes data
+        let! replyData = client.AsyncReadBytes() 
 
-      let! replyData = client.AsyncReadBytes() 
-
-      match serializer.Deserialize<Response> replyData with 
-      | Acknowledge -> return () 
-      | Error e -> return! Async.Raise e
+        match serializer.Deserialize<Response> replyData with 
+        | Acknowledge -> reply nothing
+        | Error e -> reply <| Exception e
+      with e -> reply <| Exception e
     }
 
-  member __.Post (msg: 'T, ?connectionTimeout: int) =
-    __.PostAsync(msg, ?connectionTimeout = connectionTimeout) |> Async.RunSynchronously
+  let poster = Actor.bind <| Behavior.stateless post
+
+  member __.PostAsync(msg: 'T) =
+    async {
+      try return! !poster <!- fun ch -> ch, msg
+      with :? MessageHandlingException as e -> return! Async.Raise e.InnerException
+    }
+
+  member __.Post(msg: 'T) = __.PostAsync(msg) |> Async.RunSynchronously
+
+  member private __.Acquire(?connectionTimeout: int) =
+    let connectionTimeout = defaultArg connectionTimeout 30000
+    let taken = ref false
+    spinLock.Enter(taken)
+    if isReleased then spinLock.Exit(); false
+    else
+      if refCount = 0 then
+        try
+          client.Connect(connectionTimeout)
+          poster.Start()
+        with _ -> spinLock.Exit(); reraise()
+      refCount <- refCount + 1
+      spinLock.Exit()
+      true
+
+  interface IDisposable with
+    override __.Dispose() =
+      let taken = ref false
+      spinLock.Enter(taken)
+      if refCount = 1 then
+        isReleased <- true
+        poster.Stop()
+        client.Dispose()
+        senders.TryRemove(pipeName) |> ignore
+      refCount <- refCount - 1
+      spinLock.Exit()
+
+  static member GetPipeSender(pipeName: string) =
+    let sender = senders.GetOrAdd(pipeName, fun _ -> new PipeSender<'T>(pipeName))
+    if sender.Acquire() then sender
+    else Thread.SpinWait(20); PipeSender<'T>.GetPipeSender(pipeName)
