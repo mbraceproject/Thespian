@@ -196,7 +196,7 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, proc: Process) =
     }
   
   interface IProtocolClient<'T> with
-    override __.ProtocolName = "nnp"
+    override __.ProtocolName = "npp"
     override __.ActorId = actorId :> ActorId
     override __.Uri = String.Empty
     override __.Factory = Some (new PipeProtocolFactory(proc) :> IProtocolFactory)
@@ -214,9 +214,24 @@ and PipeProtocolFactory(?proc: Process) =
   member __.Pid = proc.Id
 
   interface IProtocolFactory with
-    override __.ProtocolName = "nnp"
+    override __.ProtocolName = "npp"
     override __.CreateClientInstance<'T>(actorName: string) = new PipeProtocolClient<'T>(actorName, mkPipeName actorName, proc) :> IProtocolClient<'T>
     override __.CreateServerInstance<'T>(actorName: string, actorRef: ActorRef<'T>) = new PipeProtocolServer<'T>(mkPipeName actorName, proc, actorRef) :> IProtocolServer<'T>
+
+
+module ActorRef =
+  let ofProcess<'T> (proc : Process) (actorName : string) =
+    let protoConf = new PipeProtocolFactory(proc) :> IProtocolFactory
+    let proto = protoConf.CreateClientInstance<'T>(actorName)
+    new ActorRef<'T>(actorName, [| proto |])
+            
+  let ofProcessId<'T> (pid : int) (name : string) = ofProcess<'T> (Process.GetProcessById pid) name
+
+[<AutoOpen>]
+module Protocol =
+  let NPP = "npp"
+  type Protocols with
+    static member npp(?proc: Process) = new PipeProtocolFactory(?proc = proc) :> IProtocolFactory
 
 
 // type PipeProtocol<'T> private (config : PipeProtocolConfig, pipeName : string, 
@@ -358,14 +373,3 @@ and PipeProtocolFactory(?proc: Process) =
 
 
 //     type PipeProtocol = PipeProtocolConfig
-                
-
-    
-module ActorRef =
-  let ofProcess<'T> (proc : Process) (actorName : string) =
-    let protoConf = new PipeProtocolFactory(proc) :> IProtocolFactory
-    let proto = protoConf.CreateClientInstance<'T>(actorName)
-    new ActorRef<'T>(actorName, [| proto |])
-            
-  let ofProcessId<'T> (pid : int) (name : string) = ofProcess<'T> (Process.GetProcessById pid) name
-        
