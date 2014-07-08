@@ -57,13 +57,10 @@ type private Response =
   | Acknowledge
   | Error of exn
 
-
-//An IObservable wrapper for one or more named pipe server objects receiving connections asynchronously
-type PipeReceiver<'T>(pipeName: string, ?singularAccept: bool) =
-  let singularAccept = defaultArg singularAccept false
+type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccept: bool) =
+  let singleAccept = defaultArg singleAccept false
   let serializer = Serialization.defaultSerializer
 
-  let receiveEvent = new Event<'T>()
   let errorEvent = new Event<exn>()
 
   let createServerStreamInstance _ =
@@ -89,21 +86,16 @@ type PipeReceiver<'T>(pipeName: string, ?singularAccept: bool) =
             try
               let! data = server.AsyncReadBytes()
               let msg = serializer.Deserialize<'T>(data)
-              // trigger event
-              let _ = receiveEvent.TriggerAsync msg
+              do processMessage msg
               return Acknowledge
-
             with e -> return Error e
           }
 
-        // acknowledge reception to client
         let data = serializer.Serialize reply
         do! server.AsyncWriteBytes data
-      with e -> let _ = errorEvent.TriggerAsync e in ()
+      with e -> do! errorEvent.TriggerAsync e
 
-      if singularAccept then
-        server.Disconnect()
-        return ()
+      if singleAccept then server.Dispose()
       else return! connectionLoop server
     }
 
@@ -127,7 +119,6 @@ type PipeReceiver<'T>(pipeName: string, ?singularAccept: bool) =
       server.Dispose()    
     with _ -> ()
 
-  interface IObservable<'T> with override __.Subscribe o = receiveEvent.Publish.Subscribe o
   interface IDisposable with override __.Dispose() = __.Stop()
 
 
@@ -153,7 +144,7 @@ type PipeSender<'T> private (pipeName: string) =
 
         match serializer.Deserialize<Response> replyData with 
         | Acknowledge -> reply nothing
-        | Error e -> reply <| Exception e
+        | Error e -> reply <| Exception (new DeliveryException("PipeProtocol: message delivery failure.", e))
       with e -> reply <| Exception e
     }
 
