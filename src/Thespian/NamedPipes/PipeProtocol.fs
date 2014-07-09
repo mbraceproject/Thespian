@@ -85,7 +85,7 @@ and PipedReplyChannel<'R> internal (actorId: PipeActorId, chanId: string, ?timeo
     override __.AsyncReplyUntyped(v: Reply<obj>) = asyncReply (Reply.unbox v)
     override __.Reply(v: Reply<'R>) = reply v
     override __.AsyncReply(v: Reply<'R>) = asyncReply v
-    override __.WithTimeout t = new PipedReplyChannel<'R>(actorId, chanId, t) :> IReplyChannel<'R>
+    override self.WithTimeout t = let self' = self :> IReplyChannel<'R> in self'.Timeout <- t; self'
 
   interface ISerializable with
     override __.GetObjectData(sI: SerializationInfo, _: StreamingContext) =
@@ -137,12 +137,12 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, processId: int) 
       let rc = rcr.ReplyChannel :> IReplyChannel<'R>
       let initTimeout = rc.Timeout
       let msg = msgF rc
-      let timeout' = if initTimeout <> rc.Timeout then initTimeout else timeout
+      let timeout' = if initTimeout <> rc.Timeout then rc.Timeout else timeout
 
       try
         use sender = PipeSender<'T>.GetPipeSender(pipeName, actorId)
         do! sender.PostAsync msg
-        return! rcr.AwaitReply timeout
+        return! rcr.AwaitReply timeout'
       with :? CommunicationException as e -> return! Async.Raise e
           | e -> return! Async.Raise <| CommunicationException(sprintf "PipeProtocol: error communicating with %O" actorId, e)
     }
