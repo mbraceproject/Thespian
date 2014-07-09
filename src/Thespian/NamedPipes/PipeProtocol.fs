@@ -50,11 +50,7 @@ type PipedReplyChannelReceiver<'R> (actorId: PipeActorId, timeout: int) =
   let processReply (reply: Reply<'R>) = tcs.TrySetResult(reply) |> ignore
   let replyReceiver = new PipeReceiver<Reply<'R>>(pipeName = chanId, processMessage = processReply)
 
-  member __.AwaitReply() =
-    async {
-      use _ = replyReceiver
-      return! Async.AwaitTask(tcs.Task, timeout)
-    }
+  member __.AwaitReply() = Async.AwaitTask(tcs.Task, timeout)
 
   // pubishes a serialiable descriptor for this receiver
   member __.ReplyChannel = PipedReplyChannel<'R>(actorId, chanId, timeout)

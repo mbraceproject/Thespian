@@ -61,7 +61,8 @@ type private Response =
   | UnknownRecepient
   | Error of exn
 
-type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit) =
+type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccept: bool) as self =
+  let singleAccept = defaultArg singleAccept false
   let serializer = Serialization.defaultSerializer
 
   let errorEvent = new Event<exn>()
@@ -95,22 +96,27 @@ type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit) =
               with :? ActorInactiveException -> UnknownRecepient
             let data = serializer.Serialize response
             do! server.AsyncWriteBytes data
-            return! connectionLoop server
-          | Disconnect -> return ()
+            if singleAccept then return false
+            else return! connectionLoop server
+          | Disconnect -> return true
         with e ->
           let data = serializer.Serialize <| Error e
           do! server.AsyncWriteBytes data
-          return ()
-      with e -> do! errorEvent.TriggerAsync e
+          return true
+      with e ->
+        do! errorEvent.TriggerAsync e
+        return false
     }
 
   let rec serverLoop server =
     async {
       try
         do! awaitConnectionAsync server
-        return! connectionLoop server
-        server.Disconnect()
-        return! serverLoop server
+        let! keep = connectionLoop server
+        if keep then
+          server.Disconnect()
+          return! serverLoop server
+        else self.Stop()
       with e -> return errorEvent.Trigger e
     }
 
