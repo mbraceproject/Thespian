@@ -444,7 +444,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
     let rc = new ReplyChannel<'R>(localListenerAddress, actorId, msgId)
     let initTimeout = rc.Timeout
     let msg = msgF (new ReplyChannelProxy<'R>(rc))
-    let timeout' = if initTimeout <> rc.Timeout then initTimeout else timeout
+    let timeout' = if initTimeout <> rc.Timeout then rc.Timeout else timeout
     async {
       let! resposne = postMessageWithReply msgId msg timeout'
       match resposne with
