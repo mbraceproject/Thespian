@@ -44,19 +44,19 @@ type PipeActorId internal (pipeName: string, actorName: string) =
 //  reply channels
 //
 
-type PipedReplyChannelReceiver<'R> (actorId: PipeActorId, timeout: int) =
+type PipedReplyChannelReceiver<'R> (actorId: PipeActorId) =
   let chanId = Guid.NewGuid().ToString()
   let tcs = new TaskCompletionSource<Reply<'R>>()
   let processReply (reply: Reply<'R>) = tcs.TrySetResult(reply) |> ignore
   let replyReceiver = new PipeReceiver<Reply<'R>>(pipeName = chanId, processMessage = processReply)
 
-  member __.AwaitReply() = Async.AwaitTask(tcs.Task, timeout)
+  member __.AwaitReply(timeout: int) = Async.AwaitTask(tcs.Task, timeout)
 
   // pubishes a serialiable descriptor for this receiver
-  member __.ReplyChannel = PipedReplyChannel<'R>(actorId, chanId, timeout)
+  member __.ReplyChannel = PipedReplyChannel<'R>(actorId, chanId)
 
-and PipedReplyChannel<'R> internal (actorId: PipeActorId, chanId: string, timeout: int) =
-  let mutable timeout = timeout
+and PipedReplyChannel<'R> internal (actorId: PipeActorId, chanId: string, ?timeout: int) =
+  let mutable timeout = defaultArg timeout Default.ReplyReceiveTimeout
         
   let reply v =
     try
@@ -131,16 +131,19 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, processId: int) 
           | e -> return! Async.Raise <| CommunicationException(sprintf "PipeProtocol: error communicating with %O." actorId, e)
     }
 
-  member private __.TryPostWithReplyInner(msgB: IReplyChannel<'R> -> 'T, timeout: int) =
+  member private __.TryPostWithReplyInner(msgF: IReplyChannel<'R> -> 'T, timeout: int) =
     async {
-      let rcr = new PipedReplyChannelReceiver<'R>(actorId, timeout)       
-      let rc = rcr.ReplyChannel
+      let rcr = new PipedReplyChannelReceiver<'R>(actorId)
+      let rc = rcr.ReplyChannel :> IReplyChannel<'R>
+      let initTimeout = rc.Timeout
+      let msg = msgF rc
+      let timeout' = if initTimeout <> rc.Timeout then initTimeout else timeout
 
       try
         use sender = PipeSender<'T>.GetPipeSender(pipeName, actorId)
-        do! sender.PostAsync <| msgB rc
-        return! rcr.AwaitReply()
-      with :? CommunicationException as e -> return! Async.Raise <| new MessageHandlingException("An exception occurred while on the remote recepient while processing the message.", actorId, e)
+        do! sender.PostAsync msg
+        return! rcr.AwaitReply timeout
+      with :? CommunicationException as e -> return! Async.Raise e
           | e -> return! Async.Raise <| CommunicationException(sprintf "PipeProtocol: error communicating with %O" actorId, e)
     }
 
@@ -149,7 +152,7 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, processId: int) 
       let! r = self.TryPostWithReplyInner(msgF, timeout)
       match r with
       | Some(Value v) -> return Some v
-      | Some(Exception e) -> return! Async.Raise e
+      | Some(Exception e) -> return! Async.Raise <| new MessageHandlingException("An exception occurred while on the remote recepient while processing the message.", actorId, e)
       | None -> return None
     }
 
