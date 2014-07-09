@@ -110,16 +110,23 @@ type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccep
       with e -> return errorEvent.Trigger e
     }
 
-  let cts = new CancellationTokenSource()
-  let server = createServerStreamInstance()
+  let mutable cts = new CancellationTokenSource()
+  let mutable server = createServerStreamInstance()
   do Async.Start(serverLoop server, cts.Token)
 
   member __.PipeName = pipeName
   member __.Errors = errorEvent.Publish
+  member __.Start() =
+    if cts.IsCancellationRequested then
+      cts <- new CancellationTokenSource()
+      server <- createServerStreamInstance()
+      Async.Start(serverLoop server, cts.Token)
   member __.Stop() =
     try
-      cts.Cancel ()
-      server.Dispose()    
+      if not cts.IsCancellationRequested then
+        cts.Cancel()
+        server.Disconnect()
+        server.Dispose()
     with _ -> ()
 
   interface IDisposable with override __.Dispose() = __.Stop()
@@ -139,6 +146,8 @@ type PipeSender<'T> private (pipeName: string, actorId: ActorId) =
 
   let post (R reply, msg: 'T) =
     async {
+      if client.IsConnected then reply <| Exception (new UnknownRecipientException("npp: message target is stopped or pipe is broken", actorId))
+      else
       try
         let data = serializer.Serialize<'T>(msg)
         do! client.AsyncWriteBytes data
@@ -147,8 +156,8 @@ type PipeSender<'T> private (pipeName: string, actorId: ActorId) =
 
         match serializer.Deserialize<Response> replyData with 
         | Acknowledge -> reply nothing
-        | UnknownRecepient -> reply <| Exception (new UnknownRecipientException("Message recepient not found on remote target.", actorId))
-        | Error e -> reply <| Exception (new DeliveryException("PipeProtocol: message delivery failure.", actorId, e))
+        | UnknownRecepient -> reply <| Exception (new UnknownRecipientException("npp: message recepient not found on remote target.", actorId))
+        | Error e -> reply <| Exception (new DeliveryException("npp: message delivery failure.", actorId, e))
       with e -> reply <| Exception e
     }
 

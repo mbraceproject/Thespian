@@ -105,6 +105,7 @@ type PipeProtocolServer<'T>(pipeName: string, processId: int, actorRef: ActorRef
 
   member __.Errors = errorEvent
   member __.ActorRef = actorRef
+  member __.Start() = server.Start()
   member __.Stop() = server.Stop()
 
   interface IProtocolServer<'T> with
@@ -112,7 +113,7 @@ type PipeProtocolServer<'T>(pipeName: string, processId: int, actorRef: ActorRef
     override __.ActorId = actorId :> ActorId
     override __.Client = new PipeProtocolClient<'T>(actorId.Name, pipeName, processId) :> IProtocolClient<'T>
     override __.Log = log
-    override __.Start() = ()
+    override __.Start() = __.Start()
     override __.Stop() = __.Stop()
     override __.Dispose() = __.Stop()
 
