@@ -48,9 +48,13 @@ type PipedReplyChannelReceiver<'R> (actorId: PipeActorId, timeout: int) =
   let chanId = Guid.NewGuid().ToString()
   let tcs = new TaskCompletionSource<Reply<'R>>()
   let processReply (reply: Reply<'R>) = tcs.TrySetResult(reply) |> ignore
-  let replyReceiver = new PipeReceiver<Reply<'R>>(pipeName = chanId, processMessage = processReply, singleAccept = true)
+  let replyReceiver = new PipeReceiver<Reply<'R>>(pipeName = chanId, processMessage = processReply)
 
-  member __.AwaitReply() = Async.AwaitTask(tcs.Task, timeout)
+  member __.AwaitReply() =
+    async {
+      use _ = replyReceiver
+      return! Async.AwaitTask(tcs.Task, timeout)
+    }
 
   // pubishes a serialiable descriptor for this receiver
   member __.ReplyChannel = PipedReplyChannel<'R>(actorId, chanId, timeout)
@@ -121,11 +125,12 @@ type PipeProtocolServer<'T>(pipeName: string, processId: int, actorRef: ActorRef
 and PipeProtocolClient<'T>(actorName: string, pipeName: string, processId: int) =
   let actorId = new PipeActorId(pipeName, actorName)
   let serializer = Serialization.defaultSerializer
-  let sender = PipeSender<'T>.GetPipeSender(pipeName, actorId)
 
   let post (msg: 'T) =
     async {
-      try do! sender.PostAsync msg
+      try
+        use sender = PipeSender<'T>.GetPipeSender(pipeName, actorId)
+        do! sender.PostAsync msg
       with :? CommunicationException as e -> return! Async.Raise e
           | e -> return! Async.Raise <| CommunicationException(sprintf "PipeProtocol: error communicating with %O." actorId, e)
     }
@@ -136,6 +141,7 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, processId: int) 
       let rc = rcr.ReplyChannel
 
       try
+        use sender = PipeSender<'T>.GetPipeSender(pipeName, actorId)
         do! sender.PostAsync <| msgB rc
         return! rcr.AwaitReply()
       with :? CommunicationException as e -> return! Async.Raise e

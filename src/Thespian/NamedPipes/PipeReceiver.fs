@@ -52,14 +52,16 @@ module private Utils =
 
   type Event<'T> with member self.TriggerAsync(t: 'T) = Task.Factory.StartNew(fun () -> self.Trigger t)
 
+type private Request<'T> =
+  | Message of 'T
+  | Disconnect
 
 type private Response =
   | Acknowledge
   | UnknownRecepient
   | Error of exn
 
-type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccept: bool) =
-  let singleAccept = defaultArg singleAccept false
+type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit) =
   let serializer = Serialization.defaultSerializer
 
   let errorEvent = new Event<exn>()
@@ -81,32 +83,34 @@ type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccep
   let rec connectionLoop (server: NamedPipeServerStream) =
     async {
       try
-        // download request
-        let! reply = 
-          async {
-            try
-              let! data = server.AsyncReadBytes()
-              let msg = serializer.Deserialize<'T>(data)
+        let! data = server.AsyncReadBytes()
+        try
+          let msg = serializer.Deserialize<Request<'T>>(data)
+          match msg with
+          | Message m ->
+            let response =
               try
-                do processMessage msg
-                return Acknowledge
-              with :? ActorInactiveException -> return UnknownRecepient
-            with e -> return Error e
-          }
-
-        let data = serializer.Serialize reply
-        do! server.AsyncWriteBytes data
+                do processMessage m
+                Acknowledge
+              with :? ActorInactiveException -> UnknownRecepient
+            let data = serializer.Serialize response
+            do! server.AsyncWriteBytes data
+            return! connectionLoop server
+          | Disconnect -> return ()
+        with e ->
+          let data = serializer.Serialize <| Error e
+          do! server.AsyncWriteBytes data
+          return ()
       with e -> do! errorEvent.TriggerAsync e
-
-      if singleAccept then server.Dispose()
-      else return! connectionLoop server
     }
 
-  let serverLoop server =
+  let rec serverLoop server =
     async {
       try
         do! awaitConnectionAsync server
         return! connectionLoop server
+        server.Disconnect()
+        return! serverLoop server
       with e -> return errorEvent.Trigger e
     }
 
@@ -124,8 +128,9 @@ type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccep
   member __.Stop() =
     try
       if not cts.IsCancellationRequested then
+        if server.IsConnected then server.WaitForPipeDrain()
         cts.Cancel()
-        server.Disconnect()
+        if server.IsConnected then server.Disconnect()
         server.Dispose()
     with _ -> ()
 
@@ -146,13 +151,13 @@ type PipeSender<'T> private (pipeName: string, actorId: ActorId) =
 
   let post (R reply, msg: 'T) =
     async {
-      if client.IsConnected then reply <| Exception (new UnknownRecipientException("npp: message target is stopped or pipe is broken", actorId))
+      if not client.IsConnected then reply <| Exception (new UnknownRecipientException("npp: message target is stopped or pipe is broken", actorId))
       else
       try
-        let data = serializer.Serialize<'T>(msg)
+        let data = serializer.Serialize<Request<'T>>(Message msg)
         do! client.AsyncWriteBytes data
 
-        let! replyData = client.AsyncReadBytes() 
+        let! replyData = client.AsyncReadBytes()
 
         match serializer.Deserialize<Response> replyData with 
         | Acknowledge -> reply nothing
@@ -172,7 +177,7 @@ type PipeSender<'T> private (pipeName: string, actorId: ActorId) =
   member __.Post(msg: 'T) = __.PostAsync(msg) |> Async.RunSynchronously
 
   member private __.Acquire(?connectionTimeout: int) =
-    let connectionTimeout = defaultArg connectionTimeout 30000
+    let connectionTimeout = defaultArg connectionTimeout 10000
     let taken = ref false
     spinLock.Enter(taken)
     if isReleased then spinLock.Exit(); false
@@ -181,7 +186,8 @@ type PipeSender<'T> private (pipeName: string, actorId: ActorId) =
         try
           client.Connect(connectionTimeout)
           poster.Start()
-        with _ -> spinLock.Exit(); reraise()
+        with :? TimeoutException as e -> spinLock.Exit(); raise <| new UnknownRecipientException("npp: unable to connect to recepient", actorId, e)
+            | _ -> spinLock.Exit(); reraise()
       refCount <- refCount + 1
       spinLock.Exit()
       true
@@ -193,6 +199,7 @@ type PipeSender<'T> private (pipeName: string, actorId: ActorId) =
       if refCount = 1 then
         isReleased <- true
         poster.Stop()
+        try Async.RunSynchronously (client.AsyncWriteBytes <| serializer.Serialize<Request<'T>>(Disconnect)) with _ -> ()
         client.Dispose()
         senders.TryRemove(pipeName) |> ignore
       refCount <- refCount - 1
