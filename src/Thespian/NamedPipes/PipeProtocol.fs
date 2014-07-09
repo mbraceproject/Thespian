@@ -140,7 +140,7 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, processId: int) 
         use sender = PipeSender<'T>.GetPipeSender(pipeName, actorId)
         do! sender.PostAsync <| msgB rc
         return! rcr.AwaitReply()
-      with :? CommunicationException as e -> return! Async.Raise e
+      with :? CommunicationException as e -> return! Async.Raise <| new MessageHandlingException("An exception occurred while on the remote recepient while processing the message.", actorId, e)
           | e -> return! Async.Raise <| CommunicationException(sprintf "PipeProtocol: error communicating with %O" actorId, e)
     }
 
