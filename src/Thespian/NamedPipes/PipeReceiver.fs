@@ -62,13 +62,14 @@ type private Response =
   | Error of exn
 
 type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccept: bool) as self =
+  let onMono = Type.GetType("Mono.Runtime") <> null
   let singleAccept = defaultArg singleAccept false
   let serializer = Serialization.defaultSerializer
 
   let errorEvent = new Event<exn>()
 
   let createServerStreamInstance _ =
-    new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous)
+    new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, if onMono then PipeOptions.None else PipeOptions.Asynchronous)
 
   // avoid getting ObjectDisposedException in callback if server has already been disposed
   let awaitConnectionAsync (s: NamedPipeServerStream) =
@@ -114,7 +115,7 @@ type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccep
         do! awaitConnectionAsync server
         let! keep = connectionLoop server
         if keep then
-          server.Disconnect()
+          if not onMono then server.Disconnect()
           return! serverLoop server
         else self.Stop()
       with e -> return errorEvent.Trigger e
@@ -136,7 +137,7 @@ type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccep
       if not cts.IsCancellationRequested then
         if server.IsConnected then server.WaitForPipeDrain()
         cts.Cancel()
-        if server.IsConnected then server.Disconnect()
+        if server.IsConnected && not onMono then server.Disconnect()
         server.Dispose()
     with _ -> ()
 
