@@ -53,29 +53,30 @@ type PipedReplyChannelReceiver<'R> (actorId: PipeActorId, timeout: int) =
   member __.AwaitReply() = Async.AwaitTask(tcs.Task, timeout)
 
   // pubishes a serialiable descriptor for this receiver
-  member __.ReplyChannel = PipedReplyChannel<'R>(chanId, timeout)
+  member __.ReplyChannel = PipedReplyChannel<'R>(actorId, chanId, timeout)
 
-and PipedReplyChannel<'R> internal (chanId: string, timeout: int) =
+and PipedReplyChannel<'R> internal (actorId: PipeActorId, chanId: string, timeout: int) =
   let mutable timeout = timeout
         
   let reply v =
     try
-      use client = PipeSender<Reply<'R>>.GetPipeSender(chanId)
+      use client = PipeSender<Reply<'R>>.GetPipeSender(chanId, actorId)
       client.Post(v)
     with e -> raise <| CommunicationException("PipeProtocol: cannot reply.", e)
 
   let asyncReply v =
     async {
       try
-        use client = PipeSender<Reply<'R>>.GetPipeSender(chanId)
+        use client = PipeSender<Reply<'R>>.GetPipeSender(chanId, actorId)
         return! client.PostAsync(v)
       with e -> return! Async.Raise <| CommunicationException("PipeProtocol: cannot reply.", e)
     }
 
   new (sI: SerializationInfo, _: StreamingContext) =
+    let actorId = sI.GetValue("actorId", typeof<PipeActorId>) :?> PipeActorId
     let chanId = sI.GetString("chanId")
     let timeout = sI.GetInt32("timeout")
-    new PipedReplyChannel<'R>(chanId, timeout)
+    new PipedReplyChannel<'R>(actorId, chanId, timeout)
 
   interface IReplyChannel<'R> with
     override __.Protocol = "npp"
@@ -84,10 +85,11 @@ and PipedReplyChannel<'R> internal (chanId: string, timeout: int) =
     override __.AsyncReplyUntyped(v: Reply<obj>) = asyncReply (Reply.unbox v)
     override __.Reply(v: Reply<'R>) = reply v
     override __.AsyncReply(v: Reply<'R>) = asyncReply v
-    override __.WithTimeout t = new PipedReplyChannel<'R>(chanId, t) :> IReplyChannel<'R>
+    override __.WithTimeout t = new PipedReplyChannel<'R>(actorId, chanId, t) :> IReplyChannel<'R>
 
   interface ISerializable with
     override __.GetObjectData(sI: SerializationInfo, _: StreamingContext) =
+      sI.AddValue("actorId", actorId)
       sI.AddValue("chanId", chanId)
       sI.AddValue("timeout", timeout)
 
@@ -95,7 +97,7 @@ and PipedReplyChannel<'R> internal (chanId: string, timeout: int) =
 //  the protocol
 //
 
-type PipeProtocolServer<'T>(pipeName: string, proc: Process, actorRef: ActorRef<'T>) =
+type PipeProtocolServer<'T>(pipeName: string, processId: int, actorRef: ActorRef<'T>) =
   let actorId = new PipeActorId(pipeName, actorRef.Name)
   let server = new PipeReceiver<'T>(pipeName, actorRef.Post)
   let errorEvent = server.Errors
@@ -108,17 +110,17 @@ type PipeProtocolServer<'T>(pipeName: string, proc: Process, actorRef: ActorRef<
   interface IProtocolServer<'T> with
     override __.ProtocolName = "nnp"
     override __.ActorId = actorId :> ActorId
-    override __.Client = new PipeProtocolClient<'T>(actorId.Name, pipeName, proc) :> IProtocolClient<'T>
+    override __.Client = new PipeProtocolClient<'T>(actorId.Name, pipeName, processId) :> IProtocolClient<'T>
     override __.Log = log
     override __.Start() = ()
     override __.Stop() = __.Stop()
     override __.Dispose() = __.Stop()
 
 
-and PipeProtocolClient<'T>(actorName: string, pipeName: string, proc: Process) =
+and PipeProtocolClient<'T>(actorName: string, pipeName: string, processId: int) =
   let actorId = new PipeActorId(pipeName, actorName)
   let serializer = Serialization.defaultSerializer
-  let sender = PipeSender<'T>.GetPipeSender(pipeName)
+  let sender = PipeSender<'T>.GetPipeSender(pipeName, actorId)
 
   let post (msg: 'T) =
     async {
@@ -160,29 +162,29 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, proc: Process) =
     override __.ProtocolName = "npp"
     override __.ActorId = actorId :> ActorId
     override __.Uri = String.Empty
-    override __.Factory = Some (new PipeProtocolFactory(proc) :> IProtocolFactory)
+    override __.Factory = Some (new PipeProtocolFactory(processId) :> IProtocolFactory)
     override __.Post(msg: 'T): unit = Async.RunSynchronously(post msg)
     override __.AsyncPost(msg: 'T): Async<unit> = post msg
     override __.PostWithReply(msgF: IReplyChannel<'R> -> 'T, timeout: int): Async<'R> = __.PostWithReply(msgF, timeout)
     override __.TryPostWithReply(msgF: IReplyChannel<'R> -> 'T, timeout: int): Async<'R option> = __.TryPostWithReply(msgF, timeout)
 
 
-and PipeProtocolFactory(?proc: Process) =
-  let proc = match proc with None -> Process.GetCurrentProcess () | Some p -> p
+and PipeProtocolFactory(?processId: int) =
+  let processId = defaultArg processId <| Process.GetCurrentProcess().Id
 
-  let mkPipeName (actorName : string) = sprintf "pid-%d-actor-%s" proc.Id actorName
+  let mkPipeName (actorName : string) = sprintf "pid-%d-actor-%s" processId actorName
         
-  member __.Pid = proc.Id
+  member __.Pid = processId
 
   interface IProtocolFactory with
     override __.ProtocolName = "npp"
-    override __.CreateClientInstance<'T>(actorName: string) = new PipeProtocolClient<'T>(actorName, mkPipeName actorName, proc) :> IProtocolClient<'T>
-    override __.CreateServerInstance<'T>(actorName: string, actorRef: ActorRef<'T>) = new PipeProtocolServer<'T>(mkPipeName actorName, proc, actorRef) :> IProtocolServer<'T>
+    override __.CreateClientInstance<'T>(actorName: string) = new PipeProtocolClient<'T>(actorName, mkPipeName actorName, processId) :> IProtocolClient<'T>
+    override __.CreateServerInstance<'T>(actorName: string, actorRef: ActorRef<'T>) = new PipeProtocolServer<'T>(mkPipeName actorName, processId, actorRef) :> IProtocolServer<'T>
 
 
 module ActorRef =
   let ofProcess<'T> (proc : Process) (actorName : string) =
-    let protoConf = new PipeProtocolFactory(proc) :> IProtocolFactory
+    let protoConf = new PipeProtocolFactory(proc.Id) :> IProtocolFactory
     let proto = protoConf.CreateClientInstance<'T>(actorName)
     new ActorRef<'T>(actorName, [| proto |])
             
@@ -192,7 +194,7 @@ module ActorRef =
 module Protocol =
   let NPP = "npp"
   type Protocols with
-    static member npp(?proc: Process) = new PipeProtocolFactory(?proc = proc) :> IProtocolFactory
+    static member npp(?processId: int) = new PipeProtocolFactory(?processId = processId) :> IProtocolFactory
 
 
 // type PipeProtocol<'T> private (config : PipeProtocolConfig, pipeName : string, 

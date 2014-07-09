@@ -55,6 +55,7 @@ module private Utils =
 
 type private Response =
   | Acknowledge
+  | UnknownRecepient
   | Error of exn
 
 type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccept: bool) =
@@ -86,8 +87,10 @@ type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccep
             try
               let! data = server.AsyncReadBytes()
               let msg = serializer.Deserialize<'T>(data)
-              do processMessage msg
-              return Acknowledge
+              try
+                do processMessage msg
+                return Acknowledge
+              with :? ActorInactiveException -> return UnknownRecepient
             with e -> return Error e
           }
 
@@ -123,7 +126,7 @@ type PipeReceiver<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccep
 
 
 // client side implementation
-type PipeSender<'T> private (pipeName: string) =
+type PipeSender<'T> private (pipeName: string, actorId: ActorId) =
   let serializer = Serialization.defaultSerializer
   let client = new NamedPipeClientStream(pipeName)
   [<VolatileField>]
@@ -144,7 +147,8 @@ type PipeSender<'T> private (pipeName: string) =
 
         match serializer.Deserialize<Response> replyData with 
         | Acknowledge -> reply nothing
-        | Error e -> reply <| Exception (new DeliveryException("PipeProtocol: message delivery failure.", e))
+        | UnknownRecepient -> reply <| Exception (new UnknownRecipientException("Message recepient not found on remote target.", actorId))
+        | Error e -> reply <| Exception (new DeliveryException("PipeProtocol: message delivery failure.", actorId, e))
       with e -> reply <| Exception e
     }
 
@@ -185,7 +189,7 @@ type PipeSender<'T> private (pipeName: string) =
       refCount <- refCount - 1
       spinLock.Exit()
 
-  static member GetPipeSender(pipeName: string) =
-    let sender = senders.GetOrAdd(pipeName, fun _ -> new PipeSender<'T>(pipeName))
+  static member GetPipeSender(pipeName: string, actorId: ActorId) =
+    let sender = senders.GetOrAdd(pipeName, fun _ -> new PipeSender<'T>(pipeName, actorId))
     if sender.Acquire() then sender
-    else Thread.SpinWait(20); PipeSender<'T>.GetPipeSender(pipeName)
+    else Thread.SpinWait(20); PipeSender<'T>.GetPipeSender(pipeName, actorId)
