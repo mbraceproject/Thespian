@@ -163,7 +163,7 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, processId: int) 
       let rcr = new PipedReplyChannelReceiver<'R>(actorId)
       let rc = rcr.ReplyChannel :> IReplyChannel<'R>
       let initTimeout = rc.Timeout
-      let msg = msgF rc
+      let msg = msgF (new ReplyChannelProxy<'R>(rc))
       let timeout' = if initTimeout <> rc.Timeout then rc.Timeout else timeout
 
       try
