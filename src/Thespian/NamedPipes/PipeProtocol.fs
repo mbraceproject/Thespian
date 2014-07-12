@@ -48,12 +48,16 @@ type PipedReplyChannelReceiver<'R> (actorId: PipeActorId) =
   let chanId = Guid.NewGuid().ToString()
   let tcs = new TaskCompletionSource<Reply<'R>>()
   let processReply (reply: Reply<'R>) = tcs.TrySetResult(reply) |> ignore
-  let replyReceiver = new PipeReceiver<Reply<'R>>(pipeName = chanId, processMessage = processReply)
+  let replyReceiver = PipeReceiver<Reply<'R>>.Create(pipeName = chanId, processMessage = processReply, singleAccept = true)
+
+  do replyReceiver.Start()
 
   member __.AwaitReply(timeout: int) = Async.AwaitTask(tcs.Task, timeout)
 
   // pubishes a serialiable descriptor for this receiver
   member __.ReplyChannel = PipedReplyChannel<'R>(actorId, chanId)
+
+//  interface IDisposable with override __.Dispose() = replyReceiver.Stop()
 
 and PipedReplyChannel<'R> internal (actorId: PipeActorId, chanId: string, ?timeout: int) =
   let mutable timeout = defaultArg timeout Default.ReplyReceiveTimeout
@@ -99,7 +103,7 @@ and PipedReplyChannel<'R> internal (actorId: PipeActorId, chanId: string, ?timeo
 
 type PipeProtocolServer<'T>(pipeName: string, processId: int, actorRef: ActorRef<'T>) =
   let actorId = new PipeActorId(pipeName, actorRef.Name)
-  let server = new PipeReceiver<'T>(pipeName, actorRef.Post)
+  let server = PipeReceiver<'T>.Create(pipeName, actorRef.Post)
   let errorEvent = server.Errors
   let log = errorEvent |> Event.map(fun e -> LogLevel.Error, LogSource.Protocol "npp", e :> obj)
 
