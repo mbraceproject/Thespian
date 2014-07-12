@@ -18,6 +18,7 @@ open Nessos.Thespian.Utils
 
 [<AutoOpen>]
 module private Utils =
+  let ProtocolName = "npp"
 
   type AsyncBuilder with
     member __.Bind(f: Task<'T>, g: 'T -> Async<'S>) = __.Bind(Async.AwaitTask f, g)

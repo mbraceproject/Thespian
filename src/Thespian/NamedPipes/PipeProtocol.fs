@@ -106,7 +106,7 @@ and PipedReplyChannel<'R> internal (actorId: PipeActorId, chanId: string, receiv
     new PipedReplyChannel<'R>(actorId, chanId, None, timeout)
 
   interface IReplyChannel<'R> with
-    override __.Protocol = "npp"
+    override __.Protocol = ProtocolName
     override __.Timeout with get () = timeout and set t = timeout <- t
     override __.ReplyUntyped(v: Reply<obj>) = reply (Reply.unbox v)
     override __.AsyncReplyUntyped(v: Reply<obj>) = asyncReply (Reply.unbox v)
@@ -128,7 +128,7 @@ and PipeProtocolServer<'T>(pipeName: string, processId: int, actorRef: ActorRef<
   let actorId = new PipeActorId(pipeName, actorRef.Name)
   let server = PipeReceiver<'T>.Create(pipeName, actorRef.Post)
   let errorEvent = server.Errors
-  let log = errorEvent |> Event.map(fun e -> LogLevel.Error, LogSource.Protocol "npp", e :> obj)
+  let log = errorEvent |> Event.map(fun e -> LogLevel.Error, LogSource.Protocol ProtocolName, e :> obj)
 
   member __.Errors = errorEvent
   member __.ActorRef = actorRef
@@ -192,7 +192,7 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, processId: int) 
     }
   
   interface IProtocolClient<'T> with
-    override __.ProtocolName = "npp"
+    override __.ProtocolName = ProtocolName
     override __.ActorId = actorId :> ActorId
     override __.Uri = String.Empty
     override __.Factory = Some (new PipeProtocolFactory(processId) :> IProtocolFactory)
@@ -210,7 +210,7 @@ and PipeProtocolFactory(?processId: int) =
   member __.Pid = processId
 
   interface IProtocolFactory with
-    override __.ProtocolName = "npp"
+    override __.ProtocolName = ProtocolName
     override __.CreateClientInstance<'T>(actorName: string) = new PipeProtocolClient<'T>(actorName, mkPipeName actorName, processId) :> IProtocolClient<'T>
     override __.CreateServerInstance<'T>(actorName: string, actorRef: ActorRef<'T>) = new PipeProtocolServer<'T>(mkPipeName actorName, processId, actorRef) :> IProtocolServer<'T>
 
@@ -432,7 +432,7 @@ and PipeReceiverWindows<'T>(pipeName: string, processMessage: 'T -> unit, ?singl
 
 // client side implementation
 
-and [<AbstractClass>] internal PipeSender<'T> internal (pipeName: string, actorId: ActorId) =
+and [<AbstractClass>] internal PipeSender<'T> internal (pipeName: string, actorId: PipeActorId) =
   static let onUnix =
     let p = (int)System.Environment.OSVersion.Platform
     p = 4 || p = 6 || p = 128
@@ -446,6 +446,35 @@ and [<AbstractClass>] internal PipeSender<'T> internal (pipeName: string, actorI
   let spinLock = SpinLock(false)
 
   static let senders = new ConcurrentDictionary<string, PipeSender<'T>>()
+
+  let serializationContext() =
+    new MessageSerializationContext(serializer,
+      {
+        new IReplyChannelFactory with 
+          override __.Protocol = ProtocolName
+          override __.Filter(rc: IReplyChannel<'U>) = rc.Protocol <> ProtocolName
+          override __.Create<'R>() =
+            let receiver = new PipedReplyChannelReceiver<'R>(actorId)
+            new ReplyChannelProxy<'R>(receiver.ReplyChannel)
+      })
+
+  let handleForeignReplyChannel (foreignRc: IReplyChannel, nativeRc: IReplyChannel) =
+    let nativeRcImpl = nativeRc :?> PipedReplyChannel
+    async {
+      let! response = nativeRcImpl.Receiver.Value.AwaitReplyUntyped(foreignRc.Timeout)
+      match response with
+      | Some reply ->
+        try do! foreignRc.AsyncReplyUntyped reply with _ -> () //TODO! log this
+      | None -> ()
+    }
+
+  let setupForeignReplyChannelHandler (context: MessageSerializationContext) =
+    if context.ReplyChannelOverrides.Length = 0 then async.Zero()
+    else
+    context.ReplyChannelOverrides
+    |> List.map handleForeignReplyChannel
+    |> Async.Parallel
+    |> Async.Ignore
 
   abstract Poster: Actor<IReplyChannel<unit> * 'T>
   abstract Connect: int -> unit
@@ -578,8 +607,8 @@ and internal PipeSenderWindows<'T> internal (pipeName: string, actorId: PipeActo
     new MessageSerializationContext(serializer,
       {
         new IReplyChannelFactory with 
-          override __.Protocol = "npp"
-          override __.Filter(rc: IReplyChannel<'U>) = rc.Protocol <> "npp"
+          override __.Protocol = ProtocolName
+          override __.Filter(rc: IReplyChannel<'U>) = rc.Protocol <> ProtocolName
           override __.Create<'R>() =
             let receiver = new PipedReplyChannelReceiver<'R>(actorId)
             new ReplyChannelProxy<'R>(receiver.ReplyChannel)
@@ -646,7 +675,7 @@ module ActorRef =
 
 [<AutoOpen>]
 module Protocol =
-  let NPP = "npp"
+  let NPP = ProtocolName
   type Protocols with
     static member npp(?processId: int) = new PipeProtocolFactory(?processId = processId) :> IProtocolFactory
 
