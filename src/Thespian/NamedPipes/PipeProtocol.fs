@@ -476,6 +476,13 @@ and [<AbstractClass>] internal PipeSender<'T> internal (pipeName: string, actorI
     |> Async.Parallel
     |> Async.Ignore
 
+  member __.SerializeDataAndHandleForeignRcs(msg: 'T) =
+    let context = serializationContext()
+    let data = serializer.Serialize<Request<'T>>(Message msg, context.GetStreamingContext())
+
+    setupForeignReplyChannelHandler context |> Async.Start
+    data
+
   abstract Poster: Actor<IReplyChannel<unit> * 'T>
   abstract Connect: int -> unit
   abstract Disconnect: unit -> unit
@@ -522,7 +529,7 @@ and [<AbstractClass>] internal PipeSender<'T> internal (pipeName: string, actorI
     else Thread.SpinWait(20); PipeSender<'T>.GetPipeSender(pipeName, actorId)
 
 
-and internal PipeSenderUnix<'T> internal (pipeName: string, actorId: ActorId) =
+and internal PipeSenderUnix<'T> internal (pipeName: string, actorId: PipeActorId) as self =
   inherit PipeSender<'T>(pipeName, actorId)
   
   let serializer = Serialization.defaultSerializer
@@ -569,7 +576,7 @@ and internal PipeSenderUnix<'T> internal (pipeName: string, actorId: ActorId) =
   let post (R reply, msg: 'T) =
     async {
       try
-        let data = serializer.Serialize<Request<'T>>(Message msg)
+        let data = self.SerializeDataAndHandleForeignRcs msg
         do! writing.AsyncWriteBytes data
 
         use reading = getReading()
@@ -597,41 +604,11 @@ and internal PipeSenderUnix<'T> internal (pipeName: string, actorId: ActorId) =
     unlockPipe()
     
     
-and internal PipeSenderWindows<'T> internal (pipeName: string, actorId: PipeActorId) =
+and internal PipeSenderWindows<'T> internal (pipeName: string, actorId: PipeActorId) as self =
   inherit PipeSender<'T>(pipeName, actorId)
   
   let serializer = Serialization.defaultSerializer
   let client = new NamedPipeClientStream(pipeName)
-
-  let serializationContext() =
-    new MessageSerializationContext(serializer,
-      {
-        new IReplyChannelFactory with 
-          override __.Protocol = ProtocolName
-          override __.Filter(rc: IReplyChannel<'U>) = rc.Protocol <> ProtocolName
-          override __.Create<'R>() =
-            let receiver = new PipedReplyChannelReceiver<'R>(actorId)
-            new ReplyChannelProxy<'R>(receiver.ReplyChannel)
-      })
-
-  let handleForeignReplyChannel (foreignRc: IReplyChannel, nativeRc: IReplyChannel) =
-    let nativeRcImpl = nativeRc :?> PipedReplyChannel
-    async {
-      let! response = nativeRcImpl.Receiver.Value.AwaitReplyUntyped(foreignRc.Timeout)
-      match response with
-      | Some reply ->
-        try do! foreignRc.AsyncReplyUntyped reply with _ -> () //TODO! log this
-      | None -> ()
-    }
-
-  let setupForeignReplyChannelHandler (context: MessageSerializationContext) =
-    if context.ReplyChannelOverrides.Length = 0 then async.Zero()
-    else
-    context.ReplyChannelOverrides
-    |> List.map handleForeignReplyChannel
-    |> Async.Parallel
-    |> Async.Ignore
-    
 
   let post (R reply, msg: 'T) =
     async {
@@ -639,10 +616,7 @@ and internal PipeSenderWindows<'T> internal (pipeName: string, actorId: PipeActo
         if not client.IsConnected then reply <| Exception (new UnknownRecipientException("npp: message target is stopped or pipe is broken", actorId))
         else
 
-        let context = serializationContext()
-        let data = serializer.Serialize<Request<'T>>(Message msg, context.GetStreamingContext())
-
-        setupForeignReplyChannelHandler context |> Async.Start
+        let data = self.SerializeDataAndHandleForeignRcs msg
         
         do! client.AsyncWriteBytes data
 
