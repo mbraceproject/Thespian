@@ -42,7 +42,7 @@ type ``Collocated UTcp``() =
 
 [<TestFixture>]
 type ``AppDomain UTcp``() =
-  inherit ``AppDomain Communication``<UtcpActorManagerFactory>()
+  inherit ``AppDomain Tcp Communication``<UtcpActorManagerFactory>()
 
   override __.GetAppDomainManager(?appDomainName: string) = new AppDomainManager<UtcpActorManagerFactory>(?appDomainName = appDomainName)
   override __.PublishActorPrimary(actor: Actor<'T>) = actor |> Actor.publish [Protocols.utcp()]

@@ -40,7 +40,7 @@ type ``Collocated BTcp``() =
 
 [<TestFixture>]
 type ``AppDomain BTcp``() =
-  inherit ``AppDomain Communication``<BtcpActorManagerFactory>()
+  inherit ``AppDomain Tcp Communication``<BtcpActorManagerFactory>()
 
   // [<TestFixtureSetUp>]
   // member __.Init() =

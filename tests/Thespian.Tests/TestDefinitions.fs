@@ -149,6 +149,7 @@ module Behaviors =
 module Remote =
   open System.Reflection
   open Nessos.Thespian.Remote
+  open Nessos.Thespian.Remote.PipeProtocol
 
   [<AbstractClass>]
   type ActorManager() =
@@ -195,6 +196,13 @@ module Remote =
       self.SetActor(actor)
       actor.Ref
 
+  type NppActorManager<'T>(behavior: Actor<'T> -> Async<unit>, ?name: string) =
+    inherit ActorManager<'T>(behavior, ?name = name)
+    override self.Publish() =
+      let actor = self.Actor |> Actor.publish [Protocols.npp()]
+      self.SetActor(actor)
+      actor.Ref
+
   type BehaviorValue<'T> = Behavior of byte[]
   with
     static member Create(behavior: Actor<'T> -> Async<unit>) =
@@ -226,6 +234,16 @@ module Remote =
     let mutable managers = []
     override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
       let manager = new BtcpActorManager<'T>(behavior, ?name = name)
+      manager.Init()
+      managers <- (manager :> ActorManager)::managers
+      manager :> ActorManager<'T>
+    override __.Fini() = for manager in managers do manager.Fini()
+
+  type NppActorManagerFactory() =
+    inherit ActorManagerFactory()
+    let mutable managers = []
+    override __.CreateActorManager(behavior: Actor<'T> -> Async<unit>, ?name: string) =
+      let manager = new NppActorManager<'T>(behavior, ?name = name)
       manager.Init()
       managers <- (manager :> ActorManager)::managers
       manager :> ActorManager<'T>
