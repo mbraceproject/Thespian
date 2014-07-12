@@ -7,6 +7,7 @@ open FsUnit
 
 open Nessos.Thespian
 open Nessos.Thespian.Remote
+open Nessos.Thespian.Remote.PipeProtocol
 open Nessos.Thespian.Tests.TestDefinitions
 open Nessos.Thespian.Tests.TestDefinitions.Remote
 
@@ -30,6 +31,11 @@ type ``Collocated BTcp``() =
            override __.Publish(a) = a |> Actor.publish [Protocols.utcp()]
            override __.Ref(a) = a.Ref.[UTCP]
            override __.ToString() = "utcp foreign protocol" }
+       //npp for foreign protocol
+       { new ForeignProtocolProxy() with
+           override __.Publish(a) = a |> Actor.publish [Protocols.npp()]
+           override __.Ref(a) = a.Ref.[NPP]
+           override __.ToString() = "npp foreign protocol" }
     |]
 
 [<TestFixture>]
