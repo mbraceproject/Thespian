@@ -5,6 +5,7 @@ open NUnit.Framework
 open FsUnit
 
 open Nessos.Thespian
+open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.PipeProtocol
 
 [<TestFixture>]
@@ -20,4 +21,14 @@ type ``Collocated Npp``() =
            override __.Publish(a) = a
            override __.Ref(a) = a.Ref
            override __.ToString() = "in-memory foreign protocol" }
+       //utcp for foreign protocol
+       { new ForeignProtocolProxy() with
+           override __.Publish(a) = a |> Actor.publish [Protocols.utcp()]
+           override __.Ref(a) = a.Ref.[UTCP]
+           override __.ToString() = "utcp foreign protocol" }
+       //btcp for foreign protocol
+       { new ForeignProtocolProxy() with
+           override __.Publish(a) = a |> Actor.publish [Protocols.btcp()]
+           override __.Ref(a) = a.Ref.[BTCP]
+           override __.ToString() = "btcp foreign protocol" }
     |]
