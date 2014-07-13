@@ -581,7 +581,7 @@ type ``Collocated Remote Communication``() =
                     |> Actor.start
     let forwarderRef = foreignProxy.Ref forwarder
 
-    let proxy = Actor.bind <| Behavior.stateless (Behaviors.multiRepliesForward forwarderRef)
+    use proxy = Actor.bind <| Behavior.stateless (Behaviors.multiRepliesForward forwarderRef)
                 |> foreignProxy.Publish
                 |> Actor.start
     let proxyRef = foreignProxy.Ref proxy

@@ -225,7 +225,7 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
     let actorRef = actorManager.Publish()
     actorManager.Start()
 
-    [ for i in 1..100 -> actorRef <!- fun ch -> TestSync(ch, i) ]
+    [ for i in 1..100 -> actorRef <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*8), i) ]
     |> Async.Parallel
     |> Async.Ignore
     |> Async.RunSynchronously
@@ -256,7 +256,7 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
 
   [<Test>]
   member self.``Parallel posts with reply with collocated and non-collocated refs``() =
-    let actor = Actor.bind <| Behavior.stateful 0 Behaviors.stateNoUpdateOnSync
+    use actor = Actor.bind <| Behavior.stateful 0 Behaviors.stateNoUpdateOnSync
                 |> self.PublishActorPrimary
                 |> Actor.start
                 
