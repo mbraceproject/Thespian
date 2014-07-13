@@ -64,19 +64,27 @@ and PipedReplyChannelReceiver<'R> (actorId: PipeActorId) =
 
   do replyReceiver.Start()
 
-  member __.AwaitReply(timeout: int) = Async.AwaitTask(tcs.Task, timeout)
+  member __.AwaitReply(timeout: int) =
+    async {
+      let! r = Async.AwaitTask(tcs.Task, timeout)
+      match r with
+      | Some _ -> return r
+      | None -> replyReceiver.Stop(); return r
+    }
   override self.AwaitReplyUntyped(timeout: int) =
     async {
       let! r = self.AwaitReply(timeout)
       match r with
       | Some(Value v) -> return Some(Value <| box v)
       | Some(Exception e) -> return Some(Exception e)
-      | None -> return None
+      | None ->
+        replyReceiver.Stop()
+        return None
     }
 
   member self.ReplyChannel = new PipedReplyChannel<'R>(actorId, chanId, Some self)
 
-//  interface IDisposable with override __.Dispose() = replyReceiver.Stop()
+  interface IDisposable with override __.Dispose() = replyReceiver.Stop()
 
 and PipedReplyChannel(receiver: PipedReplyChannelReceiver option) =
   member __.Receiver = receiver
@@ -167,11 +175,15 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, processId: int) 
       let timeout' = if initTimeout <> rc.Timeout then rc.Timeout else timeout
 
       try
-        use sender = PipeSender<'T>.GetPipeSender(pipeName, actorId)
-        do! sender.PostAsync msg
-        return! rcr.AwaitReply timeout'
-      with :? CommunicationException as e -> return! Async.Raise e
-          | e -> return! Async.Raise <| CommunicationException(sprintf "PipeProtocol: error communicating with %O" actorId, e)
+        try
+          use sender = PipeSender<'T>.GetPipeSender(pipeName, actorId)
+          do! sender.PostAsync msg
+          return! rcr.AwaitReply timeout'
+        with :? CommunicationException as e -> return! Async.Raise e
+            | e -> return! Async.Raise <| CommunicationException(sprintf "PipeProtocol: error communicating with %O" actorId, e)
+      with e ->
+        let d = rcr :> IDisposable in d.Dispose()
+        return! Async.Raise e
     }
 
   member private self.TryPostWithReply(msgF: IReplyChannel<'R> -> 'T, timeout: int) =
@@ -242,7 +254,7 @@ and [<AbstractClass>] PipeReceiver<'T>(pipeName: string) =
     else new PipeReceiverWindows<'T>(pipeName, processMessage, ?singleAccept = singleAccept) :> PipeReceiver<'T>
 
 
-and PipeReceiverUnix<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccept: bool) as self =
+and PipeReceiverUnix<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAccept: bool) =
   inherit PipeReceiver<'T>(pipeName)
 
   let singleAccept = defaultArg singleAccept false
@@ -268,16 +280,18 @@ and PipeReceiverUnix<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAc
     Syscall.unlink(writeFifoName) |> ignore
     Syscall.unlink(readFifoName) |> ignore
 
-  let rec connect() =
+  let reading = ref None
+
+  let rec connect(): unit =
     let readFd = Syscall.``open``(readFifoName, OpenFlags.O_RDONLY)
     if readFd = -1 then
       let errno = Stdlib.GetLastError()
       if errno = Errno.EINTR then connect()
-      elif errno = Errno.ENOENT then None
+      elif errno = Errno.ENOENT then reading := None
       else failwith (sprintf "Failed to open read end of server pipe. Error code %A" errno)
     else
     //ownership of readFd passes to readStream
-    Some <| new UnixStream(readFd)
+    reading := Some <| new UnixStream(readFd)
 
   let rec getWriting() =
     let writeFd = Syscall.``open``(writeFifoName, OpenFlags.O_WRONLY)
@@ -293,42 +307,39 @@ and PipeReceiverUnix<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAc
       try
         let! data = reading.AsyncReadBytes()
         try
-          let msg = serializer.Deserialize<Request<'T>>(data)
-          match msg with
-          | Message m ->
-            let response =
-              try
-                do processMessage m
-                Acknowledge
-              with :? ActorInactiveException -> UnknownRecepient
-            let data = serializer.Serialize response
-            use writing = getWriting()
-            do! writing.AsyncWriteBytes data
-            return! connectionLoop reading
-          | Disconnect -> return true
+          let msg = serializer.Deserialize<'T>(data)
+          let response =
+            try
+              do processMessage msg
+              Acknowledge
+            with :? ActorInactiveException -> UnknownRecepient
+          let data = serializer.Serialize response
+          use writing = getWriting()
+          do! writing.AsyncWriteBytes data
         with e ->
           let data = serializer.Serialize <| Error e
           use writing = getWriting()
           do! writing.AsyncWriteBytes data
-          return true
       with e ->
         do! errorEvent.TriggerAsync e
-        return false
     }
 
   let rec serverLoop () =
     async {
       try
-        match connect() with
+        do connect()
+        match reading.Value with
         | Some reading ->
-          let! keep = connectionLoop reading
-          if singleAccept then reading.Dispose(); self.Stop()
-          elif keep then
+          do! connectionLoop reading
+          if singleAccept then reading.Dispose(); destroyPipes()
+          else
             reading.Dispose()
             return! serverLoop()
-          else reading.Dispose(); self.Stop()
-        | None -> () //the actor was stopped
-      with e -> errorEvent.Trigger e
+        | None -> ()
+      with e ->
+        errorEvent.Trigger e
+        if reading.Value.IsSome then reading.Value.Value.Dispose()
+        destroyPipes()
     }
 
   let mutable cts = Unchecked.defaultof<CancellationTokenSource>
@@ -343,6 +354,7 @@ and PipeReceiverUnix<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAc
     if cts <> Unchecked.defaultof<CancellationTokenSource> then
       cts.Cancel()
       cts <- Unchecked.defaultof<CancellationTokenSource>
+      if reading.Value.IsSome then reading.Value.Value.Dispose()
       destroyPipes()
 
 
@@ -476,9 +488,9 @@ and [<AbstractClass>] internal PipeSender<'T> internal (pipeName: string, actorI
     |> Async.Parallel
     |> Async.Ignore
 
-  member __.SerializeDataAndHandleForeignRcs(msg: 'T) =
+  member __.SerializeDataAndHandleForeignRcs(msg: 'U) =
     let context = serializationContext()
-    let data = serializer.Serialize<Request<'T>>(Message msg, context.GetStreamingContext())
+    let data = serializer.Serialize<'U>(msg, context.GetStreamingContext())
 
     setupForeignReplyChannelHandler context |> Async.Start
     data
@@ -497,19 +509,23 @@ and [<AbstractClass>] internal PipeSender<'T> internal (pipeName: string, actorI
 
   member private self.Acquire(?connectionTimeout: int) =
     let connectionTimeout = defaultArg connectionTimeout 10000
-    let taken = ref false
-    spinLock.Enter(taken)
-    if isReleased then spinLock.Exit(); false
-    else
-      if refCount = 0 then
-        try
-          self.Connect(connectionTimeout)
-          self.Poster.Start()
-        with :? TimeoutException as e -> spinLock.Exit(); raise <| new UnknownRecipientException("npp: unable to connect to recepient", actorId, e)
-            | _ -> spinLock.Exit(); reraise()
-      refCount <- refCount + 1
-      spinLock.Exit()
-      true
+    try
+      let taken = ref false
+      spinLock.Enter(taken)
+      if isReleased then spinLock.Exit(); false
+      else
+        if refCount = 0 then
+          try
+            self.Connect(connectionTimeout)
+            self.Poster.Start()
+          with :? TimeoutException as e -> spinLock.Exit(); raise <| new UnknownRecipientException("npp: unable to connect to recepient", actorId, e)
+              | _ -> spinLock.Exit(); reraise()
+        refCount <- refCount + 1
+        spinLock.Exit()
+        true
+    with _ ->
+      (self :> IDisposable).Dispose()
+      reraise()
 
   interface IDisposable with
     override self.Dispose() =
@@ -561,10 +577,9 @@ and internal PipeSenderUnix<'T> internal (pipeName: string, actorId: PipeActorId
   //relying on this is complicated since there is no upper bound on message size
   //therefore we use a classic lock file to provide concurrency control on the fifo
   let flockName = tmp + pipeName + ".lock"
-  let rec lockPipe () =    
+  let rec lockPipe () =
     let flockFd = Syscall.``open``(flockName, OpenFlags.O_CREAT|||OpenFlags.O_EXCL|||OpenFlags.O_WRONLY, FilePermissions.S_IRUSR|||FilePermissions.S_IWUSR)
-    if flockFd <> -1 then
-      Syscall.close(flockFd) |> ignore
+    if flockFd <> -1 then Syscall.close(flockFd) |> ignore
     elif flockFd = -1 && Stdlib.GetLastError() = Errno.EEXIST then
       Thread.Sleep 100
       lockPipe()
@@ -576,7 +591,7 @@ and internal PipeSenderUnix<'T> internal (pipeName: string, actorId: PipeActorId
   let post (R reply, msg: 'T) =
     async {
       try
-        let data = self.SerializeDataAndHandleForeignRcs msg
+        let data = self.SerializeDataAndHandleForeignRcs(msg)
         do! writing.AsyncWriteBytes data
 
         use reading = getReading()
@@ -594,12 +609,9 @@ and internal PipeSenderUnix<'T> internal (pipeName: string, actorId: PipeActorId
   override __.Poster = poster
   override __.Connect _ =
     lockPipe()
-    writing <- getWriting()
+    try writing <- getWriting() with _ -> unlockPipe(); reraise()
   override __.Disconnect() =
-    try
-      Async.RunSynchronously <| writing.AsyncWriteBytes(serializer.Serialize<Request<'T>>(Disconnect))
-      writing.Dispose()
-    with _ -> ()
+    writing.Dispose()
     writing <- Unchecked.defaultof<UnixStream>
     unlockPipe()
     
@@ -616,7 +628,7 @@ and internal PipeSenderWindows<'T> internal (pipeName: string, actorId: PipeActo
         if not client.IsConnected then reply <| Exception (new UnknownRecipientException("npp: message target is stopped or pipe is broken", actorId))
         else
 
-        let data = self.SerializeDataAndHandleForeignRcs msg
+        let data = self.SerializeDataAndHandleForeignRcs(Message msg)
         
         do! client.AsyncWriteBytes data
 
@@ -634,7 +646,7 @@ and internal PipeSenderWindows<'T> internal (pipeName: string, actorId: PipeActo
   override __.Poster = poster
   override __.Connect(connectionTimeout: int) = client.Connect(connectionTimeout)
   override __.Disconnect() =
-    Async.RunSynchronously <| client.AsyncWriteBytes(serializer.Serialize<Request<'T>>(Disconnect))
+    try Async.RunSynchronously <| client.AsyncWriteBytes(serializer.Serialize<Request<'T>>(Disconnect)) with _ -> ()
     client.Dispose()
 
 
