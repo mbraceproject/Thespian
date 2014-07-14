@@ -13,6 +13,11 @@ open Nessos.Thespian.Tests.TestDefinitions.Remote
 type ``Collocated Npp``() =
   inherit ``Collocated Remote Communication``()
 
+  override __.ParallelPostsNum = 2
+  override __.ParallelAsyncPostsNum = 2
+  override __.ParallelPostsWithReplyNum = 2
+  override __.ParallelPostsWithDeserializedNum = 2
+
   override __.PublishActorPrimary(actor: Actor<'T>) = actor |> Actor.publish [Protocols.npp()]
   override __.RefPrimary(actor: Actor<'T>) = actor.Ref.[NPP]
   override __.ForeignProtocols =
@@ -39,10 +44,10 @@ type ``Collocated Npp``() =
 type ``AppDomain Npp``() =
   inherit ``AppDomain Communication``<NppActorManagerFactory>()
 
-  override __.ParallelPostsNum = 10
-  override __.ParallelAsyncPostsNum = 30
-  override __.ParallelPostsWithReplyNum = 30
-  override __.ParallelPostsWithDeserializedNum = 10
+  override __.ParallelPostsNum = 2
+  override __.ParallelAsyncPostsNum = 2
+  override __.ParallelPostsWithReplyNum = 2
+  override __.ParallelPostsWithDeserializedNum = 2
 
   override __.GetAppDomainManager(?appDomainName: string) = new AppDomainManager<NppActorManagerFactory>(?appDomainName = appDomainName)
   override __.PublishActorPrimary(actor: Actor<'T>) = actor |> Actor.publish [Protocols.npp()]

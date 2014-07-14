@@ -11,6 +11,10 @@ open Nessos.Thespian.Tests.TestDefinitions
 type ``In-memory``() =
   inherit ``Collocated Communication``()
 
+  override __.ParallelPostsNum = 30
+  override __.ParallelAsyncPostsNum = 30
+  override __.ParallelPostsWithReplyNum = 100
+
   override __.PublishActorPrimary a = a
   override __.RefPrimary(a: Actor<'T>) = a.Ref
 

@@ -17,6 +17,10 @@ type ``Collocated Communication``() =
   abstract PublishActorPrimary: Actor<'T> -> Actor<'T>
   abstract RefPrimary: Actor<'T> -> ActorRef<'T>
 
+  abstract ParallelPostsNum: int
+  abstract ParallelAsyncPostsNum: int
+  abstract ParallelPostsWithReplyNum: int
+
   [<TestFixtureSetUp>]
   member self.SetUp() =
     defaultPrimaryProtocolFactory <- Actor.DefaultPrimaryProtocolFactory
@@ -431,10 +435,11 @@ type ``Collocated Communication``() =
                 |> self.PublishActorPrimary
                 |> Actor.start
 
-    [ for i in 1..30 -> async { self.RefPrimary(actor) <-- TestAsync i } ]
+    let N = self.ParallelPostsNum
+    [ for i in 1..N -> async { self.RefPrimary(actor) <-- TestAsync i } ]
     |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
 
-    let expected = [ for i in 1..30 -> i ] |> List.reduce (+)
+    let expected = [ for i in 1..N -> i ] |> List.reduce (+)
     let result = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
     result |> should equal expected
 
@@ -444,10 +449,11 @@ type ``Collocated Communication``() =
                 |> self.PublishActorPrimary
                 |> Actor.start
 
-    [ for i in 1..30 -> self.RefPrimary(actor) <-!- TestAsync i ]
+    let N = self.ParallelAsyncPostsNum
+    [ for i in 1..N -> self.RefPrimary(actor) <-!- TestAsync i ]
     |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
 
-    let expected = [ for i in 1..30 -> i ] |> List.reduce (+)
+    let expected = [ for i in 1..N -> i ] |> List.reduce (+)
     let result = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
     result |> should equal expected
 
@@ -457,14 +463,15 @@ type ``Collocated Communication``() =
                 |> self.PublishActorPrimary
                 |> Actor.start
 
-    [ for i in 1..100 -> self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*8), i) ]
+    let N = self.ParallelPostsWithReplyNum
+    [ for i in 1..N -> self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*8), i) ]
     |> Async.Parallel
     |> Async.Ignore
     |> Async.RunSynchronously
 
     let r = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
     r |> should be (greaterThanOrEqualTo 1)
-    r |> should be (lessThanOrEqualTo 100)
+    r |> should be (lessThanOrEqualTo N)
 
 
 
@@ -477,6 +484,8 @@ type ForeignProtocolProxy() =
 [<AbstractClass>]
 type ``Collocated Remote Communication``() =
   inherit ``Collocated Communication``()
+
+  abstract ParallelPostsWithDeserializedNum: int
 
   abstract ForeignProtocols: ForeignProtocolProxy []
 
@@ -540,9 +549,10 @@ type ``Collocated Remote Communication``() =
 
     self.RefPrimary(actor) <-- TestAsync 42
 
+    let N = self.ParallelPostsWithDeserializedNum
     let serializer = Serialization.defaultSerializer
     let serializedRef = serializer.Serialize(self.RefPrimary(actor))
-    let deserializedRefs = [ for i in 1..10 -> serializer.Deserialize<ActorRef<TestMessage<int, int>>>(serializedRef) ]
+    let deserializedRefs = [ for i in 1..N -> serializer.Deserialize<ActorRef<TestMessage<int, int>>>(serializedRef) ]
 
     let result =
       deserializedRefs

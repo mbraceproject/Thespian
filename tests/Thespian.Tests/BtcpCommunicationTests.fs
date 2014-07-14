@@ -15,6 +15,11 @@ open Nessos.Thespian.Tests.TestDefinitions.Remote
 type ``Collocated BTcp``() =
   inherit ``Tcp communication``()
 
+  override __.ParallelPostsNum = 30
+  override __.ParallelAsyncPostsNum = 30
+  override __.ParallelPostsWithReplyNum = 100
+  override __.ParallelPostsWithDeserializedNum = 10
+
   override __.PublishActorPrimary(actor: Actor<'T>) = actor |> Actor.publish [Protocols.btcp()]
   override __.RefPrimary(actor: Actor<'T>) = actor.Ref.[BTCP]
   override __.PublishActorNonExistingListener(actor: Actor<'T>) =

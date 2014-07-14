@@ -2,6 +2,7 @@
 
 open System
 open System.Collections.Concurrent
+open System.Collections.Generic
 open System.IO
 open System.IO.Pipes
 open System.Diagnostics
@@ -317,10 +318,12 @@ and PipeReceiverUnix<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAc
           use writing = getWriting()
           do! writing.AsyncWriteBytes data
         with e ->
+          printfn "DSLR-ERROR %A" e
           let data = serializer.Serialize <| Error e
           use writing = getWriting()
           do! writing.AsyncWriteBytes data
       with e ->
+        printfn "CONN-ERROR %A" e
         do! errorEvent.TriggerAsync e
     }
 
@@ -337,6 +340,7 @@ and PipeReceiverUnix<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAc
             return! serverLoop()
         | None -> ()
       with e ->
+        printfn "SRV-ERROR %A" e
         errorEvent.Trigger e
         if reading.Value.IsSome then reading.Value.Value.Dispose()
         destroyPipes()
@@ -455,9 +459,9 @@ and [<AbstractClass>] internal PipeSender<'T> internal (pipeName: string, actorI
   let mutable refCount = 0
   [<VolatileField>]
   let mutable isReleased = false
-  let spinLock = SpinLock(false)
+  static let sync = obj()
 
-  static let senders = new ConcurrentDictionary<string, PipeSender<'T>>()
+  static let senders = new Dictionary<string, PipeSender<'T>>()
 
   let serializationContext() =
     new MessageSerializationContext(serializer,
@@ -510,39 +514,38 @@ and [<AbstractClass>] internal PipeSender<'T> internal (pipeName: string, actorI
   member private self.Acquire(?connectionTimeout: int) =
     let connectionTimeout = defaultArg connectionTimeout 10000
     try
-      let taken = ref false
-      spinLock.Enter(taken)
-      if isReleased then spinLock.Exit(); false
-      else
-        if refCount = 0 then
-          try
-            self.Connect(connectionTimeout)
-            self.Poster.Start()
-          with :? TimeoutException as e -> spinLock.Exit(); raise <| new UnknownRecipientException("npp: unable to connect to recepient", actorId, e)
-              | _ -> spinLock.Exit(); reraise()
-        refCount <- refCount + 1
-        spinLock.Exit()
-        true
+      if refCount = 0 then
+        try
+          //printfn "Connecting"
+          self.Connect(connectionTimeout)
+          self.Poster.Start()
+        with :? TimeoutException as e -> raise <| new UnknownRecipientException("npp: unable to connect to recepient", actorId, e)
+            | _ -> reraise()
+      refCount <- refCount + 1
     with _ ->
       (self :> IDisposable).Dispose()
       reraise()
 
   interface IDisposable with
     override self.Dispose() =
-      let taken = ref false
-      spinLock.Enter(taken)
-      if refCount = 1 then
-        isReleased <- true
-        self.Poster.Stop()
-        self.Disconnect()
-        senders.TryRemove(pipeName) |> ignore
-      refCount <- refCount - 1
-      spinLock.Exit()
+      lock sync (fun () ->
+        if refCount = 1 then
+          //printfn "Disconnecting"
+          try self.Poster.Stop() with _ -> ()
+          self.Disconnect()
+          senders.Remove(pipeName) |> ignore
+        refCount <- refCount - 1
+      )
 
   static member GetPipeSender(pipeName: string, actorId: PipeActorId): PipeSender<'T> =
-    let sender = senders.GetOrAdd(pipeName, fun _ -> if onUnix then new PipeSenderUnix<'T>(pipeName, actorId) :> PipeSender<'T> else new PipeSenderWindows<'T>(pipeName, actorId) :> PipeSender<'T>)
-    if sender.Acquire() then sender
-    else Thread.SpinWait(20); PipeSender<'T>.GetPipeSender(pipeName, actorId)
+    lock sync (fun () ->
+      if senders.ContainsKey pipeName then let sender = senders.[pipeName] in sender.Acquire(); sender
+      else
+        let sender = if onUnix then new PipeSenderUnix<'T>(pipeName, actorId) :> PipeSender<'T> else new PipeSenderWindows<'T>(pipeName, actorId) :> PipeSender<'T>
+        senders.Add(pipeName, sender)
+        sender.Acquire()
+        sender
+    )
 
 
 and internal PipeSenderUnix<'T> internal (pipeName: string, actorId: PipeActorId) as self =
@@ -601,21 +604,21 @@ and internal PipeSenderUnix<'T> internal (pipeName: string, actorId: PipeActorId
         | Acknowledge -> reply nothing
         | UnknownRecepient -> reply <| Exception (new UnknownRecipientException("npp: message recepient not found on remote target.", actorId))
         | Error e -> reply <| Exception (new DeliveryException("npp: message delivery failure.", actorId, e))
-      with e -> reply <| Exception e
+      with e ->
+        printfn "WR-ERROR %A" e
+        reply <| Exception e
     }
 
   let poster = Actor.bind <| Behavior.stateless post
-
-  do printfn "UNIX pipe sender"
 
   override __.Poster = poster
   override __.Connect _ =
     lockPipe()
     try writing <- getWriting() with _ -> unlockPipe(); reraise()
   override __.Disconnect() =
-    writing.Dispose()
-    writing <- Unchecked.defaultof<UnixStream>
+    try writing.Dispose() with _ -> ()
     unlockPipe()
+    writing <- Unchecked.defaultof<UnixStream>
     
     
 and internal PipeSenderWindows<'T> internal (pipeName: string, actorId: PipeActorId) as self =
