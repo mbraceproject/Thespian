@@ -606,6 +606,8 @@ and internal PipeSenderUnix<'T> internal (pipeName: string, actorId: PipeActorId
 
   let poster = Actor.bind <| Behavior.stateless post
 
+  do printfn "UNIX pipe sender"
+
   override __.Poster = poster
   override __.Connect _ =
     lockPipe()
