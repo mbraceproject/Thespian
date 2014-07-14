@@ -39,6 +39,11 @@ type ``Collocated Npp``() =
 type ``AppDomain Npp``() =
   inherit ``AppDomain Communication``<NppActorManagerFactory>()
 
+  override __.ParallelPostsNum = 10
+  override __.ParallelAsyncPostsNum = 30
+  override __.ParallelPostsWithReplyNum = 30
+  override __.ParallelPostsWithDeserializedNum = 10
+
   override __.GetAppDomainManager(?appDomainName: string) = new AppDomainManager<NppActorManagerFactory>(?appDomainName = appDomainName)
   override __.PublishActorPrimary(actor: Actor<'T>) = actor |> Actor.publish [Protocols.npp()]
   override __.RefPrimary(actor: Actor<'T>) = actor.Ref.[NPP]

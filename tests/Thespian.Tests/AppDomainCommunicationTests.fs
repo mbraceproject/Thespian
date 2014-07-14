@@ -14,6 +14,11 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
   abstract PublishActorPrimary: Actor<'U> -> Actor<'U>
   abstract RefPrimary: Actor<'U> -> ActorRef<'U>
 
+  abstract ParallelPostsNum: int
+  abstract ParallelAsyncPostsNum: int
+  abstract ParallelPostsWithReplyNum: int
+  abstract ParallelPostsWithDeserializedNum: int
+
   // [<TearDown>]
   // member __.TestTearDown() =
   //   let memoryUsage = GC.GetTotalMemory(true)
@@ -197,10 +202,12 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
     let actorRef = actorManager.Publish()
     actorManager.Start()
 
-    [ for i in 1..30 -> async { actorRef <-- TestAsync i } ]
+    let N = self.ParallelPostsNum
+
+    [ for i in 1..N -> async { actorRef <-- TestAsync i } ]
     |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
 
-    let expected = [ for i in 1..30 -> i ] |> List.reduce (+)
+    let expected = [ for i in 1..N -> i ] |> List.reduce (+)
     let result = actorRef <!= fun ch -> TestSync(ch, 0)
     result |> should equal expected
 
@@ -211,10 +218,11 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
     let actorRef = actorManager.Publish()
     actorManager.Start()
 
-    [ for i in 1..30 -> actorRef <-!- TestAsync i ]
+    let N = self.ParallelAsyncPostsNum
+    [ for i in 1..N -> actorRef <-!- TestAsync i ]
     |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
 
-    let expected = [ for i in 1..30 -> i ] |> List.reduce (+)
+    let expected = [ for i in 1..N -> i ] |> List.reduce (+)
     let result = actorRef <!= fun ch -> TestSync(ch, 0)
     result |> should equal expected
 
@@ -225,14 +233,15 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
     let actorRef = actorManager.Publish()
     actorManager.Start()
 
-    [ for i in 1..100 -> actorRef <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*8), i) ]
+    let N = self.ParallelPostsWithReplyNum
+    [ for i in 1..N -> actorRef <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*8), i) ]
     |> Async.Parallel
     |> Async.Ignore
     |> Async.RunSynchronously
 
     let r = actorRef <!= fun ch -> TestSync(ch, 0)
     r |> should be (greaterThanOrEqualTo 1)
-    r |> should be (lessThanOrEqualTo 100)
+    r |> should be (lessThanOrEqualTo N)
 
   [<Test>]
   member self.``Parallel posts with reply with multiple deserialised refs``() =
@@ -243,7 +252,8 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
 
     actorRef <-- TestAsync 42
 
-    let refs = [ for i in 1..10 -> actorManager.Ref ]
+    let N = self.ParallelPostsWithDeserializedNum
+    let refs = [ for i in 1..N -> actorManager.Ref ]
 
     let result =
       refs
@@ -307,14 +317,15 @@ type ``AppDomain Tcp Communication``<'T when 'T :> ActorManagerFactory>() =
     let actorRef = actorManager.Publish()
     actorManager.Start()
 
-    [ for i in 1..100 -> async {
-      if i = 21 || i = 42 || i = 84 then 
+    let N = self.ParallelAsyncPostsNum
+    [ for i in 1..N -> async {
+      if i = N/4 || i = N/3 || i = N/2 then 
         //sleep more than connection timeout
         do! Async.Sleep 10000
       do! actorRef <-!- (TestAsync i) 
     }] |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
 
-    let expected = [for i in 1..100 -> i] |> List.reduce (+)
+    let expected = [for i in 1..N -> i] |> List.reduce (+)
     let result = actorRef <!= fun ch -> TestSync(ch, 0)
     result |> should equal expected
 
@@ -325,12 +336,13 @@ type ``AppDomain Tcp Communication``<'T when 'T :> ActorManagerFactory>() =
     let actorRef = actorManager.Publish()
     actorManager.Start()
 
-    [ for i in 1..100 -> async {
-        if i = 21 || i = 42 || i = 84 then
+    let N = self.ParallelPostsWithReplyNum
+    [ for i in 1..N -> async {
+        if i = N/4 || i = N/3 || i = N/2 then
           do! Async.Sleep 10000
         return! actorRef <!- fun ch -> TestSync(ch, i)
     }] |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
 
     let r = actorRef <!= fun ch -> TestSync(ch, 0)
     r |> should be (greaterThanOrEqualTo 1)
-    r |> should be (lessThanOrEqualTo 100)
+    r |> should be (lessThanOrEqualTo N)
