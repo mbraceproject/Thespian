@@ -340,7 +340,7 @@ type ``AppDomain Tcp Communication``<'T when 'T :> ActorManagerFactory>() =
     [ for i in 1..N -> async {
         if i = N/4 || i = N/3 || i = N/2 then
           do! Async.Sleep 10000
-        return! actorRef <!- fun ch -> TestSync(ch, i)
+        return! actorRef <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout*2), i)
     }] |> Async.Parallel |> Async.Ignore |> Async.RunSynchronously
 
     let r = actorRef <!= fun ch -> TestSync(ch, 0)
