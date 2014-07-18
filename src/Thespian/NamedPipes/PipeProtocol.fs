@@ -322,9 +322,13 @@ and PipeReceiverUnix<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAc
           let data = serializer.Serialize <| Error e
           use writing = getWriting()
           do! writing.AsyncWriteBytes data
+
+        if singleAccept then return ()
+        else return! connectionLoop reading
       with e ->
         printfn "CONN-ERROR %A" e
-        do! errorEvent.TriggerAsync e
+        errorEvent.Trigger e
+        return ()
     }
 
   let rec serverLoop () =
@@ -334,10 +338,8 @@ and PipeReceiverUnix<'T>(pipeName: string, processMessage: 'T -> unit, ?singleAc
         match reading.Value with
         | Some reading ->
           do! connectionLoop reading
-          if singleAccept then reading.Dispose(); destroyPipes()
-          else
-            reading.Dispose()
-            return! serverLoop()
+          reading.Dispose()
+          destroyPipes()
         | None -> ()
       with e ->
         printfn "SRV-ERROR %A" e
@@ -406,7 +408,7 @@ and PipeReceiverWindows<'T>(pipeName: string, processMessage: 'T -> unit, ?singl
           do! server.AsyncWriteBytes data
           return true
       with e ->
-        do! errorEvent.TriggerAsync e
+        errorEvent.Trigger e
         return false
     }
 

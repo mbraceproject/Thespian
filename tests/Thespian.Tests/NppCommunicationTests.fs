@@ -13,9 +13,9 @@ open Nessos.Thespian.Tests.TestDefinitions.Remote
 type ``Collocated Npp``() =
   inherit ``Collocated Remote Communication``()
 
-  override __.ParallelPostsNum = 2
-  override __.ParallelAsyncPostsNum = 2
-  override __.ParallelPostsWithReplyNum = 2
+  override __.ParallelPostsNum = 20
+  override __.ParallelAsyncPostsNum = 100
+  override __.ParallelPostsWithReplyNum = 30
   override __.ParallelPostsWithDeserializedNum = 2
 
   override __.PublishActorPrimary(actor: Actor<'T>) = actor |> Actor.publish [Protocols.npp()]

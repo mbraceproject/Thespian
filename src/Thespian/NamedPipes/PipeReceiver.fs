@@ -21,22 +21,24 @@ module private Utils =
   let ProtocolName = "npp"
 
   type AsyncBuilder with
-    member __.Bind(f: Task<'T>, g: 'T -> Async<'S>) = __.Bind(Async.AwaitTask f, g)
+  //   member __.Bind(f: Task<'T>, g: 'T -> Async<'S>) = __.Bind(Async.AwaitTask f, g)
     member __.Bind(f: Task, g: unit -> Async<'S>) = __.Bind(f.ContinueWith ignore |> Async.AwaitTask, g)
 
 
   type Stream with
     member self.AsyncWriteBytes (bytes: byte []) =
       async {
-        do! self.WriteAsync(BitConverter.GetBytes bytes.Length, 0, 4)
-        do! self.WriteAsync(bytes, 0, bytes.Length)
+        // do! self.WriteAsync(BitConverter.GetBytes bytes.Length, 0, 4)
+        // do! self.WriteAsync(bytes, 0, bytes.Length)
+        do! self.AsyncWrite(BitConverter.GetBytes bytes.Length, 0, 4)
+        do! self.AsyncWrite(bytes, 0, bytes.Length)
         do! self.FlushAsync()
       }
 
     member self.AsyncReadBytes(length: int) =
       let rec readSegment buf offset remaining =
         async {
-          let! read = self.ReadAsync(buf, offset, remaining)
+          let! read = self.AsyncRead(buf, offset, remaining)
           if read < remaining then return! readSegment buf (offset + read) (remaining - read)
           else return ()
         }
