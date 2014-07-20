@@ -49,11 +49,11 @@ type IMessageSerializer =
 //       else
 //         formatter.Deserialize(memoryStream) :?> 'T
 
-type FsPicklerBinarySerializer(?pickler : BinaryPickler) =
+type FsPicklerBinarySerializer(?pickler : BinarySerializer) =
         
   let pickler =
     match pickler with 
-    | None -> new BinaryPickler()
+    | None -> new BinarySerializer()
     | Some p -> p
 
   member __.Serialize<'T> (value:'T, ?context) = pickler.Pickle<'T>(value, ?streamingContext = context)
