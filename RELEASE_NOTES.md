@@ -1,3 +1,6 @@
+### 0.0.10-alpha - Jul 21, 2014
+* API fix.
+
 ### 0.0.9-alpha - Jul 21, 2014
 * Update FsPickler version
 
