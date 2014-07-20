@@ -49,18 +49,20 @@ type IMessageSerializer =
 //       else
 //         formatter.Deserialize(memoryStream) :?> 'T
 
-type FsPicklerBinarySerializer(?pickler : BinarySerializer) =
+type FsPicklerMessageSerializer(?pickler : FsPicklerSerializer) =
         
   let pickler =
     match pickler with 
-    | None -> new BinarySerializer()
+    | None -> new BinarySerializer() :> FsPicklerSerializer
     | Some p -> p
+
+  member __.Pickler = pickler
 
   member __.Serialize<'T> (value:'T, ?context) = pickler.Pickle<'T>(value, ?streamingContext = context)
   member __.Deserialize<'T> (data:byte[], ?context) = pickler.UnPickle<'T>(data, ?streamingContext = context)
 
   interface IMessageSerializer with
-    override __.Name = "FsPickler.Binary"
+    override __.Name = sprintf "FsPickler.%s" pickler.PickleFormat
 
     override self.Serialize<'T> (value:'T, ?context) =
       try self.Serialize<'T>(value, ?context = context)
@@ -70,13 +72,13 @@ type FsPicklerBinarySerializer(?pickler : BinarySerializer) =
       with e -> raise <| new ThespianSerializationException(sprintf "Failed to deserialize value with expected type %A" typeof<'T>.Name, SerializationOperation.Deserialization, e)
 
 
-let mutable defaultSerializer = new FsPicklerBinarySerializer() :> IMessageSerializer
+let mutable defaultSerializer = new FsPicklerMessageSerializer() :> IMessageSerializer
 
         
 //NOTE!! OBSOLETE
 type SerializerRegistry private () =
   static let defaultSerializerName = String.Empty
-  static let originalDefaultSerializer = new FsPicklerBinarySerializer() :> IMessageSerializer
+  static let originalDefaultSerializer = new FsPicklerMessageSerializer() :> IMessageSerializer
   static let serializerMap = Atom.atom Map.empty<string, IMessageSerializer>
   static let init () =
     serializerMap.Swap(fun _ -> 
