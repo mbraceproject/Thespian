@@ -53,11 +53,11 @@
                     formatter.Deserialize(memoryStream) :?> 'T
 
 
-    type FsPicklerSerializer(?pickler : FsPicklerBase) =
+    type FsPicklerMessageSerializer(?pickler : FsPicklerSerializer) =
         
         let pickler = 
             match pickler with 
-            | None -> FsPickler.CreateBinary() :> FsPicklerBase
+            | None -> FsPickler.CreateBinary() :> FsPicklerSerializer
             | Some p -> p
 
         interface IMessageSerializer with
@@ -69,7 +69,7 @@
 
     type SerializerRegistry private () =
         static let defaultSerializerName = String.Empty
-        static let originalDefaultSerializer = new FsPicklerSerializer() :> IMessageSerializer
+        static let originalDefaultSerializer = new FsPicklerMessageSerializer() :> IMessageSerializer
         static let serializerMap = Atom.atom Map.empty<string, IMessageSerializer>
         static let init () =
             serializerMap.Swap(fun _ -> 
