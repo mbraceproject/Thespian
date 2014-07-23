@@ -24,7 +24,7 @@ let private falsePositiveTest address = async {
 
 let private healthCheck (notifyDeadNode: ActorRef<NodeManager> -> Async<unit>) (ctx: BehaviorContext<_>) (state: ClusterHealthMonitorState) = 
     async {
-        //ctx.LogInfo "Healt check..."
+        //ctx.LogInfo "Health check..."
 
         let now = DateTime.Now
 
@@ -41,7 +41,7 @@ let private healthCheck (notifyDeadNode: ActorRef<NodeManager> -> Async<unit>) (
         let! deads = deadCandidates |> List.map fst |> List.chooseAsync falsePositiveTest
 
         let falsePositives = deadCandidates.Length - deads.Length
-        if falsePositives > 0 then ctx.LogInfo "%d false positive node deaths detected."
+        if falsePositives > 0 then ctx.LogInfo <| sprintf "%d false positive node deaths detected." falsePositives
 
         if deads.Length <> 0 then
             ctx.LogInfo <| sprintf "Declaring dead nodes: %A" deads
