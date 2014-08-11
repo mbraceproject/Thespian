@@ -20,26 +20,6 @@ open Nessos.Thespian.Serialization
 open Nessos.Thespian.Utils
 
 
-//
-//  This is a *very* rudimentary implementation of an actor protocol for named pipes
-//
-//  If we are to use this in a bigger scale, here's a short list of issues that need to
-//  be addressed.
-//    1. Every actor published on this protocol creates its own named pipe, this probably
-//       doesn't scale very well. Prolly need something akin to the recipient architecture
-//       used in tcp actors.
-//    2. Also, every reply channel opens up a separate named pipe on the client side; this
-//       has the advantage of not needing to patch reply channels in the deserialization stage
-//       and you get forwarding for free. But again, this makes the protocol *really* inefficient.
-//    3. The addressing scheme is potentially restrictive. Pipe names are built exclusively out of 
-//       the process Id and the actor name.
-//    4. It has barely been tested. For the moment, this protocol is only used to bootstrap TCP
-//       connections with spawned mbraced nodes.
-//    5. Event logging is a mess.
-//
-//
-
-
 [<Serializable>]
 type PipeActorId internal (pipeName: string, actorName: string) =
   inherit ActorId(actorName)
@@ -207,7 +187,7 @@ and PipeProtocolClient<'T>(actorName: string, pipeName: string, processId: int) 
   interface IProtocolClient<'T> with
     override __.ProtocolName = ProtocolName
     override __.ActorId = actorId :> ActorId
-    override __.Uri = String.Empty
+    override __.Uri = sprintf "%s://localhost:%d/%s" ProtocolName processId actorName
     override __.Factory = Some (new PipeProtocolFactory(processId) :> IProtocolFactory)
     override __.Post(msg: 'T): unit = Async.RunSynchronously(post msg)
     override __.AsyncPost(msg: 'T): Async<unit> = post msg
@@ -671,144 +651,3 @@ module Protocol =
   let NPP = ProtocolName
   type Protocols with
     static member npp(?processId: int) = new PipeProtocolFactory(?processId = processId) :> IProtocolFactory
-
-
-// type PipeProtocol<'T> private (config : PipeProtocolConfig, pipeName : string, 
-//                                         serializer : IMessageSerializer, actorName : string,
-//                                         actorUUID : ActorUUID, server : PipeProtocolServer<'T> option) =
-
-//         static let mkPipeName (config : PipeProtocolConfig) actorName =
-//             sprintf "pid-%d-actor-%s" config.Pid actorName
-
-//         let actorId = PipeActorId(pipeName, actorUUID, actorName)
-
-//         // whatever ..
-//         let eventLog = new Event<Log> ()
-//         let events =
-//             match server with
-//             | Some server -> 
-//                 server.Errors 
-//                 |> Event.map(fun e -> LogLevel.Error, LogSource.Protocol "npp", e :> obj)
-//                 |> Event.merge eventLog.Publish
-//             | None -> eventLog.Publish
-
-//         let sender = new PipeSender<'T * IReplyChannel * bool>(pipeName, serializer)
-
-//         let post (msg : 'T) =
-//             async {
-//                 use rcr = new PipedReplyChannelReceiver<unit>(actorId, serializer, Timeout.Infinite)
-
-//                 try
-//                     do! sender.PostAsync <| (msg, rcr.ReplyChannel :> _, false)
-//                 with e ->
-//                     return! Async.Raise <|
-//                         CommunicationException(sprintf "PipeProtocol: error communicating with %O." actorId, e)
-
-//                 let! response = rcr.AwaitReply ()
-
-//                 match response with
-//                 | Value () -> return ()
-//                 | Exception e -> return! Async.Raise e
-//             }
-
-//         let postWithReply (msgB : IReplyChannel<'R> -> 'T, timeout) =
-//             async {
-//                 use rcr = new PipedReplyChannelReceiver<'R>(actorId, serializer, timeout)
-                
-//                 let rc = rcr.ReplyChannel
-
-//                 try
-//                     do! sender.PostAsync((msgB rc, rc :> _, true), connectionTimeout = timeout)
-//                 with e ->
-//                     return! Async.Raise <|
-//                         CommunicationException(sprintf "PipeProtocol: error communicating with %O" actorId, e)
-
-//                 return! rcr.AwaitReply ()
-//             }
-
-//         new (config : PipeProtocolConfig, actorRef : ActorRef<'T>) =
-//             let pipeName = mkPipeName config actorRef.Name
-//             let server = new PipeProtocolServer<'T>(pipeName, config.Serializer, actorRef)
-//             new PipeProtocol<'T>(config, pipeName, config.Serializer, actorRef.Name, actorRef.UUId, Some server) 
-
-//         new (config : PipeProtocolConfig, actorUUID : ActorUUID, actorName : string) =
-//             let pipeName = mkPipeName config actorName
-//             new PipeProtocol<'T>(config, pipeName, config.Serializer, actorName, actorUUID, None)
-
-//         interface IActorProtocol<'T> with
-//             member __.ActorId = actorId :> _
-//             member __.ActorUUId = actorUUID
-//             member __.ActorName = actorName
-//             member __.MessageType = typeof<'T>
-//             member __.ProtocolName = "npp"
-//             member __.Log = events
-//             member __.Configuration = Some (config :> IProtocolConfiguration)
-//             member __.Start () = ()
-//             member __.Stop () = server |> Option.iter (fun s -> s.Stop())
-//             member __.Post msg = Async.RunSynchronously(post msg)
-//             member __.PostAsync msg = post msg
-//             member __.PostWithReply<'R> (msgB, timeout) : Async<'R> = 
-//                 async {
-//                     let! r = postWithReply(msgB, timeout)
-//                     match r with
-//                     | Value v -> return v
-//                     | Exception e -> return! Async.Raise e
-//                 }
-//             member __.TryPostWithReply<'R> (msgB, timeout) : Async<'R option> =
-//                 async {
-//                     let! r = postWithReply(msgB, timeout)
-//                     match r with
-//                     | Value v -> return Some v
-//                     | Exception _ -> return None
-//                 }
-//             member __.PostWithReply<'R> msg : Async<'R> =
-//                 async {
-//                     let! r = postWithReply (msg, Timeout.Infinite)
-//                     match r with
-//                     | Value v -> return v
-//                     | Exception e -> return! Async.Raise e
-//                 }
-
-
-//     and PipeProtocolConfig(?proc : Process, ?serializer : IMessageSerializer) =
-//         let isServer = proc.IsNone
-//         let proc = match proc with None -> Process.GetCurrentProcess () | Some p -> p
-//         let serializer = 
-//             match serializer with
-//             | None -> SerializerRegistry.GetDefaultSerializer()
-//             | Some s -> s
-        
-//         let mkPipeName (actorName : string) =
-//             sprintf "pid-%d-actor-%s" proc.Id actorName
-
-//         let compareTo (y : obj) =
-//             match y with
-//             | :? PipeProtocolConfig as y -> compare proc.Id y.Pid
-//             | :? IProtocolConfiguration as y -> compare "npp" y.ProtocolName
-//             | _ -> invalidArg "y" "invalid comparand"
-        
-//         member __.Pid = proc.Id
-//         member __.Serializer = serializer
-
-//         member s.GetClientInstance<'T> (uuid : ActorUUID, name : string) =
-//             new PipeProtocol<'T>(s, uuid, name)
-
-//         interface IProtocolConfiguration with
-//             member c.ProtocolName = "npp"
-//             member c.Serializer = None
-//             member c.CreateProtocolInstances<'T> (actorRef : ActorRef<'T>) =
-//                 if isServer then
-//                     [| new PipeProtocol<'T>(c, actorRef) :> IActorProtocol<'T> |]
-//                 else
-//                     invalidOp "pipe protocol configuration is not server mode."
-//             member c.CreateProtocolInstances<'T> (uuid : ActorUUID, name : string) = 
-//                 [| new PipeProtocol<'T>(c, uuid, name) :> IActorProtocol<'T> |]
-// //            member c.TryCreateProtocolInstances (uuid: ActorUUID, name : string) =
-// //                try Some (new PipeProtocol<'T>(c, uuid, name) :> IActorProtocol<'T>)
-// //                with _ -> None
-            
-//             member x.CompareTo (y : obj) = compareTo y
-//             member x.CompareTo (y : IProtocolConfiguration) = compareTo y
-
-
-//     type PipeProtocol = PipeProtocolConfig

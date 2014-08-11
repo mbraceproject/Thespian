@@ -6,6 +6,7 @@ open NUnit.Framework
 open FsUnit
 
 open Nessos.Thespian
+open Nessos.Thespian.Remote
 open Nessos.Thespian.Tests.TestDefinitions
 
 [<AbstractClass>]
@@ -614,6 +615,36 @@ type ``Collocated Remote Communication``() =
 
     actorRef |> should equal deserializedRef
 
+  [<Test>]
+  member self.``ActorRef GetUris``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    actor.Ref.GetUris() |> List.length |> should equal 1
+
+  [<Test>]
+  member self.``ActorRef toUris``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    !actor |> ActorRef.toUris |> List.length |> should equal 1
+    actor.Ref.GetUris() |> should equal (ActorRef.toUris !actor)
+
+  [<Test>]
+  member self.``ActorRef toUri <-> fromUri``() =
+    use actor = Actor.bind PrimitiveBehaviors.nill
+                |> self.PublishActorPrimary
+                |> Actor.start
+
+    let uri = ActorRef.toUri actor.Ref
+
+    let actorRef = ActorRef.fromUri uri
+
+    actorRef |> ActorRef.toUri |> should equal uri
+    actorRef = actor.Ref |> should equal true
+    
     
 
 open Nessos.Thespian.Remote
