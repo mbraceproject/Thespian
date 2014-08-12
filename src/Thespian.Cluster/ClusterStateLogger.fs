@@ -1,7 +1,7 @@
 ﻿module Nessos.Thespian.Cluster.ClusterStateLogger
 
 open Nessos.Thespian
-open Nessos.Thespian.Remote.TcpProtocol.Unidirectional
+open Nessos.Thespian.Remote
 open Nessos.Thespian.Cluster.BehaviorExtensions
 
 let private clusterStateLoggerBehavior (ctx: BehaviorContext<ClusterStateLogger>) (state: ClusterState) (msg: ClusterStateLogger) =
@@ -18,5 +18,5 @@ let private clusterStateLoggerBehavior (ctx: BehaviorContext<ClusterStateLogger>
 let createClusterStateLogger clusterState =
     Actor.bind <| Behavior.stateful clusterState clusterStateLoggerBehavior
     |> Actor.rename ("clusterStateLogger." + clusterState.ClusterId)
-    |> Actor.publish [UTcp()]
+    |> Actor.publish [Protocols.utcp()]
     |> Actor.start

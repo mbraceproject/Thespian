@@ -15,7 +15,7 @@ namespace Nessos.Thespian
         let isFsharp31 = fsharpVersion >= System.Version("4.3.1")
 
         /// stackless raise operator
-        let inline raise (e: System.Exception) = (# "throw" e : 'T #)
+        //let inline raise (e: System.Exception) = (# "throw" e : 'T #)
 
         let private remoteStackTraceField : FieldInfo =
             let bfs = BindingFlags.NonPublic ||| BindingFlags.Instance

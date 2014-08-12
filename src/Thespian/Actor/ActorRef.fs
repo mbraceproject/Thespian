@@ -149,6 +149,8 @@ and [<Serializable>] ActorRef<'T> =
 
   member self.GetUris() = self.protocols |> Seq.map (fun protocol -> protocol.Uri) |> Seq.filter (fun u -> u <> String.Empty) |> Seq.toList
 
+  member self.IsCollocated = self.protocols |> Seq.exists (fun protocol -> protocol.Factory.IsNone)
+
   override self.Id = self.defaultProtocol.ActorId
 
   abstract ProtocolFactories: IProtocolFactory[]

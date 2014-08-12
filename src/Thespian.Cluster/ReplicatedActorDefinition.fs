@@ -2,11 +2,11 @@
 
 open System
 open Nessos.Thespian
+open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol.Unidirectional
 open Nessos.Thespian.PowerPack
 open Nessos.Thespian.Cluster.BehaviorExtensions
 open Nessos.Thespian.Cluster.ActorExtensions
-open Nessos.Thespian.Utils
 open Nessos.Thespian.AsyncExtensions
 open Nessos.Thespian.Reversible
 
@@ -382,8 +382,8 @@ module AsyncReplicated =
 
 type ReplicatedActorSpec = {
     AddRaw: bool
-    Publish: IProtocolConfiguration list
-} with static member Default = { AddRaw = false; Publish = [new UTcp()] }
+    Publish: IProtocolFactory list
+} with static member Default = { AddRaw = false; Publish = [Protocols.utcp()] }
 
 type ReplicatedActorDefinitionConfiguration = {
     Replicating: ReplicatedActorSpec

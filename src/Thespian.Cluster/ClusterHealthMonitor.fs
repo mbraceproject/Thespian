@@ -3,17 +3,17 @@
 open System
 open System.Diagnostics
 open Nessos.Thespian
+open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Serialization
-open Nessos.Thespian.Utils
 
 let private addressToNodeHeartBeat (address: Address) =
     let serializer = SerializerRegistry.GetDefaultSerializer().Name
-    ActorRef.fromUri (sprintf "utcp://%A/*/nodeHeartBeat/%s" address serializer)
+    ActorRef.fromUri (sprintf "utcp://%A/nodeHeartBeat" address)
 
 let private addressToNodeManager (address: Address) =
     let serializer = SerializerRegistry.GetDefaultSerializer().Name
-    ActorRef.fromUri (sprintf "utcp://%A/*/nodeManager/%s" address serializer)
+    ActorRef.fromUri (sprintf "utcp://%A/nodeManager" address)
 
 let private falsePositiveTest address = async {
     let! r = ReliableActorRef.FromRef (addressToNodeHeartBeat address) <!- BeatBack |> Async.Catch
@@ -118,7 +118,7 @@ let clusterHealthMonitorBehavior (notifyDeadNode: ActorRef<NodeManager> -> Async
 
     let rec messageLoop state =
         async {
-            if self.CurrentQueueLength <> 0 then
+            if self.PendingMessages <> 0 then
                 let! msg = self.Receive()
                 let! state' = updateState ctx state msg
                 return! messageLoop state'

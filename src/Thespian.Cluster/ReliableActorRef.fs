@@ -160,10 +160,10 @@ type ReliableActorRef<'T> =
 
     member self.UnreliableRef = self.baseRef
 
-    override self.PostAsync(msg: 'T) : Async<unit> = async {
+    override self.AsyncPost(msg: 'T) : Async<unit> = async {
         let reliablePostExecutor = new RelieablePostExecutor<_>(self.retriesPerError, self.retryInterval, self.attemptTimeout)
 
-        let! result = reliablePostExecutor.ExecPost(self.baseRef.PostAsync msg)
+        let! result = reliablePostExecutor.ExecPost(self.baseRef.AsyncPost msg)
         return match result with
                | Choice1Of2 r -> r
                | Choice2Of2 faults -> raise <| FailureException(faults, self.baseRef)
@@ -177,11 +177,11 @@ type ReliableActorRef<'T> =
         | Choice1Of2 r -> r
         | Choice2Of2 faults -> raise <| FailureException(faults, self.baseRef)
 
-    override self.PostWithReply(msgBuilder : IReplyChannel<'R> -> 'T) : Async<'R> = 
+    override self.PostWithReply(msgBuilder : IReplyChannel<'R> -> 'T, ?timeout: int) : Async<'R> = 
         async {
             let reliablePostExecutor = new RelieablePostExecutor<_>(self.retriesPerError, self.retryInterval, self.attemptTimeout)
 
-            let! result = reliablePostExecutor.ExecPost(self.baseRef.PostWithReply msgBuilder)
+            let! result = reliablePostExecutor.ExecPost(self.baseRef.PostWithReply(msgBuilder, ?timeout = timeout))
             return match result with
                    | Choice1Of2 r -> r
                    | Choice2Of2 faults -> raise <| FailureException(faults, self.baseRef)

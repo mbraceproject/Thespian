@@ -1,7 +1,7 @@
 ﻿namespace Nessos.Thespian.Cluster
 
 open Nessos.Thespian
-open Nessos.Thespian.Remote.TcpProtocol
+open Nessos.Thespian.Remote
 open Nessos.Thespian.PowerPack
 open Nessos.Thespian.Cluster.BehaviorExtensions
 open Nessos.Thespian.Reversible
@@ -54,8 +54,8 @@ type RawProxyActorDefinition<'T>(parent: DefinitionPath, normalDef: ActorDefinit
 type RawActorDefinition<'T>(parent: DefinitionPath) =
     inherit GroupDefinition(parent)
 
-    abstract PublishProtocols: IProtocolConfiguration list
-    override __.PublishProtocols = [new Unidirectional.UTcp()]
+    abstract PublishProtocols: IProtocolFactory list
+    override __.PublishProtocols = [Protocols.utcp()]
     abstract Behavior: ActivationConfiguration * int -> Async<Actor<'T> -> Async<unit>>
 
     abstract OnActorFailure: int * ActivationConfiguration -> (exn -> unit)

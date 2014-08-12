@@ -2,11 +2,11 @@
 
 open System
 open Nessos.Thespian
+open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol.Unidirectional
 open Nessos.Thespian.PowerPack
 open Nessos.Thespian.Cluster.BehaviorExtensions
 open Nessos.Thespian.Cluster.ActorExtensions
-open Nessos.Thespian.Utils
 open Nessos.Thespian.AsyncExtensions
 open Nessos.Thespian.Reversible
 
@@ -114,7 +114,7 @@ module private Defs =
             override __.Name = name
             override __.Configuration = conf
             override __.Dependencies = []
-            override __.PublishProtocols = [UTcp()]
+            override __.PublishProtocols = [Protocols.utcp()]
             override __.Behavior(conf, instanceId) = async {
                 return Behavior.stateful initState (behavior(conf, instanceId))
             }
@@ -124,7 +124,7 @@ module private Defs =
     let replicaRawDef path replicaDef onNodeLossAction =
         {
             new RawProxyActorDefinition<Choice<'T, Stateful<'S>>>(path, replicaDef) with
-                override __.PublishProtocols = [UTcp()]
+                override __.PublishProtocols = [Protocols.utcp()]
 
                 override __.OnNodeLossAction _ = onNodeLossAction
         }
@@ -136,7 +136,7 @@ module private Defs =
                 override __.Configuration = conf
                 override def.Dependencies = [dependency def.Configuration]
                 override __.GetDependencies(conf') = [dependency conf']
-                override __.PublishProtocols = [UTcp()]
+                override __.PublishProtocols = [Protocols.utcp()]
                 override def.Behavior(conf, instanceId) = async {
                     let replicas = getReplicas instanceId
                     
@@ -227,7 +227,7 @@ type private DefsHelper<'T1, 'U1, 'S1, 'T2, 'U2, 'S2>(self: CombinedAsyncReplica
                       { local2Dependency with Configuration = local2Dependency.Configuration.Override conf' }
                       replica1Dependency conf'
                       replica2Dependency conf' ]
-                override __.PublishProtocols = [UTcp()]
+                override __.PublishProtocols = [Protocols.utcp()]
                 override __.Behavior(_, instanceId) = async {
                     let replicas1 = getReplicas1 instanceId |> Seq.map ReliableActorRef.FromRef |> Seq.toList
                     let replicas2 = getReplicas2 instanceId |> Seq.map ReliableActorRef.FromRef |> Seq.toList

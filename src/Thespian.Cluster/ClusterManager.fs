@@ -1094,7 +1094,7 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
                 //stop monitoring of nodes
                 if state.HealthMonitor.IsSome then
                     for nodeAddress in nodeManagers |> Seq.map ActorRef.toUniTcpAddress |> Seq.choose id do
-                        do! state.HealthMonitor.Value.PostAsync(StopMonitoringNode nodeAddress)
+                        do! state.HealthMonitor.Value.AsyncPost(StopMonitoringNode nodeAddress)
 
                 let updates = nodeManagers |> Seq.map ClusterRemoveNode
 
@@ -1317,7 +1317,7 @@ let createClusterManager (state: NodeState) (clusterState: ClusterState) (notify
         Actor.bind (ClusterHealthMonitor.clusterHealthMonitorBehavior notifyDeadNode ClusterHealthMonitorState.Default)
         |> Actor.subscribeLog (Default.actorEventHandler Default.fatalActorFailure String.Empty)
         |> Actor.rename ("clusterHealthMonitor." + clusterState.ClusterId)
-        |> Actor.publish [UTcp()]
+        |> Actor.publish [Protocols.utcp()]
         |> Actor.start
 
     let clusterState' = { clusterState with HealthMonitor = Some clusterHealthMonitor.Ref }
@@ -1327,7 +1327,7 @@ let createClusterManager (state: NodeState) (clusterState: ClusterState) (notify
         Actor.bind <| FSM.fsmBehavior (goto clusterManagerBehaviorProper clusterState')
         |> Actor.subscribeLog (Default.actorEventHandler Default.fatalActorFailure String.Empty)
         |> Actor.rename name
-        |> Actor.publish [UTcp()]
+        |> Actor.publish [Protocols.utcp()]
         |> Actor.start
 
     let managedCluster = {

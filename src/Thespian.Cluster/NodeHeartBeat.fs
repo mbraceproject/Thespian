@@ -11,7 +11,7 @@ let nodeHeartBeatBehavior (healthMonitor: ReliableActorRef<ClusterHealthMonitor>
 
     let rec messageLoop (heartBeatInterval: TimeSpan option) =
         async {
-            if self.CurrentQueueLength <> 0 then
+            if self.PendingMessages <> 0 then
                 let! msg = self.Receive()
 
                 match msg with

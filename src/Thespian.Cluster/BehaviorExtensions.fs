@@ -35,7 +35,7 @@ module Async =
 //            | Choice2Of2 e -> return! Async.Raise e
 //        }
 
-type BehaviorContext<'T>(self: ActorBase, selfRef: ActorRef<'T>) =
+type BehaviorContext<'T>(self: Actor, selfRef: ActorRef<'T>) =
 
     new (self: Actor<'T>) = new BehaviorContext<'T>(self, self.Ref)
 
@@ -135,7 +135,7 @@ module FSM =
 
         and pollReceive () = 
             async {
-                if self.CurrentQueueLength > 0 then return! self.Receive()
+                if self.PendingMessages > 0 then return! self.Receive()
                 else
                     do! Async.SleepSafe(500)
                     return! pollReceive()

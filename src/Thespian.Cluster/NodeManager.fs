@@ -2,10 +2,10 @@
 
 open System
 open Nessos.Thespian
+open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Remote.TcpProtocol.Unidirectional
 open Nessos.Thespian.Cluster.BehaviorExtensions.FSM
-open Nessos.Thespian.Utils
 open Nessos.Thespian.AsyncExtensions
 open Nessos.Thespian.Reversible
 
@@ -397,7 +397,7 @@ and private attachToCluster (ctx: BehaviorContext<_>) (state: NodeState) cluster
                     Actor.bind (NodeHeartBeat.nodeHeartBeatBehavior healthMonitor)
                     |> Actor.rename "nodeHeartBeat"
                     |> Actor.subscribeLog (Default.actorEventHandler Default.fatalActorFailure String.Empty)
-                    |> Actor.publish [UTcp()]
+                    |> Actor.publish [Protocols.utcp()]
                     |> Actor.start
 
                 try
@@ -1431,7 +1431,7 @@ let createNodeManager (nodeConfig: NodeConfiguration) =
                 Actor.bind <| FSM.fsmBehavior (goto nodeManagerInit state)
                 |> Actor.subscribeLog (Default.actorEventHandler Default.fatalActorFailure String.Empty)
                 |> Actor.rename "nodeManager"
-                |> Actor.publish [UTcp()] //TODO!!! Add bidirectional for diagnostics from shell
+                |> Actor.publish [Protocols.utcp()] //TODO!!! Add bidirectional for diagnostics from shell
                 |> Actor.start
 
             Log.logInfo "NodeManager started."

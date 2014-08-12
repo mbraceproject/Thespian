@@ -33,14 +33,8 @@ module Default =
 
     let actorEventHandlerProtocol (namePrefix: string) (logEntry: Log) =
         let logLevel, logSource, payload = logEntry
-//        let logLevel' = match logLevel with Nessos.Thespian.LogLevel.Info -> Info
-//                                            | Nessos.Thespian.LogLevel.Warning -> Warning
-//                                            | Nessos.Thespian.LogLevel.Error -> Error
         let logSourceStr = match logSource with 
-                           | Actor(name, uuid) -> 
-                                let name' = if name = String.Empty then "*" else name
-                                let uuid' = if name = String.Empty then uuid.ToString() else "*"
-                                sprintf "%s/%s" uuid' name'
+                           | Actor name -> name
                            | Protocol name -> "protocol: " + name
 
         let entryMsg = sprintf "%s: %s %A" namePrefix logSourceStr payload
@@ -51,14 +45,8 @@ module Default =
         match logSource with
         | Protocol _ -> ()
         | _ ->
-//            let logLevel' = match logLevel with Nessos.Thespian.LogLevel.Info -> Info
-//                                                | Nessos.Thespian.LogLevel.Warning -> Warning
-//                                                | Nessos.Thespian.LogLevel.Error -> Error
             let logSourceStr = match logSource with 
-                               | Actor(name, uuid) -> 
-                                    let name' = if name = String.Empty then "*" else name
-                                    let uuid' = if name = String.Empty then uuid.ToString() else "*"
-                                    sprintf "%s/%s" uuid' name'
+                               | Actor name -> name
                                | _ -> "Invalid log message. If this appears in the log, this is a bug."
 
             let entryMsg = sprintf "%s: %s %A" namePrefix logSourceStr payload
@@ -507,8 +495,8 @@ and [<AbstractClass>] BaseActorDefinition<'T>(parent: DefinitionPath) =
     abstract Actor: ActivationConfiguration * int -> Async<Actor<'T>>
     abstract GetActorRef: Actor<'T> -> ActorRef
     default def.GetActorRef(actor: Actor<'T>) = actor.Ref :> ActorRef
-    abstract PublishProtocols: IProtocolConfiguration list
-    override __.PublishProtocols = [new Unidirectional.UTcp()]
+    abstract PublishProtocols: IProtocolFactory list
+    override __.PublishProtocols = [Protocols.utcp()]
 
     abstract OnActorFailure: int * ActivationConfiguration -> (exn -> unit)
     default __.OnActorFailure(_, _) = ignore

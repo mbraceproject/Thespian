@@ -36,7 +36,7 @@ module Broadcast =
 
     let post (msg: 'T) (targets: #seq<#ActorRef<'T>>) = 
 //        targets |> action (fun target -> async { do target <-- msg })
-        targets |> action (fun target -> async { do! target.PostAsync msg })
+        targets |> action (fun target -> async { do! target <-!- msg })
 
     let postWithReply (msgF: IReplyChannel<'R> -> 'T) (targets: #seq<#ActorRef<'T>>) = 
         targets |> action (fun target -> target <!- msgF)
@@ -90,13 +90,12 @@ module Failover =
 
 module ActorRef =
     let toUniTcpAddress (actorRef: ActorRef<'T>) =
-        let conf = actorRef.Configurations |> List.find (fun conf -> conf.ProtocolName = Remote.TcpProtocol.Unidirectional.ProtocolName) :?> Remote.TcpProtocol.Unidirectional.UTcp
-        match conf.Addresses with
+        let addresses = actorRef.GetUris()
+                        |> List.map (fun uri -> new Uri(uri))
+                        |> List.choose (fun uri -> if uri.Scheme = Remote.TcpProtocol.Unidirectional.ProtocolName || uri.Scheme = Remote.TcpProtocol.Bidirectional.ProtocolName then Some(new Remote.TcpProtocol.Address(uri.Host, uri.Port)) else None)
+        match addresses with
         | [] -> None
         | addr::_ -> Some addr
-
-    let isCollocated (actorRef: ActorRef<'T>) =
-        actorRef.Protocols |> Array.exists (fun name -> name = "mailbox")
         
 
 module Actor =
@@ -105,10 +104,10 @@ module Actor =
 
         let mutable subscriptionRef = None : IDisposable option 
 
-        override self.Publish(protocols: IActorProtocol<'T>[]) = 
+        override self.Publish(protocols: IProtocolServer<'T>[]) = 
             new LogSubscribedActor<'T>(otherActor.Publish(protocols), observerF) :> Actor<'T>
 
-        override self.Publish(configurations: #seq<'U> when 'U :> IProtocolConfiguration) =
+        override self.Publish(configurations: #seq<'U> when 'U :> IProtocolFactory) =
             new LogSubscribedActor<'T>(otherActor.Publish(configurations), observerF) :> Actor<'T>
 
         override self.Rename(newName: string) =

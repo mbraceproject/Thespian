@@ -86,4 +86,4 @@ module ActorRef =
   let fromUri (uri: string): ActorRef<'T> =
     match tryFromUri uri with
     | Some actorRef -> actorRef
-    | None -> invalidArg "uri" "Unknown protocol uri."                 
+    | None -> invalidArg "uri" "Unknown protocol uri."
