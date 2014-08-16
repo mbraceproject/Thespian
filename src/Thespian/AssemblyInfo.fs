@@ -6,9 +6,9 @@ open System.Runtime.CompilerServices
 [<assembly: AssemblyProductAttribute("Thespian")>]
 [<assembly: AssemblyDescriptionAttribute("An F# Actor Framework")>]
 [<assembly: InternalsVisibleToAttribute("Thespian.Cluster")>]
-[<assembly: AssemblyVersionAttribute("0.0.10")>]
-[<assembly: AssemblyFileVersionAttribute("0.0.10")>]
+[<assembly: AssemblyVersionAttribute("0.0.11")>]
+[<assembly: AssemblyFileVersionAttribute("0.0.11")>]
 do ()
 
 module internal AssemblyVersionInformation =
-    let [<Literal>] Version = "0.0.10"
+    let [<Literal>] Version = "0.0.11"

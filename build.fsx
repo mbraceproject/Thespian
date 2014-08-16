@@ -126,7 +126,7 @@ Target "NuGet" (fun _ ->
             OutputPath = "bin"
             AccessKey = getBuildParamOrDefault "nugetkey" ""
             Publish = hasBuildParam "nugetkey"
-            Dependencies = [("FsPickler", "0.9.9")] })
+            Dependencies = [("FsPickler", "0.9.11")] })
         ("nuget/" + project + ".nuspec")
 )
 
