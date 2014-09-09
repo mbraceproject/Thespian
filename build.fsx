@@ -42,8 +42,9 @@ let tags = "actors, agents, message-passing, distributed"
 // (<solutionFile>.sln is built during the building process)
 let solutionFile  = "Thespian"
 // Pattern specifying assemblies to be tested using NUnit
-let testAssemblies = "tests/**/bin/Release/*Tests*.dll"
-let testAssembliesDebug = "tests/**/bin/Debug/*Tests*.dll"
+// NOTE : No need to specify different directories.
+let testAssemblies = "bin/Thespian.Tests.dll"       //"tests/**/bin/Release/*Tests*.dll"
+let testAssembliesDebug = "bin/Thespian.Tests.dll"  //"tests/**/bin/Debug/*Tests*.dll"
 
 // Git configuration (used for publishing documentation in gh-pages branch)
 // The profile where the project is posted 
@@ -116,7 +117,7 @@ Target "RunTests" (fun _ ->
             TimeOut = TimeSpan.FromMinutes 60.
             OutputFile = "TestResults.xml" })
 )
-
+// NOTE: No need for this.
 Target "RunTestsDebug" (fun _ ->
     !! testAssembliesDebug
     |> NUnit (fun p ->
