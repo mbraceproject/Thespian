@@ -3,10 +3,10 @@ namespace Nessos.Thespian.Agents
     open System
     open Nessos.Thespian
 
-    type AgentMessage<'T> =
-    | Swap of ('T -> 'T)
-    | SafeSwap of IReplyChannel<unit> * ('T -> 'T)
-    | Read of IReplyChannel<'T>
+    type private AgentMessage<'T> =
+        | Swap of ('T -> 'T)
+        | SafeSwap of IReplyChannel<unit> * ('T -> 'T)
+        | Read of IReplyChannel<'T>
 
     type Agent<'T>(init: 'T) =
         let refCell = ref init
