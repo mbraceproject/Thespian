@@ -4,10 +4,8 @@ open Mono.Unix
 open Mono.Unix.Native
 open Nessos.Thespian
 open Nessos.Thespian.AsyncExtensions
-open Nessos.Thespian.Serialization
 open Nessos.Thespian.Utils
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 //when in unix, use unixpipes instead of .net named pipes
 open System.Diagnostics
