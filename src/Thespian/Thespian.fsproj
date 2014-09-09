@@ -86,7 +86,7 @@
     <Compile Include="TCP\TcpProtocol.fs" />
     <Compile Include="NamedPipes\PipeReceiver.fs" />
     <Compile Include="NamedPipes\PipeProtocol.fs" />
-    <Compile Include="TCP\ActorRefExtensions.fs" />
+    <Compile Include="ActorRefExtensions.fs" />
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
