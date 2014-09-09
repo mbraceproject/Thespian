@@ -1,6 +1,5 @@
 namespace Nessos.Thespian
 
-    open System
     open System.Threading
 
     type Atom<'T when 'T : not struct>(value : 'T) =

@@ -167,7 +167,7 @@ namespace Nessos.Thespian
                 //at which point EndRead raises an ObjectDisposed exception
                 //if the operation completed immediately then timer is not set
                 let timer = ref Unchecked.defaultof<Timer>
-                //Use the latch to determin whether timeout has occured in the async callback
+                //Use the latch to determine whether timeout has occurred in the async callback
                 let latch = ref 0
                 Async.FromBeginEnd(
                   (fun (callback, state) ->
@@ -393,7 +393,7 @@ namespace Nessos.Thespian
         // Implementation of the 'AwaitEvent' primitive
         // From Real World Functional Programming
         // NOTE!!!! THIS IMLEMENTATION IS HIGHLY PROBLEMATIC
-        // The actual registrastion on the observable does not
+        // The actual registration on the observable does not
         // occur until the control flow actually reaches
         // a monadic bind.
         // The problem is that the event we want to observe could
