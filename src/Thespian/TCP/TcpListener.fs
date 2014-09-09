@@ -24,7 +24,7 @@ type TcpProtocolListener(ipEndPoint: IPEndPoint, ?backLog: int, ?concurrentAccep
 
   let openConnections = ref 0
 
-  let recepientRegistry = new ConcurrentDictionary<TcpActorId, RequestData -> Async<bool>>()
+  let recipientRegistry = new ConcurrentDictionary<TcpActorId, RequestData -> Async<bool>>()
 
   let logEvent = new Event<Log>()
     
@@ -44,10 +44,10 @@ type TcpProtocolListener(ipEndPoint: IPEndPoint, ?backLog: int, ?concurrentAccep
         | Some((msgId, actorId, payload), protocolStream) ->
           try
             use _ = protocolStream
-            let isValid, recepientF = recepientRegistry.TryGetValue(actorId)
+            let isValid, recipientF = recipientRegistry.TryGetValue(actorId)
             if isValid then
               try
-                return! recepientF (msgId, actorId, payload, protocolStream)
+                return! recipientF (msgId, actorId, payload, protocolStream)
               with e ->
                 let! r' = protocolStream.TryAsyncWriteResponse(Failure(msgId, e))
                 match r' with
@@ -106,14 +106,14 @@ type TcpProtocolListener(ipEndPoint: IPEndPoint, ?backLog: int, ?concurrentAccep
 
   member __.IPEndPoint = ipEndPoint
 
-  member __.RegisterRecepient(actorId: TcpActorId, processorF: RequestData -> Async<bool>) =
-    if not <| recepientRegistry.TryAdd(actorId, processorF) then invalidOp "Recepient is already registered."
+  member __.Registerrecipient(actorId: TcpActorId, processorF: RequestData -> Async<bool>) =
+    if not <| recipientRegistry.TryAdd(actorId, processorF) then invalidOp "recipient is already registered."
 
-  member __.UnregisterRecepient(actorId: TcpActorId) =
-    let isRemoved, _ = recepientRegistry.TryRemove(actorId)
-    if not isRemoved  then invalidOp "Recepient was not registered."
+  member __.Unregisterrecipient(actorId: TcpActorId) =
+    let isRemoved, _ = recipientRegistry.TryRemove(actorId)
+    if not isRemoved  then invalidOp "recipient was not registered."
 
-  member __.IsRecepientRegistered(actorId: TcpActorId) = recepientRegistry.ContainsKey(actorId)
+  member __.IsrecipientRegistered(actorId: TcpActorId) = recipientRegistry.ContainsKey(actorId)
 
   member __.Dispose() =
     for cts in acceptLoopCancellationTokenSources do cts.Cancel()

@@ -273,7 +273,7 @@ type MessageProcessor<'T> private (actorId: TcpActorId, listener: TcpProtocolLis
     spinLock.Enter(taken)
     if isReleased then spinLock.Exit(); false
     else
-      if refCount = 0 then listener.RegisterRecepient(actorId, processMessage)
+      if refCount = 0 then listener.Registerrecipient(actorId, processMessage)
       refCount <- refCount + 1
       spinLock.Exit()
       true
@@ -287,7 +287,7 @@ type MessageProcessor<'T> private (actorId: TcpActorId, listener: TcpProtocolLis
     spinLock.Enter(taken)
     if refCount = 1 then
       isReleased <- true
-      listener.UnregisterRecepient(actorId)
+      listener.Unregisterrecipient(actorId)
       processors.TryRemove(actorId) |> ignore
     refCount <- refCount - 1
     spinLock.Exit()
@@ -616,18 +616,18 @@ and [<Serializable>] UTcpFactory =
 
 //             static member TryGet(actorId: TcpActorId): IActorProtocol option = pool.Value.TryFind actorId
         
-//         and internal ListenerRegistrationResource(clientOnly: bool, actorId: ActorId, listener: TcpProtocolListener, recepientProcessor: Actor<RecepientProcessor>, processorF: RecepientProcessor -> Async<unit>, onDisposeF: unit -> unit) =
+//         and internal ListenerRegistrationResource(clientOnly: bool, actorId: ActorId, listener: TcpProtocolListener, recipientProcessor: Actor<recipientProcessor>, processorF: recipientProcessor -> Async<unit>, onDisposeF: unit -> unit) =
 //             static let counter = Nessos.Thespian.Agents.Agent.start Map.empty<ActorId, int>
 
 //             let start () =
 //                 if clientOnly then
-//                     recepientProcessor.Start()
-//                     listener.RegisterRecepient(actorId, !recepientProcessor, processorF)
+//                     recipientProcessor.Start()
+//                     listener.Registerrecipient(actorId, !recipientProcessor, processorF)
 
 //             let stop () =
 //                 if clientOnly then
-//                     listener.UnregisterRecepient(actorId)
-//                     recepientProcessor.Stop()
+//                     listener.Unregisterrecipient(actorId)
+//                     recipientProcessor.Stop()
 
 //             let inc counterMap = 
 //                 match Map.tryFind actorId counterMap with 
@@ -854,7 +854,7 @@ and [<Serializable>] UTcpFactory =
             
 //             //this receives serialized messages from the listener
 //             //deserializes and then passes processProtocolMessage for further processing
-//             let recepientProcessorBehavior ((msgId, payload, protocolStream): RecepientProcessor) = async {
+//             let recipientProcessorBehavior ((msgId, payload, protocolStream): recipientProcessor) = async {
 //                 //make sure connection is always properly closed after we are finished
 //                 //use _ = protocolStream
 
@@ -878,7 +878,7 @@ and [<Serializable>] UTcpFactory =
 //                         //debug msgId "MESSAGE FAIL WRITE FAILURE: %A" e 
 //                         logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, new CommunicationException("Failed to send a Failure response.", e) |> box)
 //             }
-//             let recepientProcessor = Actor.bind <| Behavior.stateless recepientProcessorBehavior
+//             let recipientProcessor = Actor.bind <| Behavior.stateless recipientProcessorBehavior
             
 //             let rec postMessageOnEndPoint (targetEndPoint: IPEndPoint) (msgId: MsgId) (msg: 'T) = 
 //                 //let debug x = debug (sprintf "MESSAGE POST::%A" msgId) x
@@ -905,7 +905,7 @@ and [<Serializable>] UTcpFactory =
 //                                 let nativeReplyChannel = nativeReplyChannel :?> ReplyChannel
 //                                 let awaitResponse = registerAndWaitForResponse (protocolPing targetEndPoint) nativeReplyChannel.MessageId foreignReplyChannel.Timeout
 //                                 //if in client mode make sure the recipient processor is registered with the listener
-//                                 let listenerRegistration = new ListenerRegistrationResource(clientOnly, actorId, listener, recepientProcessor, recepientProcessorBehavior, ignore)
+//                                 let listenerRegistration = new ListenerRegistrationResource(clientOnly, actorId, listener, recipientProcessor, recipientProcessorBehavior, ignore)
 //                                 async {
 //                                     use _ = listenerRegistration //make sure unregistration happens
 //                                     //wait for the native rc result
@@ -1008,8 +1008,8 @@ and [<Serializable>] UTcpFactory =
 //                     //if in client mode make sure the recipient processor is registered with the listener
 //                     Atom.swap responseHandleRegistry (Map.add msgId handleResponseMsg)
 //                     //use _ = new ListenerRegistrationResource(clientOnly, actorId, listener, recipientProcessor, (fun () -> Atom.swap responseHandleRegistry (Map.remove msgId)))
-//                     use _ = if not (listener.IsRecepientRegistered actorId) then
-//                                 listener.RegisterMessageProcessor(msgId, recepientProcessorBehavior)
+//                     use _ = if not (listener.IsrecipientRegistered actorId) then
+//                                 listener.RegisterMessageProcessor(msgId, recipientProcessorBehavior)
 //                                 { new IDisposable with override __.Dispose() = Atom.swap responseHandleRegistry (Map.remove msgId); listener.UnregisterMessageProcessor(msgId) }
 //                             else { new IDisposable with override __.Dispose() = Atom.swap responseHandleRegistry (Map.remove msgId) }
 
@@ -1152,8 +1152,8 @@ and [<Serializable>] UTcpFactory =
 //                                                   |> Observable.subscribe logEvent.Trigger
 //                                                   |> Some
 
-//                         recepientProcessor.Start()
-//                         listener.RegisterRecepient(actorId, !recepientProcessor, recepientProcessorBehavior)
+//                         recipientProcessor.Start()
+//                         listener.Registerrecipient(actorId, !recipientProcessor, recipientProcessorBehavior)
 //                         ServerSideProtocolPool.Register(actorId, p)
 //                     | _ -> ()
 
@@ -1161,8 +1161,8 @@ and [<Serializable>] UTcpFactory =
 //                     match listenerLogSubcription with
 //                     | Some disposable ->
 //                         ServerSideProtocolPool.UnRegister(actorId)
-//                         listener.UnregisterRecepient(actorId)
-//                         recepientProcessor.Stop()
+//                         listener.Unregisterrecipient(actorId)
+//                         recipientProcessor.Stop()
 //                         disposable.Dispose()
 //                         listenerLogSubcription <- None
 //                     | None -> ()

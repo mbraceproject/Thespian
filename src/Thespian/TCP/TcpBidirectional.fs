@@ -489,12 +489,12 @@ and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRe
         |> Observable.subscribe logEvent.Trigger
         |> Some
       listenerLogSubcription <- observer
-      listener.RegisterRecepient(actorId, processMessage)
+      listener.Registerrecipient(actorId, processMessage)
     | _ -> ()
   let stop() =
     match listenerLogSubcription with
     | Some observer ->
-      listener.UnregisterRecepient(actorId)
+      listener.Unregisterrecipient(actorId)
       observer.Dispose()
       listenerLogSubcription <- None
     | _ -> ()
@@ -633,7 +633,7 @@ and [<Serializable>] BTcpFactory =
 
 //             //this receives serialized messages from the listener
 //             //deserializes and then passes processProtocolMessage for further processing
-//             let recepientProcessorBehavior (actorRef: ActorRef<'T>) ((msgId, payload, protocolStream): RecepientProcessor) = 
+//             let recipientProcessorBehavior (actorRef: ActorRef<'T>) ((msgId, payload, protocolStream): recipientProcessor) = 
 //                 async {
 //                     //debug msgId "MESSAGE PROCESS START"
 
@@ -694,9 +694,9 @@ and [<Serializable>] BTcpFactory =
 //                         //protocolStream.Retain <- false
 //                 }
 
-//             let recepientProcessor = 
+//             let recipientProcessor = 
 //                 match actorRef with
-//                 | Some actorRef -> Actor.bind <| Behavior.stateless (recepientProcessorBehavior actorRef)
+//                 | Some actorRef -> Actor.bind <| Behavior.stateless (recipientProcessorBehavior actorRef)
 //                 | None -> Actor.sink() //if in client only mode, we are not getting messages from the tcp listener
 
 //             let newSerializationContext() =
@@ -1013,15 +1013,15 @@ and [<Serializable>] BTcpFactory =
 //                                                                    |> Observable.subscribe logEvent.Trigger
 //                                                                    |> Some)
 
-//                         recepientProcessor.Start()
-//                         listener |> Option.iter (fun listener -> listener.RegisterRecepient(actorId, !recepientProcessor, match actorRef with Some actorRef -> recepientProcessorBehavior actorRef | None -> fun _ -> async.Return()))
+//                         recipientProcessor.Start()
+//                         listener |> Option.iter (fun listener -> listener.Registerrecipient(actorId, !recipientProcessor, match actorRef with Some actorRef -> recipientProcessorBehavior actorRef | None -> fun _ -> async.Return()))
 //                     | _ -> ()
 
 //                 member p.Stop() =
 //                     match listenerLogSubcription with
 //                     | Some disposable ->
-//                         listener |> Option.iter (fun listener -> listener.UnregisterRecepient(actorId))
-//                         recepientProcessor.Stop()
+//                         listener |> Option.iter (fun listener -> listener.Unregisterrecipient(actorId))
+//                         recipientProcessor.Stop()
 //                         disposable.Dispose()
 //                         listenerLogSubcription <- None
 //                     | None -> ()
