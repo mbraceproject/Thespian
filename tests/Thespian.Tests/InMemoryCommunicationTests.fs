@@ -1,34 +1,26 @@
 namespace Nessos.Thespian.Tests
 
-open System
-open System.Runtime.Serialization
 open NUnit.Framework
-
 open Nessos.Thespian
 open Nessos.Thespian.Tests.TestDefinitions
 
 [<TestFixture>]
-type ``In-memory``() =
-  inherit ``Collocated Communication``()
+type ``In-memory``() = 
+    inherit ``Collocated Communication``()
+    override __.ParallelPostsNum = 30
+    override __.ParallelAsyncPostsNum = 30
+    override __.ParallelPostsWithReplyNum = 100
+    override __.PublishActorPrimary a = a
+    override __.RefPrimary(a : Actor<'T>) = a.Ref
 
-  override __.ParallelPostsNum = 30
-  override __.ParallelAsyncPostsNum = 30
-  override __.ParallelPostsWithReplyNum = 100
-
-  override __.PublishActorPrimary a = a
-  override __.RefPrimary(a: Actor<'T>) = a.Ref
-
-  [<Test>]
-  [<ExpectedException(typeof<ThespianSerializationException>)>]
-  member self.``Non-publish actor.Ref serialization failure``() =
-    use actor = Actor.bind PrimitiveBehaviors.nill
-
-    let serializer = Serialization.defaultSerializer
-    serializer.Serialize(actor.Ref) |> ignore
+    [<Test>]
+    [<ExpectedException(typeof<ThespianSerializationException>)>]
+    member self.``Non-publish actor.Ref serialization failure``() = 
+        use actor = Actor.bind PrimitiveBehaviors.nill
+        let serializer = Serialization.defaultSerializer
+        serializer.Serialize(actor.Ref) |> ignore
 
 [<TestFixture>]
-type ``In-memory (observable)``() =
-  inherit ``In-memory``()
-
-  override __.PrimaryProtocolFactory = new ObservableTestUtils.ProtocolFactory() :> IPrimaryProtocolFactory
-
+type ``In-memory (observable)``() = 
+    inherit ``In-memory``()
+    override __.PrimaryProtocolFactory = new ObservableTestUtils.ProtocolFactory() :> IPrimaryProtocolFactory
