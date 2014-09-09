@@ -6,7 +6,7 @@ open System.Net
 open System.Net.Sockets
 open System.Collections.Generic
 open System.Collections.Concurrent
-open System.Diagnostics
+
 open Nessos.Thespian
 open Nessos.Thespian.AsyncExtensions
 open Nessos.Thespian.Remote.SocketExtensions

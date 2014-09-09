@@ -4,12 +4,8 @@
     open System.IO
     open System.Net
     open System.Net.Sockets
-    open System.Threading
-    open System.Threading.Tasks
-    open System.Runtime.Serialization
 
     open Nessos.Thespian
-    open Nessos.Thespian.Serialization
     open Nessos.Thespian.Utils
     open Nessos.Thespian.Remote
     open Nessos.Thespian.Remote.SocketExtensions
@@ -144,6 +140,7 @@
                 | (true, port) -> Some <| Address(hostnameOrAddress, port)
                 | _ -> None
             | _ -> None
+
         static member Parse(addressString: string): Address =
             match Address.TryParse addressString with
             | Some address -> address

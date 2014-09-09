@@ -1,22 +1,18 @@
 module Nessos.Thespian.Remote.SocketExtensions
 
-open System
-open System.IO
 open System.Net
 open System.Net.Sockets
-open System.Threading
-
-open Nessos.Thespian.AsyncExtensions
 
 type TcpListener with
-  member listener.AsyncAcceptTcpClient(): Async<TcpClient> =
-    Async.FromBeginEnd(listener.BeginAcceptTcpClient, listener.EndAcceptTcpClient)
+    member listener.AsyncAcceptTcpClient() : Async<TcpClient> = 
+        Async.FromBeginEnd(listener.BeginAcceptTcpClient, listener.EndAcceptTcpClient)
 
 type TcpClient with
-  member client.AsyncConnent(endPoint: IPEndPoint): Async<unit> =
-    Async.FromBeginEnd(
-      (fun (callback: System.AsyncCallback, state: obj) ->  client.BeginConnect(endPoint.Address, endPoint.Port, callback, state)), 
-      client.EndConnect)
+    member client.AsyncConnent(endPoint : IPEndPoint) : Async<unit> = 
+        Async.FromBeginEnd
+            ((fun (callback : System.AsyncCallback, state : obj) -> 
+                client.BeginConnect(endPoint.Address, endPoint.Port, callback, state)), client.EndConnect)
+
 
 // type Stream with
 //   //an AsyncRead with a timeout implemented with Begin/EndRead
@@ -50,7 +46,7 @@ type TcpClient with
 //     else Async.TryFromBeginEnd(buffer, offset, count, self.BeginWrite, self.EndWrite, timeout, fun () -> self.Dispose())
 
 type Dns with
-  static member AsyncGetHostAddresses(hostNameOrAddress: string): Async<IPAddress[]> =
-    Async.FromBeginEnd(
-      (fun (callback: System.AsyncCallback, state: obj) -> Dns.BeginGetHostAddresses(hostNameOrAddress, callback, state)),
-      Dns.EndGetHostAddresses)
+    static member AsyncGetHostAddresses(hostNameOrAddress : string) : Async<IPAddress []> = 
+        Async.FromBeginEnd
+            ((fun (callback : System.AsyncCallback, state : obj) -> 
+                Dns.BeginGetHostAddresses(hostNameOrAddress, callback, state)), Dns.EndGetHostAddresses)

@@ -3,12 +3,10 @@
 open System
 open Nessos.Thespian
 open Nessos.Thespian.Remote
-open Nessos.Thespian.Remote.TcpProtocol.Unidirectional
 open Nessos.Thespian.PowerPack
 open Nessos.Thespian.Cluster.BehaviorExtensions
 open Nessos.Thespian.Cluster.ActorExtensions
 open Nessos.Thespian.AsyncExtensions
-open Nessos.Thespian.Reversible
 
 type private LogLevel = Nessos.Thespian.LogLevel
 
@@ -230,7 +228,7 @@ module Actor =
 
     let replicatedProxyBehavior stateExceptionReplyExtract (ctx: BehaviorContext<_>) (state: ReplicatedProxyState<'T, 'S>) (msg: ReplicatedProxy<'T, 'S>) = async {
         match msg with
-        | ReplicatedProxy payload & ReplicatedProxy(ReplicatedExceptionReply ctx stateExceptionReplyExtract exceptionReply) ->
+        | ReplicatedProxy(ReplicatedExceptionReply ctx stateExceptionReplyExtract exceptionReply as payload) ->
             try
                 do! state.Replicated <-!- payload
 
@@ -258,7 +256,7 @@ module Actor =
 
     let asyncReplicatedProxyBehavior stateExceptionReplyExtract (ctx: BehaviorContext<_>) (state: AsyncReplicatedProxyState<'T, 'S>) (msg: AsyncReplicatedProxy<'T, 'S>) = async {
         match msg with
-        | AsyncRepicatedProxy payload & AsyncRepicatedProxy(AsyncReplicatedExceptionReply ctx stateExceptionReplyExtract exceptionReply) ->
+        | AsyncRepicatedProxy(AsyncReplicatedExceptionReply ctx stateExceptionReplyExtract exceptionReply as payload) ->
             try
                 do! state.AsyncReplicated <-!- payload
 
