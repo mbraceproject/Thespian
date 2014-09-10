@@ -197,7 +197,7 @@ and PipeProtocolClient<'T>(actorName : string, pipeName : string, processId : in
     interface IProtocolClient<'T> with
         member __.ProtocolName = ProtocolName
         member __.ActorId = actorId :> ActorId
-        member __.Uri = sprintf "%s://localhost:%d/%s" ProtocolName processId actorName
+        member __.Uri = UriBuilder(ProtocolName, "localhost", processId, actorName).Uri.ToString()
         member __.Factory = Some(new PipeProtocolFactory(processId) :> IProtocolFactory)
         member __.Post(msg : 'T) : unit = Async.RunSynchronously(post msg)
         member __.AsyncPost(msg : 'T) : Async<unit> = post msg

@@ -233,7 +233,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
     let replyRegistry = new ReplyResultsRegistry()
     let logEvent = new Event<Log>()
     let factory = new BTcpFactory(ProtocolMode.Client address)
-    let uri = sprintf "%s://%s:%d/%s" ProtocolName address.HostnameOrAddress address.Port actorId.Name
+    let uri = UriBuilder(ProtocolName, address.HostnameOrAddress, address.Port, actorId.Name).Uri.ToString()
 
     let processReply (protocolStream: ProtocolStream) =
         async {
