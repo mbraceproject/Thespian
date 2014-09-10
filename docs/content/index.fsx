@@ -3,43 +3,55 @@
 // it to define helpers that you do not want to show in the documentation.
 #I "../../bin"
 
-(**
-F# Project Scaffold
-===================
+#r "FsPickler.dll"
+#r "Thespian.dll"
 
-Documentation
+(**
+# Thespian [draft]
+
+A distributed actors library based on F# MailboxProcessor.
 
 <div class="row">
   <div class="span1"></div>
   <div class="span6">
     <div class="well well-small" id="nuget">
       Thespian can be <a href="https://nuget.org/packages/Thespian">installed from NuGet</a>:
-      <pre>PM> Install-Package Thespian</pre>
+      <pre>PM> Install-Package Thespian -Pre</pre>
     </div>
   </div>
   <div class="span1"></div>
 </div>
 
-Example
--------
+## Example
 
 This example demonstrates using a function defined in this sample library.
 
 *)
-#r "Thespian.dll"
-open Thespian
 
-printfn "hello = %i" <| Library.hello 0
+open Nessos.Thespian
+
+type Msg = Msg of IReplyChannel<int> * int
+
+let behavior state (Msg (rc,v)) = async {
+    printfn "Received %d" v
+    rc.Reply <| Value state
+    return (state + v)
+}
+
+let actor =
+    behavior
+    |> Behavior.stateful 0 
+    |> Actor.bind
+    |> Actor.start
+
+let post v = actor.Ref <!= fun ch -> Msg(ch, v)
+
+post 42
 
 (**
-Some more info
 
 Samples & documentation
 -----------------------
-
-The library comes with comprehensible documentation. 
-It can include a tutorials automatically generated from `*.fsx` files in [the content folder][content]. 
-The API reference is automatically generated from Markdown comments in the library implementation.
 
  * [Tutorial](tutorial.html) contains a further explanation of this sample library.
 
@@ -55,13 +67,12 @@ the project and submit pull requests. If you're adding new public API, please al
 consider adding [samples][content] that can be turned into a documentation. You might
 also want to read [library design notes][readme] to understand how it works.
 
-The library is available under Public Domain license, which allows modification and 
-redistribution for both commercial and non-commercial purposes. For more information see the 
-[License file][license] in the GitHub repository. 
+The library is available under the Apache license.
+For more information see the [License file][license] in the GitHub repository. 
 
-  [content]: https://github.com/fsprojects/FSharp.ProjectScaffold/tree/master/docs/content
-  [gh]: https://github.com/fsprojects/FSharp.ProjectScaffold
-  [issues]: https://github.com/fsprojects/FSharp.ProjectScaffold/issues
-  [readme]: https://github.com/fsprojects/FSharp.ProjectScaffold/blob/master/README.md
-  [license]: https://github.com/fsprojects/FSharp.ProjectScaffold/blob/master/LICENSE.txt
+  [content]: https://github.com/nessos/Thespian/tree/master/docs/content
+  [gh]: https://github.com/nessos/Thespian
+  [issues]: https://github.com/nessos/Thespian/issues
+  [readme]: https://github.com/nessos/Thespian/blob/master/README.md
+  [license]: https://github.com/nessos/Thespian/blob/master/LICENSE.txt
 *)

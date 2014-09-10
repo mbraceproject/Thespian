@@ -9,7 +9,9 @@ open Fake
 open Fake.Git
 open Fake.AssemblyInfoFile
 open Fake.ReleaseNotesHelper
+
 open System
+open System.IO
 
 // --------------------------------------------------------------------------------------
 // START TODO: Provide project-specific details below
@@ -130,6 +132,24 @@ Target "RunTestsDebug" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Build a NuGet package
 
+let addFile (target : string) (file : string) =
+    if File.Exists (Path.Combine("nuget", file)) then (file, Some target, None)
+    else raise <| new FileNotFoundException(file)
+
+let addAssembly (target : string) assembly =
+    let includeFile force file =
+        let file = file
+        if File.Exists (Path.Combine("nuget", file)) then [(file, Some target, None)]
+        elif force then raise <| new FileNotFoundException(file)
+        else []
+
+    seq {
+        yield! includeFile true assembly
+        yield! includeFile false <| Path.ChangeExtension(assembly, "pdb")
+        yield! includeFile false <| Path.ChangeExtension(assembly, "xml")
+        yield! includeFile false <| assembly + ".config"
+    }
+
 Target "NuGet" (fun _ ->
     NuGet (fun p -> 
         { p with   
@@ -143,7 +163,13 @@ Target "NuGet" (fun _ ->
             OutputPath = "bin"
             AccessKey = getBuildParamOrDefault "nugetkey" ""
             Publish = hasBuildParam "nugetkey"
-            Dependencies = [("FsPickler", "0.9.9")] })
+            Dependencies = [("FsPickler", "0.9.11")]
+            Files =
+                [
+                    yield! addAssembly @"lib\net45" @"..\bin\Thespian.dll"
+                    yield! addAssembly @"lib\net45" @"..\bin\Thespian.Cluster.dll"
+                ]
+            })
         ("nuget/" + project + ".nuspec")
 )
 
@@ -169,26 +195,24 @@ Target "ReleaseDocs" (fun _ ->
     Branches.push tempDocsDir
 )
 
-Target "Release" DoNothing
-
-Target "Debug" DoNothing
-
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
 
-Target "All" DoNothing
+Target "Default" DoNothing
+Target "Release" DoNothing
+Target "Debug" DoNothing
 
 "Clean"
   ==> "RestorePackages"
   ==> "AssemblyInfo"
   ==> "Build"
-  ==> "RunTests"
-  ==> "All"
+//  ==> "RunTests"
+  ==> "Default"
 
-"All" 
+"Default" 
   ==> "CleanDocs"
-//  ==> "GenerateDocs"
-//  ==> "ReleaseDocs"
+  ==> "GenerateDocs"
+  ==> "ReleaseDocs"
   ==> "NuGet"
   ==> "Release"
 
@@ -197,5 +221,5 @@ Target "All" DoNothing
   ==> "Debug"
 
 
-//RunTargetOrDefault "Release"
-RunTargetOrDefault "All"
+RunTargetOrDefault "Release"
+//RunTargetOrDefault "Default"

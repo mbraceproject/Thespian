@@ -31,6 +31,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{83F16175-43B1-4C90-A1EE-8E351C33435D}"
 	ProjectSection(SolutionItems) = preProject
 		docs\tools\generate.fsx = docs\tools\generate.fsx
+		docs\tools\packages.config = docs\tools\packages.config
 		docs\tools\templates\template.cshtml = docs\tools\templates\template.cshtml
 	EndProjectSection
 EndProject
@@ -47,6 +48,12 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Thespian.Cluster", "src\Thespian.Cluster\Thespian.Cluster.fsproj", "{59D16381-C1D4-4555-8029-7BA06F86FA12}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7AEA014B-42FE-4133-9AB4-89C77AF0FF8A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "files", "files", "{A8A24E18-DCBC-49B5-B9E0-1738EB76329B}"
+	ProjectSection(SolutionItems) = preProject
+		docs\files\img\logo.png = docs\files\img\logo.png
+		docs\files\img\nessos.png = docs\files\img\nessos.png
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -76,5 +83,6 @@ Global
 		{8E6D5255-776D-4B61-85F9-73C37AA1FB9A} = {A6A6AF7D-D6E3-442D-9B1E-58CC91879BE1}
 		{E789C72A-5CFD-436B-8EF1-61AA2852A89F} = {ED8079DD-2B06-4030-9F0F-DC548F98E1C4}
 		{59D16381-C1D4-4555-8029-7BA06F86FA12} = {7AEA014B-42FE-4133-9AB4-89C77AF0FF8A}
+		{A8A24E18-DCBC-49B5-B9E0-1738EB76329B} = {A6A6AF7D-D6E3-442D-9B1E-58CC91879BE1}
 	EndGlobalSection
 EndGlobal
