@@ -391,7 +391,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
     let replyRegistry = new ReplyResultRegistry<'T>(actorId, localListener)
     let logEvent = new Event<Log>()
     let factory = new UTcpFactory(Client address)
-    let uri = sprintf "%s://%s:%d/%s" ProtocolName address.HostnameOrAddress address.Port actorId.Name
+    let uri = UriBuilder(ProtocolName, address.HostnameOrAddress, address.Port, actorId.Name).Uri.ToString()
 
     let handleForeignReplyChannel (foreignRc: IReplyChannel, nativeRc: IReplyChannel) =
         //register async wait handle for the nativeRc

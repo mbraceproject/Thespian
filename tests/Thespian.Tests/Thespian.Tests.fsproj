@@ -69,6 +69,7 @@
     <Compile Include="UtcpCommunicationTests.fs" />
     <Compile Include="BtcpCommunicationTests.fs" />
     <Compile Include="NppCommunicationTests.fs" />
+    <None Include="Test.fsx" />
     <None Include="packages.config" />
     <None Include="app.config" />
   </ItemGroup>
