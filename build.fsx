@@ -206,7 +206,7 @@ Target "Debug" DoNothing
   ==> "RestorePackages"
   ==> "AssemblyInfo"
   ==> "Build"
-//  ==> "RunTests"
+  ==> "RunTests"
   ==> "Default"
 
 "Default" 
@@ -221,5 +221,5 @@ Target "Debug" DoNothing
   ==> "Debug"
 
 
-RunTargetOrDefault "Release"
-//RunTargetOrDefault "Default"
+RunTargetOrDefault "Default"
+//RunTargetOrDefault "Release"
