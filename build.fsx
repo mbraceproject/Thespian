@@ -45,8 +45,7 @@ let tags = "actors, agents, message-passing, distributed"
 let solutionFile  = "Thespian"
 // Pattern specifying assemblies to be tested using NUnit
 // NOTE : No need to specify different directories.
-let testAssemblies = "bin/Thespian.Tests.dll"       //"tests/**/bin/Release/*Tests*.dll"
-let testAssembliesDebug = "bin/Thespian.Tests.dll"  //"tests/**/bin/Debug/*Tests*.dll"
+let testAssemblies = [ yield! !! "bin/*Tests*.dll" ; yield! !! "bin/*Tests*.exe" ]
 
 // Git configuration (used for publishing documentation in gh-pages branch)
 // The profile where the project is posted 
@@ -112,16 +111,7 @@ Target "DebugBuild" (fun _ ->
 // Run the unit tests using test runner
 
 Target "RunTests" (fun _ ->
-    !! testAssemblies 
-    |> NUnit (fun p ->
-        { p with
-            DisableShadowCopy = true
-            TimeOut = TimeSpan.FromMinutes 60.
-            OutputFile = "TestResults.xml" })
-)
-// NOTE: No need for this.
-Target "RunTestsDebug" (fun _ ->
-    !! testAssembliesDebug
+    testAssemblies 
     |> NUnit (fun p ->
         { p with
             DisableShadowCopy = true
@@ -215,11 +205,6 @@ Target "Debug" DoNothing
   ==> "ReleaseDocs"
   ==> "NuGet"
   ==> "Release"
-
-"DebugBuild"
-  ==> "RunTestsDebug"
-  ==> "Debug"
-
 
 RunTargetOrDefault "Default"
 //RunTargetOrDefault "Release"
