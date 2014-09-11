@@ -33,19 +33,21 @@ let summary = "An F# Actor Framework"
 
 // Longer description of the project
 // (used as a description for NuGet package; line breaks are automatically cleaned up)
-let description = """
-  An F# Actor Framework """
+let description = """An F# Actor Frameworks"""
+
 // List of author names (for NuGet package)
 let authors = [ "Jan Dzik"; "Eirik Tsarpalis" ]
+
 // Tags for your project (for NuGet package)
 let tags = "actors, agents, message-passing, distributed"
 
 // File system information 
 // (<solutionFile>.sln is built during the building process)
 let solutionFile  = "Thespian"
+
 // Pattern specifying assemblies to be tested using NUnit
 // NOTE : No need to specify different directories.
-let testAssemblies = [ yield! !! "bin/*Tests*.dll" ; yield! !! "bin/*Tests*.exe" ]
+let testAssemblies = [ "bin/Thespian.Tests.dll" ]
 
 // Git configuration (used for publishing documentation in gh-pages branch)
 // The profile where the project is posted 
