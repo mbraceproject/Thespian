@@ -1,19 +1,26 @@
 ﻿namespace Nessos.Thespian.Remote.PipeProtocol
 
-open Mono.Unix
-open Mono.Unix.Native
-open Nessos.Thespian
-open Nessos.Thespian.AsyncExtensions
-open Nessos.Thespian.Utils
 open System
 open System.Collections.Generic
-//when in unix, use unixpipes instead of .net named pipes
 open System.Diagnostics
 open System.IO
 open System.IO.Pipes
 open System.Runtime.Serialization
 open System.Threading
 open System.Threading.Tasks
+
+//when in unix, use unixpipes instead of .net named pipes
+open Mono.Unix
+open Mono.Unix.Native
+
+open Nessos.Thespian
+open Nessos.Thespian.Tools
+open Nessos.Thespian.Utils
+
+[<AutoOpen>]
+module private Utils =
+    let ProtocolName = "npp"
+
 
 [<Serializable>]
 type PipeActorId internal (pipeName : string, actorName : string) = 

@@ -32,16 +32,9 @@ namespace Nessos.Thespian
 
         let inline reraise' (e : #exn) = raiseWithStackTrace (e.StackTrace + System.Environment.NewLine) e
 
-        let memoize f =
-            let cache = new ConcurrentDictionary<_,_>()
-
-            fun x ->
-                let found, y = cache.TryGetValue x
-                if found then y
-                else
-                    let y = f x
-                    let _ = cache.TryAdd(x, y)
-                    y
+        let memoize (f : 'a -> 'b) =
+            let cache = new ConcurrentDictionary<'a,'b>()
+            fun x -> cache.GetOrAdd(x, f)
 
         let compareOn (f: 'T -> 'U when 'U : comparison) (x: 'T) (other: obj): int =
             match other with

@@ -1,8 +1,10 @@
 namespace Nessos.Thespian
-    
-open Nessos.Thespian.Serialization
+
 open System
 open System.Runtime.Serialization
+
+open Nessos.Thespian.Serialization
+open Nessos.Thespian.Tools
 
 [<Serializable>]
 type IProtocolFactory =

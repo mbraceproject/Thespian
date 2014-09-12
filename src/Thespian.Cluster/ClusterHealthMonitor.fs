@@ -2,10 +2,11 @@
 
 open System
 open System.Diagnostics
+
 open Nessos.Thespian
+open Nessos.Thespian.Tools
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol
-open Nessos.Thespian.Serialization
 
 let private addressToNodeHeartBeat (address: Address) =
     let serializer = Serialization.defaultSerializer.Name

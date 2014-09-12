@@ -1,9 +1,11 @@
 ﻿module Nessos.Thespian.Serialization
 
-open Nessos.FsPickler
-open Nessos.Thespian
 open System
 open System.Runtime.Serialization
+
+open Nessos.FsPickler
+open Nessos.Thespian
+open Nessos.Thespian.Tools
 
 type IMessageSerializer =
     abstract Name: string  

@@ -1,7 +1,9 @@
 ﻿module Nessos.Thespian.Cluster.ClusterProxy
 
 open System
+
 open Nessos.Thespian
+open Nessos.Thespian.Tools
 open Nessos.Thespian.PowerPack
 
 type private LogLevel = Nessos.Thespian.LogLevel

@@ -1,14 +1,10 @@
 ﻿namespace Nessos.Thespian.Cluster
 
-open System
 open Nessos.Thespian
+open Nessos.Thespian.Tools
 open Nessos.Thespian.Remote
-open Nessos.Thespian.Remote.TcpProtocol.Unidirectional
-open Nessos.Thespian.PowerPack
 open Nessos.Thespian.Cluster.BehaviorExtensions
 open Nessos.Thespian.Cluster.ActorExtensions
-open Nessos.Thespian.AsyncExtensions
-open Nessos.Thespian.Reversible
 
 type AsyncReplicatedDirection = Left | Right
 

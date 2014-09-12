@@ -3,8 +3,8 @@ module Nessos.Thespian.Cluster.Common
 
 open System
 open Nessos.Thespian
-open Nessos.Thespian.Utils
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Tools
+
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Remote.TcpProtocol.Unidirectional

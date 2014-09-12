@@ -3,8 +3,9 @@ module Nessos.Thespian.Cluster.BehaviorExtensions
 
 open System
 open System.Threading
+
 open Nessos.Thespian
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Tools
 
 let (|MessageHandlingException2|_|) (e: exn) = 
     match e with

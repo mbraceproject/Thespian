@@ -4,8 +4,7 @@ open System
 open System.Net
 open System.Runtime.Serialization
 open Nessos.Thespian
-open Nessos.Thespian.AsyncExtensions
-open Nessos.Thespian.Serialization
+open Nessos.Thespian.Tools
 
 type Rely<'T> = IReplyChannel<unit> * 'T
 

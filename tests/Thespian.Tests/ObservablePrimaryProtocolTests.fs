@@ -1,10 +1,12 @@
 namespace Nessos.Thespian.Tests
 
 open System
+
 open NUnit.Framework
 open FsUnit
+
 open Nessos.Thespian
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Tools
 
 module ObservableTestUtils = 
     let receiver = 

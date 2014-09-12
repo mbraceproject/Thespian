@@ -10,8 +10,7 @@ open System.Runtime.Serialization
 open System.Collections.Concurrent
 
 open Nessos.Thespian
-open Nessos.Thespian.AsyncExtensions
-open Nessos.Thespian.Utils
+open Nessos.Thespian.Tools
 open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Remote.TcpProtocol.ConnectionPool
 open Nessos.Thespian.Serialization
@@ -196,7 +195,7 @@ type ReplyChannel<'T> =
 
             let! r = 
                 endPoints 
-                |> List.conditionalFoldAsync (fun es endPoint ->
+                |> List.foldWhileAsync (fun es endPoint ->
                     async {
                         let! r = self.TryAsyncReplyOnEndPoint(endPoint, reply)
                         match r with
@@ -468,7 +467,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
             let! endPoints = addressToEndpoints actorId address
 
             let! r = 
-                endPoints |> List.conditionalFoldAsync (fun es endPoint -> async {
+                endPoints |> List.foldWhileAsync (fun es endPoint -> async {
                     let! r = tryPostOnEndpoint endPoint msgId msg
                     match r with
                     | Choice1Of2() -> return es, false

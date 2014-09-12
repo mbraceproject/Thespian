@@ -5,9 +5,9 @@ open System.IO
 open System.Net.Sockets
 open System.Threading
 open System.Runtime.Serialization
+
 open Nessos.Thespian
-open Nessos.Thespian.Utils
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Tools
 
 type MsgId = Guid
 

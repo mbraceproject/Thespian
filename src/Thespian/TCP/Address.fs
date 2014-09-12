@@ -6,7 +6,7 @@
     open System.Net.Sockets
 
     open Nessos.Thespian
-    open Nessos.Thespian.Utils
+    open Nessos.Thespian.Tools
     open Nessos.Thespian.Remote
     open Nessos.Thespian.Remote.SocketExtensions
 
@@ -60,7 +60,7 @@
                            |> Seq.toList
         }
 
-        static let memoizedToEndPointsAsync = memoizeAsync toEndPointsAsync
+        static let memoizedToEndPointsAsync = Async.memoize toEndPointsAsync
 
         do if port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort then
             invalidArg "Address port out of range." "port"

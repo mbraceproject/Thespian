@@ -2,11 +2,11 @@
 
 open System
 open Nessos.Thespian
+open Nessos.Thespian.Tools
 open Nessos.Thespian.Remote
 open Nessos.Thespian.PowerPack
 open Nessos.Thespian.Cluster.BehaviorExtensions
 open Nessos.Thespian.Cluster.ActorExtensions
-open Nessos.Thespian.AsyncExtensions
 
 type private LogLevel = Nessos.Thespian.LogLevel
 
