@@ -70,7 +70,7 @@ type FsPicklerMessageSerializer(?pickler : FsPicklerSerializer) =
 let mutable defaultSerializer = new FsPicklerMessageSerializer() :> IMessageSerializer
 
         
-//NOTE!! OBSOLETE
+[<Obsolete("use defaultSerializer value instead.")>]
 type SerializerRegistry private () =
     static let defaultSerializerName = String.Empty
     static let originalDefaultSerializer = new FsPicklerMessageSerializer() :> IMessageSerializer
@@ -103,8 +103,3 @@ type SerializerRegistry private () =
     static member Resolve(name: string) = serializerMap.Value.[name]
     static member IsRegistered(name: string) = serializerMap.Value.ContainsKey name
     static member Clear() = init ()
-
-//NOTE!!! OBSOLETE
-[<AutoOpen>]
-module Default =
-    let serializerNameDefaultArg (name: string option) = defaultArg name SerializerRegistry.DefaultName

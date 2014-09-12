@@ -389,7 +389,7 @@ and private attachToCluster (ctx: BehaviorContext<_>) (state: NodeState) cluster
             if state.Address <> clusterInfo.Master then
 
                 let healthMonitor = 
-                    let serializer = Serialization.SerializerRegistry.GetDefaultSerializer().Name
+                    let serializer = Serialization.defaultSerializer.Name
                     ActorRef.fromUri (sprintf "utcp://%A/*/clusterHealthMonitor.%s/%s" clusterInfo.Master clusterInfo.ClusterId serializer)
                     |> ReliableActorRef.FromRef
 

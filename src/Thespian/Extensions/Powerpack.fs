@@ -55,21 +55,16 @@ type RawOrNormal<'T> =
 [<Serializable>]
 type Raw<'T> = 
     val private rawValue : RawOrNormal<'T>
-    val private serializer : IMessageSerializer
     val private memoizedValue : Lazy<'T>
     
     new(value : 'T) = 
         { rawValue = NormalMessage value
-          serializer = Unchecked.defaultof<IMessageSerializer>
           memoizedValue = Unchecked.defaultof<Lazy<'T>> }
     
     private new(info : SerializationInfo, context : StreamingContext) = 
         let raw = info.GetValue("rawValue", typeof<byte []>) :?> byte []
-        let serializerName = info.GetString("serializerName")
-        let serializer = SerializerRegistry.Resolve(serializerName)
         { rawValue = RawMessage raw
-          serializer = serializer
-          memoizedValue = lazy (serializer.Deserialize<'T>(raw)) }
+          memoizedValue = lazy (Serialization.defaultSerializer.Deserialize<'T>(raw)) }
     
     member self.Value = self.rawValue
     
@@ -84,17 +79,13 @@ type Raw<'T> =
             | NormalMessage value, (:? MessageSerializationContext as messageSerializationContext) -> 
                 let raw = messageSerializationContext.Serializer.Serialize(value, context)
                 info.AddValue("rawValue", raw)
-                info.AddValue("serializerName", messageSerializationContext.Serializer.Name)
             | RawMessage raw, (:? MessageSerializationContext as messageSerializationContext) -> 
                 info.AddValue("rawValue", raw)
-                info.AddValue("serializerName", messageSerializationContext.Serializer.Name)
             | NormalMessage value, _ -> 
-                let raw = SerializerRegistry.GetDefaultSerializer().Serialize(value, context)
+                let raw = Serialization.defaultSerializer.Serialize(value, context)
                 info.AddValue("rawValue", raw)
-                info.AddValue("serializerName", SerializerRegistry.GetDefaultSerializer().Name)
             | RawMessage raw, _ -> 
                 info.AddValue("rawValue", raw)
-                info.AddValue("serializerName", SerializerRegistry.GetDefaultSerializer().Name)
     
 module Raw = 
     let fromMessage (msg : 'T) : Raw<'T> = new Raw<'T>(msg)

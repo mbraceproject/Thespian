@@ -8,11 +8,11 @@ open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Serialization
 
 let private addressToNodeHeartBeat (address: Address) =
-    let serializer = SerializerRegistry.GetDefaultSerializer().Name
+    let serializer = Serialization.defaultSerializer.Name
     ActorRef.fromUri (sprintf "utcp://%A/nodeHeartBeat" address)
 
 let private addressToNodeManager (address: Address) =
-    let serializer = SerializerRegistry.GetDefaultSerializer().Name
+    let serializer = Serialization.defaultSerializer.Name
     ActorRef.fromUri (sprintf "utcp://%A/nodeManager" address)
 
 let private falsePositiveTest address = async {

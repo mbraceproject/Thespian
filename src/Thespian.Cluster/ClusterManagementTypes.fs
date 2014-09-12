@@ -781,7 +781,7 @@ and ClusterInfo = {
     ClusterId: ClusterId
 } with //TODO!!! Extract these to a combinator
     member private __.SerializerName =
-        Serialization.SerializerRegistry.GetDefaultSerializer().Name
+        Serialization.defaultSerializer.Name
 
     member cluster.ClusterManager : ReliableActorRef<ClusterManager> =
         ActorRef.fromUri <| sprintf "utcp://%O/*/clusterManager.%s/%s" cluster.Master cluster.ClusterId cluster.SerializerName
@@ -804,7 +804,7 @@ and ManagedCluster = {
     ClusterHealthMonitor: Actor<ClusterHealthMonitor>
 } with
     member private __.SerializerName =
-        Serialization.SerializerRegistry.GetDefaultSerializer().Name
+        Serialization.defaultSerializer.Name
 
     member cluster.ClusterStateLoggers =
         cluster.AltMasters |> List.map (fun address ->
