@@ -1,7 +1,7 @@
 ﻿namespace Nessos.Thespian.Cluster
 
 open Nessos.Thespian
-open Nessos.Thespian.Tools
+open Nessos.Thespian.AsyncExtensions
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Cluster.BehaviorExtensions
 open Nessos.Thespian.Cluster.ActorExtensions

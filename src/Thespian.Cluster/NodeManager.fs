@@ -2,7 +2,7 @@
 
 open System
 open Nessos.Thespian
-open Nessos.Thespian.Tools
+open Nessos.Thespian.AsyncExtensions
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Cluster.BehaviorExtensions.FSM
 open Nessos.Thespian.Reversible

@@ -5,7 +5,7 @@ open System.Runtime.Serialization
 
 open Nessos.FsPickler
 open Nessos.Thespian
-open Nessos.Thespian.Tools
+open Nessos.Thespian.Concurrency
 
 type IMessageSerializer =
     abstract Name: string  

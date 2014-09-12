@@ -47,7 +47,7 @@ let solutionFile  = "Thespian"
 
 // Pattern specifying assemblies to be tested using NUnit
 // NOTE : No need to specify different directories.
-let testAssemblies = [ "bin/Thespian.Tests.dll" ]
+let testAssemblies = [ "bin/Thespian.Tests.dll"; "bin/Thespian.Cluster.Tests.dll" ]
 
 // Git configuration (used for publishing documentation in gh-pages branch)
 // The profile where the project is posted 

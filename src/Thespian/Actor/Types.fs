@@ -38,6 +38,12 @@ type LogLevel =
     | Info
     | Warning
     | Error
+    with
+        override self.ToString() =
+            match self with
+            | Info -> "INFO"
+            | Warning -> "WARNING"
+            | Error -> "ERROR"
 
 type LogSource = 
     | Actor of string

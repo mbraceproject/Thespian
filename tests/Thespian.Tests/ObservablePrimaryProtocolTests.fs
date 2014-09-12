@@ -6,7 +6,7 @@ open NUnit.Framework
 open FsUnit
 
 open Nessos.Thespian
-open Nessos.Thespian.Tools
+open Nessos.Thespian.AsyncExtensions
 
 module ObservableTestUtils = 
     let receiver = 

@@ -1,7 +1,7 @@
 ﻿module Nessos.Thespian.Cluster.ClusterUpdate
 
 open Nessos.Thespian
-open Nessos.Thespian.Tools
+open Nessos.Thespian.AsyncExtensions
 
 //Throws
 //ClusterStateLogBroadcastException => some updates have failed (node failures)

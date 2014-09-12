@@ -4,7 +4,7 @@ open System
 open Nessos.Thespian
 open Nessos.Thespian.Remote
 open Nessos.Thespian.ImemDb
-open Nessos.Thespian.Tools
+open Nessos.Thespian.AsyncExtensions
 open Nessos.Thespian.Reversible
 open Nessos.Thespian.Cluster
 

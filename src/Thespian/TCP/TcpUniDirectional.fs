@@ -10,7 +10,7 @@ open System.Runtime.Serialization
 open System.Collections.Concurrent
 
 open Nessos.Thespian
-open Nessos.Thespian.Tools
+open Nessos.Thespian.AsyncExtensions
 open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Remote.TcpProtocol.ConnectionPool
 open Nessos.Thespian.Serialization

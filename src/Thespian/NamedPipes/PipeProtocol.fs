@@ -14,7 +14,7 @@ open Mono.Unix
 open Mono.Unix.Native
 
 open Nessos.Thespian
-open Nessos.Thespian.Tools
+open Nessos.Thespian.AsyncExtensions
 open Nessos.Thespian.Utils
 
 [<AutoOpen>]
