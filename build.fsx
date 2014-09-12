@@ -33,7 +33,7 @@ let summary = "An F# Actor Framework"
 
 // Longer description of the project
 // (used as a description for NuGet package; line breaks are automatically cleaned up)
-let description = """An F# Actor Frameworks"""
+let description = """An F# Actor Framework"""
 
 // List of author names (for NuGet package)
 let authors = [ "Jan Dzik"; "Eirik Tsarpalis" ]
