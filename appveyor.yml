@@ -2,3 +2,4 @@ configuration: Release
 test:
   assemblies:
     - Thespian.Tests.dll
+    - Thespian.Cluster.Tests.dll
