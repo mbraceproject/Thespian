@@ -4,13 +4,12 @@ module Nessos.Thespian.Cluster.Common
 open System
 
 open Nessos.Thespian
-open Nessos.Thespian.AsyncExtensions
-open Nessos.Thespian.Concurrency
+open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utilities.ImemDb
+open Nessos.Thespian.Utilities.Reversible
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Remote.TcpProtocol.Unidirectional
-open Nessos.Thespian.ImemDb
-open Nessos.Thespian.Reversible
 open Nessos.Thespian.Cluster
 
 

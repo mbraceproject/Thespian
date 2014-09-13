@@ -7,7 +7,7 @@ open System.Threading
 open System.Runtime.Serialization
 
 open Nessos.Thespian
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Utilities
 
 type MsgId = Guid
 

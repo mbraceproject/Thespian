@@ -9,7 +9,7 @@ open System.Runtime.Serialization
 open System.Collections.Concurrent
 
 open Nessos.Thespian
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Utilities
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol.ConnectionPool
 

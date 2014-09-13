@@ -4,7 +4,7 @@ open System
 open System.IO
 
 open Nessos.Thespian
-open Nessos.Thespian.Utils
+open Nessos.Thespian.Utilities
 
 [<Serializable>]
 type TcpActorId(actorName : string, protocolName : string, address : Address) = 

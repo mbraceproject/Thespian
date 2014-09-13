@@ -56,11 +56,8 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Utils\LazyList.fs" />
-    <Compile Include="Utils\ReversibleMonad.fs" />
-    <Compile Include="Utils\ReversibleAsyncUtils.fs" />
-    <Compile Include="Utils\ImemDb.fs" />
     <Compile Include="Logger.fs" />
+    <Compile Include="ImemDb.fs" />
     <Compile Include="ReliableActorRef.fs" />
     <Compile Include="ActorExtensions.fs" />
     <Compile Include="BehaviorExtensions.fs" />

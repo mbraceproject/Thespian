@@ -2,10 +2,10 @@
 
 open System
 open Nessos.Thespian
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utilities.Reversible
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Cluster.BehaviorExtensions.FSM
-open Nessos.Thespian.Reversible
 
 type private LogLevel = Nessos.Thespian.LogLevel
 

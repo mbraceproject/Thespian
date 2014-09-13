@@ -2,6 +2,8 @@
 
 open System
 
+open Nessos.Thespian.Utilities
+
 [<AbstractClass>]
 [<Serializable>]
 type ActorId(actorName : string) = 

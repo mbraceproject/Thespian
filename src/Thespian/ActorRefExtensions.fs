@@ -2,7 +2,7 @@
     
 open System
 open Nessos.Thespian
-open Nessos.Thespian.Concurrency
+open Nessos.Thespian.Utilities
 open Nessos.Thespian.Remote.TcpProtocol
 
 [<AutoOpen>]

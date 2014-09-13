@@ -61,8 +61,10 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils\Utils.fs" />
     <Compile Include="Utils\Concurrency.fs" />
+    <Compile Include="Utils\LazyList.fs" />
     <Compile Include="Utils\TaskExtensions.fs" />
     <Compile Include="Utils\AsyncExtensions.fs" />
+    <Compile Include="Utils\Reversible.fs" />
     <Compile Include="Actor\Types.fs" />
     <Compile Include="Actor\Exceptions.fs" />
     <Compile Include="Actor\Serialization.fs" />
