@@ -40,7 +40,7 @@ module Uri =
 
                 let protocol = factory.CreateClientInstance<'T>(actorName)
 
-                new ActorRef<'T>(uri.PathAndQuery, [| protocol |])
+                new ActorRef<'T>(actorName, [| protocol |])
 
     type NppParser internal () =
         interface IUriParser with
