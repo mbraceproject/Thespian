@@ -112,6 +112,8 @@ and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
     let mailboxPost message (mailbox: MailboxProcessor<_>) = mailbox.Post message
     let post = protectMailbox << mailboxPost
 
+    override __.ToString() = let ub = new UriBuilder(ProtocolName, srv.ActorId.Name) in ub.Uri.ToString()
+
     interface IProtocolClient<'T> with
         override __.ProtocolName = srv.ProtocolName
         override __.Factory = None

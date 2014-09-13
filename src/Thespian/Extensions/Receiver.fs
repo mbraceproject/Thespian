@@ -58,7 +58,9 @@ namespace Nessos.Thespian
                 |> Seq.toArray)
 
     module Observable = 
-        type ObservableProtocolClient<'T>(actorName : string, observableActorRef : ActorRef<'T>) = 
+        type ObservableProtocolClient<'T>(actorName : string, observableActorRef : ActorRef<'T>) =
+            override __.ToString() = let ub = new UriBuilder("observable", actorName) in ub.Uri.ToString()
+            
             interface IProtocolClient<'T> with
                 member __.ProtocolName = "observable"
                 member __.ActorId = new Mailbox.MailboxActorId(actorName) :> ActorId

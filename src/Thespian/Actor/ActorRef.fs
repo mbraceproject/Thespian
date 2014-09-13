@@ -129,7 +129,7 @@ and [<Serializable>] ActorRef<'T> =
 
     new (clone: ActorRef<'T>) = new ActorRef<'T>((clone :> ActorRef).Name, clone.protocols)
   
-  //should be protected; but whatever
+    //should be protected; but whatever
     new (info: SerializationInfo, context: StreamingContext) =
         let name = info.GetString("name")
         let protocolFactories = info.GetValue("protocolFactories", typeof<IProtocolFactory[]>) :?> IProtocolFactory[]

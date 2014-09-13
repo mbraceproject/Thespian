@@ -231,7 +231,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
     let replyRegistry = new ReplyResultsRegistry()
     let logEvent = new Event<Log>()
     let factory = new BTcpFactory(ProtocolMode.Client address)
-    let uri = UriBuilder(ProtocolName, address.HostnameOrAddress, address.Port, actorId.Name).Uri.ToString()
+    let uri = let ub = new UriBuilder(ProtocolName, address.HostnameOrAddress, address.Port, actorId.Name) in ub.Uri.ToString()
 
     let processReply (protocolStream: ProtocolStream) =
         async {
@@ -433,6 +433,8 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
             | Some v -> return v
             | None -> return! Async.Raise (new TimeoutException("Timeout occurred while waiting for reply."))
         }
+
+    override __.ToString() = uri
 
     interface IProtocolClient<'T> with
         override __.ProtocolName = ProtocolName

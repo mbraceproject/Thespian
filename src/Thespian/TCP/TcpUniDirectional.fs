@@ -25,8 +25,7 @@ type ProtocolMessage<'T> =
 
 let rec internal attempt f = 
     async { 
-        try 
-            return! f
+        try return! f
         with
         | :? SocketException as e when e.SocketErrorCode = SocketError.ConnectionReset 
                                        || e.SocketErrorCode = SocketError.ConnectionAborted -> 
@@ -46,10 +45,8 @@ let rec internal attempt f =
 
 let inline internal addressToEndpoints (actorId : ActorId) (address : Address) = 
     async { 
-        try 
-            return! address.ToEndPointsAsync()
-        with e -> 
-            return! Async.Raise <| new CommunicationException("Unable to obtain ip endpoint from address.", actorId, e)
+        try return! address.ToEndPointsAsync()
+        with e -> return! Async.Raise <| new CommunicationException("Unable to obtain ip endpoint from address.", actorId, e)
     }
 
 module ProtocolMessage = 
@@ -291,8 +288,7 @@ type MessageProcessor<'T> private (actorId : TcpActorId, listener : TcpProtocolL
         }
     
     static let processors = new ConcurrentDictionary<TcpActorId, MessageProcessor<'T>>()
-    member __.RegisterReplyProcessor(msgId : MsgId, replyF : Reply<obj> -> unit) = 
-        clientRegistry.TryAdd(msgId, replyF) |> ignore
+    member __.RegisterReplyProcessor(msgId : MsgId, replyF : Reply<obj> -> unit) = clientRegistry.TryAdd(msgId, replyF) |> ignore
     member __.UnregisterReplyProcessor(msgId : MsgId) = clientRegistry.TryRemove(msgId) |> ignore
     
     member __.Acquire() = 
@@ -324,15 +320,7 @@ type MessageProcessor<'T> private (actorId : TcpActorId, listener : TcpProtocolL
         spinLock.Exit()
     
     static member GetClientProcessor(actorId : TcpActorId, listener : TcpProtocolListener) = 
-        let p = 
-            processors.GetOrAdd
-                (actorId, 
-                 
-                 fun _ -> 
-                     new MessageProcessor<'T>(actorId, listener, 
-                                              
-                                              fun _ -> 
-                                                  invalidOp "Tried to process a Request message in a protocol client"))
+        let p = processors.GetOrAdd(actorId, fun _ -> new MessageProcessor<'T>(actorId, listener, fun _ -> invalidOp "Tried to process a Request message in a protocol client"))
         if p.Acquire() then p
         else 
             Thread.SpinWait(20)
@@ -340,8 +328,8 @@ type MessageProcessor<'T> private (actorId : TcpActorId, listener : TcpProtocolL
     
     static member GetServerProcessor(actorId : TcpActorId, listener : TcpProtocolListener, processRequest : 'T -> unit) = 
         new MessageProcessor<'T>(actorId, listener, processRequest)
-    interface IDisposable with
-        member self.Dispose() = self.Release()
+
+    interface IDisposable with member self.Dispose() = self.Release()
     
 
 type ReplyResultRegistry<'T>(actorId : TcpActorId, listener : TcpProtocolListener) = 
@@ -390,7 +378,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
     let replyRegistry = new ReplyResultRegistry<'T>(actorId, localListener)
     let logEvent = new Event<Log>()
     let factory = new UTcpFactory(Client address)
-    let uri = UriBuilder(ProtocolName, address.HostnameOrAddress, address.Port, actorId.Name).Uri.ToString()
+    let uri = let ub = new UriBuilder(ProtocolName, address.HostnameOrAddress, address.Port, actorId.Name) in ub.Uri.ToString()
 
     let handleForeignReplyChannel (foreignRc: IReplyChannel, nativeRc: IReplyChannel) =
         //register async wait handle for the nativeRc
@@ -510,6 +498,8 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
         | Some v -> return v
         | None -> return! Async.Raise (new TimeoutException("Timeout occurred while waiting for reply."))
     }
+
+    override __.ToString() = uri
   
     interface IProtocolClient<'T> with
         override __.ProtocolName = ProtocolName

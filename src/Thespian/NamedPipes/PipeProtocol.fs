@@ -142,6 +142,8 @@ and PipeProtocolServer<'T>(pipeName : string, processId : int, actorRef : ActorR
 and PipeProtocolClient<'T>(actorName : string, pipeName : string, processId : int) = 
     let actorId = new PipeActorId(pipeName, actorName)
     let serializer = Serialization.defaultSerializer
+
+    let uri = let ub = new UriBuilder(ProtocolName, "localhost", processId, actorName) in ub.Uri.ToString()
     
     let post (msg : 'T) = 
         async { 
@@ -200,11 +202,13 @@ and PipeProtocolClient<'T>(actorName : string, pipeName : string, processId : in
             | Some v -> return v
             | None -> return! Async.Raise <| new TimeoutException("Timeout occurred while waiting for reply.")
         }
+
+    override __.ToString() = uri
     
     interface IProtocolClient<'T> with
         member __.ProtocolName = ProtocolName
         member __.ActorId = actorId :> ActorId
-        member __.Uri = UriBuilder(ProtocolName, "localhost", processId, actorName).Uri.ToString()
+        member __.Uri = uri
         member __.Factory = Some(new PipeProtocolFactory(processId) :> IProtocolFactory)
         member __.Post(msg : 'T) : unit = Async.RunSynchronously(post msg)
         member __.AsyncPost(msg : 'T) : Async<unit> = post msg
