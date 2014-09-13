@@ -1,4 +1,4 @@
-﻿namespace Nessos.Thespian.Remote.PipeProtocol
+﻿module Nessos.Thespian.Remote.PipeProtocol
 
 open System
 open System.Collections.Generic
@@ -14,11 +14,11 @@ open Mono.Unix
 open Mono.Unix.Native
 
 open Nessos.Thespian
-open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utils
+open Nessos.Thespian.Utils.Async
 
-[<AutoOpen>]
-module private Utils =
-    let ProtocolName = "npp"
+
+let ProtocolName = "npp"
 
 
 [<Serializable>]
@@ -679,9 +679,3 @@ module ActorRef =
     
     let ofProcessId<'T> (pid : int) (name : string) = ofProcess<'T> (Process.GetProcessById pid) name
 
-[<AutoOpen>]
-module Protocol = 
-    let NPP = ProtocolName
-    
-    type Protocols with
-        static member npp (?processId : int) = new PipeProtocolFactory(?processId = processId) :> IProtocolFactory

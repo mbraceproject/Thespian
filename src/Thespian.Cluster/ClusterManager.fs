@@ -2,10 +2,10 @@
 
 open System
 open Nessos.Thespian
-open Nessos.Thespian.Utilities
-open Nessos.Thespian.Utilities.ImemDb
-open Nessos.Thespian.Utilities.Reversible
 open Nessos.Thespian.Remote
+open Nessos.ImemDb
+open Nessos.Thespian.Utils
+open Nessos.Thespian.Utils.Async
 open Nessos.Thespian.Cluster
 
 type private LogLevel = Nessos.Thespian.LogLevel

@@ -1,4 +1,4 @@
-﻿namespace Nessos.Thespian.Utilities.ImemDb
+﻿namespace Nessos.ImemDb
 
 open System
 open System.Collections
@@ -9,8 +9,6 @@ open Microsoft.FSharp.Quotations.DerivedPatterns
 open Microsoft.FSharp.Quotations.ExprShape
 open Microsoft.FSharp.Reflection
 
-// Eirik's note (9/14) : Did not move ImemDB back to the core Thespian library
-// as this would introduce a dependency to Unquote.
 
 // TODO : make ImemDb a separate project, perhaps part of LinqOptimizer?
 

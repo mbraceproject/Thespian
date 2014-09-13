@@ -8,7 +8,7 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 
 open Nessos.Thespian
-open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utils.Async
 open Nessos.Thespian.Remote.SocketExtensions
 
 

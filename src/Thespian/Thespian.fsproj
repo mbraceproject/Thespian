@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -61,31 +61,31 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils\Utils.fs" />
     <Compile Include="Utils\Concurrency.fs" />
-    <Compile Include="Utils\LazyList.fs" />
-    <Compile Include="Utils\TaskExtensions.fs" />
-    <Compile Include="Utils\AsyncExtensions.fs" />
-    <Compile Include="Utils\Reversible.fs" />
-    <Compile Include="Actor\Types.fs" />
-    <Compile Include="Actor\Exceptions.fs" />
-    <Compile Include="Actor\Serialization.fs" />
-    <Compile Include="Actor\ActorRef.fs" />
-    <Compile Include="Actor\MailboxActorProtocol.fs" />
-    <Compile Include="Actor\Actor.fs" />
-    <Compile Include="Extensions\Agents.fs" />
-    <Compile Include="Extensions\Receiver.fs" />
-    <Compile Include="Extensions\DisposableExtensions.fs" />
-    <Compile Include="Extensions\Powerpack.fs" />
-    <Compile Include="TCP\RemoteExceptions.fs" />
-    <Compile Include="TCP\SocketExtensions.fs" />
-    <Compile Include="TCP\Address.fs" />
-    <Compile Include="TCP\TcpActorId.fs" />
-    <Compile Include="TCP\Message.fs" />
-    <Compile Include="TCP\ConnectionPool.fs" />
-    <Compile Include="TCP\TcpListener.fs" />
-    <Compile Include="TCP\TcpUniDirectional.fs" />
-    <Compile Include="TCP\TcpBidirectional.fs" />
-    <Compile Include="TCP\TcpProtocol.fs" />
-    <Compile Include="NamedPipes\PipeProtocol.fs" />
+    <Compile Include="Utils\Task.fs" />
+    <Compile Include="Utils\Async.fs" />
+    <Compile Include="Utils\IOExtensions.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="Exceptions.fs" />
+    <Compile Include="Serialization.fs" />
+    <Compile Include="ActorRef.fs" />
+    <Compile Include="Protocols\Mailbox\MailboxActorProtocol.fs" />
+    <Compile Include="Actor.fs" />
+    <Compile Include="Protocols\Observable\ObservableProtocol.fs" />
+    <Compile Include="Agents.fs" />
+    <Compile Include="Receiver.fs" />
+    <Compile Include="Powerpack.fs" />
+    <Compile Include="Utils\Disposable.fs" />
+    <Compile Include="Protocols\TCP\RemoteExceptions.fs" />
+    <Compile Include="Protocols\TCP\SocketExtensions.fs" />
+    <Compile Include="Protocols\TCP\Address.fs" />
+    <Compile Include="Protocols\TCP\TcpActorId.fs" />
+    <Compile Include="Protocols\TCP\Message.fs" />
+    <Compile Include="Protocols\TCP\ConnectionPool.fs" />
+    <Compile Include="Protocols\TCP\TcpListener.fs" />
+    <Compile Include="Protocols\TCP\TcpUniDirectional.fs" />
+    <Compile Include="Protocols\TCP\TcpBidirectional.fs" />
+    <Compile Include="Protocols\NamedPipes\PipeProtocol.fs" />
+    <Compile Include="Protocols\Protocols.fs" />
     <Compile Include="ActorRefExtensions.fs" />
     <None Include="app.config" />
     <None Include="packages.config" />

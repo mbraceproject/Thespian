@@ -1,22 +1,21 @@
 ﻿namespace Nessos.Thespian.Remote
     
 open System
+
 open Nessos.Thespian
-open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utils.Concurrency
+open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol
 
 [<AutoOpen>]
 module Constants =
-    let UTCP = Unidirectional.ProtocolName
-    let BTCP = Bidirectional.ProtocolName
-    let NPP = Remote.PipeProtocol.Protocol.NPP
     let DefaultTcpPort = 2753
     
 module Uri =
 
-    let private (|UTCP|_|) (protocolName: string) = if protocolName = Constants.UTCP then Some() else None
-    let private (|BTCP|_|) (protocolName: string) = if protocolName = Constants.BTCP then Some() else None
-    let private (|NPP|_|) (protocolName: string) = if protocolName = Constants.NPP then Some() else None
+    let private (|UTCP|_|) (protocolName: string) = if protocolName = Protocols.UTCP then Some() else None
+    let private (|BTCP|_|) (protocolName: string) = if protocolName = Protocols.BTCP then Some() else None
+    let private (|NPP|_|) (protocolName: string) = if protocolName = Protocols.NPP then Some() else None
     let private (|TCP|_|) (protocolName: string) =
         match protocolName with
         | UTCP | BTCP  -> Some()

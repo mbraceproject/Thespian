@@ -4,7 +4,7 @@ open System
 open System.Runtime.Serialization
 
 open Nessos.Thespian.Serialization
-open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utils.Concurrency
 
 [<Serializable>]
 type IProtocolFactory =

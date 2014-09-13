@@ -2,9 +2,8 @@ namespace Nessos.Thespian.Cluster.Tests
 
 open System
 open System.Diagnostics
-
 open Nessos.Thespian
-open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utils.Async
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Cluster
 
@@ -93,7 +92,7 @@ type ClusterController(nodes : Node list) =
     member __.Boot(replicationFactor : int, failoverFactor : int) =
         let clusterConfiguration = {
             ClusterId = clusterId
-            Nodes = nodeManagers |> List.tail |> List.toArray
+            Nodes = nodeManagers |> List.toArray
             ReplicationFactor = replicationFactor
             FailoverFactor = failoverFactor
             NodeDeadNotify = fun _ -> async.Zero()

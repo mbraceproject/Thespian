@@ -5,7 +5,7 @@ open System
 open System.Threading
 
 open Nessos.Thespian
-open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utils.Async
 
 let (|MessageHandlingException2|_|) (e: exn) = 
     match e with

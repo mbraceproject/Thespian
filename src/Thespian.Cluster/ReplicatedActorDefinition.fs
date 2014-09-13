@@ -2,7 +2,8 @@
 
 open System
 open Nessos.Thespian
-open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utils
+open Nessos.Thespian.Utils.Async
 open Nessos.Thespian.Remote
 open Nessos.Thespian.PowerPack
 open Nessos.Thespian.Cluster.BehaviorExtensions

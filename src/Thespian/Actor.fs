@@ -3,7 +3,7 @@ namespace Nessos.Thespian
 open System
 open System.Threading
 
-open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utils
 
 
 type IPrimaryProtocolFactory =
@@ -185,7 +185,7 @@ module Operators =
                 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Actor =
-    open Nessos.Thespian.Utilities
+    open Nessos.Thespian.Utils
 
     let inline bind (body: Actor<'T> -> Async<unit>) = let name = Guid.NewGuid().ToString() in new Actor<'T>(name, body)
 

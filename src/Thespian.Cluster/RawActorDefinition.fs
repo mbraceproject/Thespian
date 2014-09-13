@@ -4,7 +4,7 @@ open Nessos.Thespian
 open Nessos.Thespian.Remote
 open Nessos.Thespian.PowerPack
 open Nessos.Thespian.Cluster.BehaviorExtensions
-open Nessos.Thespian.Utilities.Reversible
+open Nessos.Thespian.Cluster
 
 type IRawProxyDef =
     abstract NormalMessageType: System.Type

@@ -1,11 +1,12 @@
-﻿[<AutoOpen>]
-module Nessos.Thespian.Remote.ProtocolFactories
+[<AutoOpen>]
+module Nessos.Thespian.Remote.Protocols
 
 open System.Net
 open Nessos.Thespian
 
 let UTCP = Nessos.Thespian.Remote.TcpProtocol.Unidirectional.ProtocolName
 let BTCP = Nessos.Thespian.Remote.TcpProtocol.Bidirectional.ProtocolName
+let NPP = Nessos.Thespian.Remote.PipeProtocol.ProtocolName
 
 type Protocols with
     static member utcp(?endPoint: IPEndPoint) =
@@ -15,3 +16,6 @@ type Protocols with
     static member btcp(?endPoint: IPEndPoint) =
         let endPoint = defaultArg endPoint (new IPEndPoint(IPAddress.Any, 0))
         new TcpProtocol.Bidirectional.BTcpFactory(TcpProtocol.Bidirectional.ProtocolMode.Server endPoint) :> IProtocolFactory
+
+    static member npp(?processId: int) =
+        new Nessos.Thespian.Remote.PipeProtocol.PipeProtocolFactory(?processId = processId) :> IProtocolFactory

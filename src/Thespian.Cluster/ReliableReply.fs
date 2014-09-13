@@ -2,6 +2,7 @@
 module Nessos.Thespian.Cluster.ReliableReply
 
 open Nessos.Thespian
+open Nessos.Thespian.Utils
 
 type FaultType =
     | NodeUnknown

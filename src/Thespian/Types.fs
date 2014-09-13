@@ -1,8 +1,7 @@
 ﻿namespace Nessos.Thespian
 
 open System
-
-open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utils
 
 [<AbstractClass>]
 [<Serializable>]
@@ -33,7 +32,7 @@ type Reply<'T> =
         match self with
         | Value t -> t
         | Exception e -> 
-            if defaultArg keepOriginalStackTrace false then reraise' e
+            if defaultArg keepOriginalStackTrace false then reraiseWithStackTrace e
             else raise e
 
 type LogLevel = 

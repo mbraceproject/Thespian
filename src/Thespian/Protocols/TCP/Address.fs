@@ -5,7 +5,8 @@ open System.IO
 open System.Net
 open System.Net.Sockets
 open Nessos.Thespian
-open Nessos.Thespian.Utilities
+open Nessos.Thespian.Utils
+open Nessos.Thespian.Utils.Async
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.SocketExtensions
 
@@ -20,11 +21,11 @@ type HostOrAddress(hostnameOrAddress: string) =
 
     member __.Value = hostnameOrAddress
 
-    member ha.Compare(other: HostOrAddress) =
-        match ha.Value.CompareTo(other.Value) with
+    member self.Compare(other: HostOrAddress) =
+        match self.Value.CompareTo(other.Value) with
         | 0 -> 0
         | stringCmp ->
-            let ips = getIps ha.Value
+            let ips = getIps self.Value
             let otherIps = getIps other.Value
             if Set.intersect ips otherIps |> Set.isEmpty |> not then 0
             else stringCmp
@@ -32,19 +33,19 @@ type HostOrAddress(hostnameOrAddress: string) =
     override __.ToString() = hostnameOrAddress
 
     override __.GetHashCode() = hostnameOrAddress.GetHashCode()
-    override ha.Equals(other: obj) =
+    override self.Equals(other: obj) =
         match other with
-        | :? HostOrAddress as ha' -> ha.Compare(ha') = 0
+        | :? HostOrAddress as ha -> self.Compare(ha) = 0
         | _ -> false
 
     interface IComparable with
-        override ha.CompareTo(other: obj) =
+        override self.CompareTo(other: obj) =
             match other with
-            | :? HostOrAddress as ha' -> ha.Compare(ha')
+            | :? HostOrAddress as ha -> self.Compare(ha)
             | _ -> invalidArg "other" "Cannot compare objects of incompatible types."
 
     interface IComparable<HostOrAddress> with
-        override ha.CompareTo(other: HostOrAddress) = ha.Compare(other)
+        override self.CompareTo(other: HostOrAddress) = self.Compare(other)
 
 type Address(hostnameOrAddress : string, ?port : int) =
     let port = defaultArg port 0
@@ -80,51 +81,50 @@ type Address(hostnameOrAddress : string, ?port : int) =
     member __.HostnameOrAddress = hostnameOrAddress
     member __.Port = port
 
-    member private a.CompareHostOrAddrs(otherAddress: Address): int =
-        match a.HostnameOrAddress.CompareTo(otherAddress.HostnameOrAddress) with
+    member private self.CompareHostOrAddrs(otherAddress: Address): int =
+        match self.HostnameOrAddress.CompareTo(otherAddress.HostnameOrAddress) with
         | 0 -> 0
         | stringCmp ->
-            let ips = a.GetIPAddresses()
+            let ips = self.GetIPAddresses()
             let otherIps = otherAddress.GetIPAddresses()
             if Set.intersect ips otherIps |> Set.isEmpty |> not then 0
             else stringCmp
 
-    member a.CompareTo(otherAddress: Address): int =
-        compareOn (fun (ha: Address) -> HostOrAddress ha.HostnameOrAddress, ha.Port) a otherAddress
+    member self.CompareTo(otherAddress: Address): int =
+        compareOn (fun (ha: Address) -> HostOrAddress ha.HostnameOrAddress, ha.Port) self otherAddress
 
-    override a.ToString() = toString
+    override __.ToString() = toString
 
-    member a.ToEndPoints() = 
-        if a.HostnameOrAddress = IPAddress.Any.ToString() then [new IPEndPoint(IPAddress.Any, a.Port)]
-        else Dns.GetHostAddresses(a.HostnameOrAddress)
+    member self.ToEndPoints() = 
+        if self.HostnameOrAddress = IPAddress.Any.ToString() then [new IPEndPoint(IPAddress.Any, self.Port)]
+        else Dns.GetHostAddresses(self.HostnameOrAddress)
              |> Seq.filter (fun addr -> addr.AddressFamily = AddressFamily.InterNetwork)
-             |> Seq.map (fun addr -> new IPEndPoint(addr, a.Port))
+             |> Seq.map (fun addr -> new IPEndPoint(addr, self.Port))
              |> Seq.toList
 
-    member a.ForceToEndPointsAsync() = 
-        toEndPointsAsync (a.HostnameOrAddress, a.Port)
+    member self.ForceToEndPointsAsync() = toEndPointsAsync (self.HostnameOrAddress, self.Port)
 
-    member a.ToEndPointsAsync() = memoizedToEndPointsAsync (a.HostnameOrAddress, a.Port)
+    member self.ToEndPointsAsync() = memoizedToEndPointsAsync (self.HostnameOrAddress, self.Port)
 
-    member internal a.GetIPAddresses() = 
-        Dns.GetHostAddresses(a.HostnameOrAddress) 
+    member internal self.GetIPAddresses() = 
+        Dns.GetHostAddresses(self.HostnameOrAddress) 
             |> Seq.filter (fun addr -> addr.AddressFamily = AddressFamily.InterNetwork)
             |> Seq.map (fun addr -> addr.ToString())
             |> Set.ofSeq
 
-    override a.GetHashCode() = Unchecked.hash (a.ToString())
-    override a.Equals(other: obj) =
+    override self.GetHashCode() = Unchecked.hash (self.ToString())
+    override self.Equals(other: obj) =
         match other with
-        | :? Address as otherAddress -> a.CompareTo(otherAddress) = 0
+        | :? Address as otherAddress -> self.CompareTo(otherAddress) = 0
         | _ -> false
 
     interface IComparable<Address> with
-        member a.CompareTo(otherAddress: Address): int = a.CompareTo(otherAddress)
+        override self.CompareTo(otherAddress: Address): int = self.CompareTo(otherAddress)
 
     interface IComparable with
-        member a.CompareTo(other: obj): int =
+        override self.CompareTo(other: obj): int =
             match other with
-            | :? Address as otherAddress -> a.CompareTo(otherAddress)
+            | :? Address as otherAddress -> self.CompareTo(otherAddress)
             | _ -> invalidArg "other" "Cannot compare objects of incompatible types."
 
     static member Any = Address(IPAddress.Any.ToString(), 0)
