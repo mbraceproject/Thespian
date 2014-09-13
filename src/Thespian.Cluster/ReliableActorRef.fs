@@ -6,8 +6,6 @@ open System.Runtime.Serialization
 open Nessos.Thespian
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol
-open Nessos.Thespian.ImemDb
-open Nessos.Thespian.Reversible
 open Nessos.Thespian.Cluster
 
 module AsyncFSM =

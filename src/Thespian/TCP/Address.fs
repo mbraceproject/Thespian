@@ -5,7 +5,7 @@ open System.IO
 open System.Net
 open System.Net.Sockets
 open Nessos.Thespian
-open Nessos.Thespian.AsyncExtensions
+open Nessos.Thespian.Utilities
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.SocketExtensions
 

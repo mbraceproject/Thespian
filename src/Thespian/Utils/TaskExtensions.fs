@@ -1,4 +1,4 @@
-﻿namespace Nessos.Thespian
+﻿namespace Nessos.Thespian.Utilities
 
     [<AutoOpen>]
     module TaskExtensions =

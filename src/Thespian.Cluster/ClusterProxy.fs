@@ -3,7 +3,7 @@
 open System
 
 open Nessos.Thespian
-open Nessos.Thespian.Concurrency
+open Nessos.Thespian.Utilities
 open Nessos.Thespian.PowerPack
 
 type private LogLevel = Nessos.Thespian.LogLevel
