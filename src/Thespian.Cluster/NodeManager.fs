@@ -272,9 +272,7 @@ and private resolve (ctx: BehaviorContext<_>) reply state activationRef =
         try
             //Throws
             //ActivationResolutionException => activationRef not found;; reply to client
-            NodeRegistry.Registry.ResolveLocal activationRef
-            |> Value
-            |> reply
+            NodeRegistry.Registry.ResolveLocal activationRef |> Value |> reply
 
             return stay state
         with ActivationResolutionException _ as e ->
@@ -289,9 +287,7 @@ and private resolve (ctx: BehaviorContext<_>) reply state activationRef =
 and private tryResolve (ctx: BehaviorContext<_>) reply state activationRef =
     async {
         try
-            NodeRegistry.Registry.TryResolveLocal activationRef
-            |> Value
-            |> reply
+            NodeRegistry.Registry.TryResolveLocal activationRef |> Value |> reply
 
             return stay state
         with e ->
