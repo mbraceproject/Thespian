@@ -76,7 +76,7 @@ type Node() =
         
 
 
-type ClusterController(nodes : Node list) =
+type ClusterController(nodes: Node list) =
     let clusterId = "TestCluster"
     let clusterManager =
         let clusterManagerNode = nodes.Head
@@ -84,12 +84,15 @@ type ClusterController(nodes : Node list) =
         ActorRef.fromUri uri :> ActorRef<ClusterManager>
 
     let nodeManagers = nodes |> List.map (fun node -> node.NodeManager)
+
+    let mutable currentReplicationFactor = 0
+    let mutable currentFailoverFactor = 0
         
     member __.KillCluster() = for node in nodes do node.Kill()
 
     member __.ClusterManager = clusterManager
 
-    member __.Boot(replicationFactor : int, failoverFactor : int) =
+    member self.Boot(replicationFactor: int, failoverFactor: int) =
         let clusterConfiguration = {
             ClusterId = clusterId
             Nodes = nodeManagers |> List.tail |> List.toArray
@@ -97,10 +100,17 @@ type ClusterController(nodes : Node list) =
             FailoverFactor = failoverFactor
             NodeDeadNotify = fun _ -> async.Zero()
         }
-
-        let _ = nodeManagers.Head <!= fun ch -> InitCluster(ch, clusterConfiguration) in ()
+        let _ = nodeManagers.Head <!= fun ch -> InitCluster(ch, clusterConfiguration)
+        currentReplicationFactor <- replicationFactor
+        currentFailoverFactor <- failoverFactor
 
     member __.Shutdown() = let _ = clusterManager <!= KillClusterSync in ()
+
+    member self.Reboot(?replicationFactor: int, ?failoverFactor: int) =
+        let replicationFactor = defaultArg replicationFactor currentReplicationFactor
+        let failoverFactor = defaultArg failoverFactor currentFailoverFactor
+        self.Shutdown()
+        self.Boot(replicationFactor, failoverFactor)
 
     interface IDisposable with override __.Dispose() = __.KillCluster()
 

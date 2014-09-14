@@ -27,3 +27,18 @@ type BaseLifetimeTests() =
 
         testCluster.Boot(0, 0)
         testCluster.Shutdown()
+
+    [<Test>]
+    member __.``Simple node(s) boot and reboot``([<ValueSource("ClusterSizes")>] numberOfNodes : int) =
+        use testCluster = TestCluster.spawn numberOfNodes
+
+        testCluster.Boot(0, 0)
+        testCluster.Reboot()
+
+    [<Test>]
+    member __.``Simple node(s) boot, reboot, shutdown``([<ValueSource("ClusterSizes")>] numberOfNodes : int) =
+        use testCluster = TestCluster.spawn numberOfNodes
+
+        testCluster.Boot(0, 0)
+        testCluster.Reboot()
+        testCluster.Shutdown()
