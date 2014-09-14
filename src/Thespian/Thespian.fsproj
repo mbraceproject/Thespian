@@ -68,13 +68,13 @@
     <Compile Include="Exceptions.fs" />
     <Compile Include="Serialization.fs" />
     <Compile Include="ActorRef.fs" />
-    <Compile Include="Protocols\Mailbox\MailboxActorProtocol.fs" />
+    <Compile Include="MailboxPrimaryProtocol.fs" />
     <Compile Include="Actor.fs" />
-    <Compile Include="Protocols\Observable\ObservableProtocol.fs" />
+    <Compile Include="ObservablePrimaryProtocol.fs" />
     <Compile Include="Agents.fs" />
     <Compile Include="Receiver.fs" />
     <Compile Include="Powerpack.fs" />
-    <Compile Include="Utils\Disposable.fs" />
+    <Compile Include="Disposable.fs" />
     <Compile Include="Protocols\TCP\RemoteExceptions.fs" />
     <Compile Include="Protocols\TCP\SocketExtensions.fs" />
     <Compile Include="Protocols\TCP\Address.fs" />
