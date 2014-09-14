@@ -216,7 +216,7 @@ let rec private initCluster (ctx: BehaviorContext<_>)
 
                 ctx.LogInfo "Attaching master node to cluster..."
             
-                if state.ClusterInfo.IsNone then Cluster.SetClusterManager <| Some(ReliableActorRef.FromRef <| state'.ManagedClusters.["HEAD"].ClusterManager.Ref)
+                if state.ClusterInfo.IsNone then Cluster.SetClusterManager <| Some(ReliableActorRef.FromRef <| state'.ManagedClusters.[clusterConfiguration.ClusterId].ClusterManager.Ref)
             
                 ctx.LogInfo "Triggering OnAddToCluster..."
             
@@ -1000,7 +1000,7 @@ and private nodeManagerProper (ctx: BehaviorContext<NodeManager>) (state: NodeSt
             let! state' = clearState ctx state
 
             try
-                let clusterId = state.ClusterInfo |> Option.fold (fun _ info -> info.ClusterId) "HEAD"
+                let clusterId = state.ClusterInfo |> Option.fold (fun _ info -> info.ClusterId) "_TOP_"
                 ctx.LogInfo <| sprintf "Detaching from cluster %A..." clusterId
 
                 ctx.LogInfo "Trigerring OnRemoveFromCluster..."
