@@ -57,8 +57,8 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utils\LazyList.fs" />
-    <Compile Include="RevAsync.fs" />
     <Compile Include="Utils\ImemDb.fs" />
+    <Compile Include="RevAsync.fs" />
     <Compile Include="Logger.fs" />
     <Compile Include="ReliableActorRef.fs" />
     <Compile Include="ActorExtensions.fs" />
