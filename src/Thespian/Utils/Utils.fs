@@ -13,6 +13,10 @@ module internal Utility =
 
     let isFsharp31 = fsharpVersion >= System.Version("4.3.1")
 
+    /// <summary>
+    /// Thread-safe memoization combinator.
+    /// </summary>
+    /// <param name="f">Function to be memoized.</param>
     let memoize (f : 'a -> 'b) =
         let cache = new ConcurrentDictionary<'a,'b>()
         fun x -> cache.GetOrAdd(x, f)
@@ -58,7 +62,7 @@ module Control =
     /// stackless raise operator
     //let inline raise (e: System.Exception) = (# "throw" e : 'T #)
 
-    let remoteStackTraceField : FieldInfo =
+    let private remoteStackTraceField : FieldInfo =
         let bfs = BindingFlags.NonPublic ||| BindingFlags.Instance
         match typeof<System.Exception>.GetField("remote_stack_trace", bfs) with
         | null ->
@@ -67,10 +71,26 @@ module Control =
             | f -> f
         | f -> f
 
+    type Exception with
+        /// <summary>
+        /// Set a custom stacktrace to given exception.
+        /// </summary>
+        /// <param name="trace">Stacktrace to be set.</param>
+        member self.SetStackTrace(trace : string) = remoteStackTraceField.SetValue(self, trace)
+
+    /// <summary>
+    /// Raise exception with given stacktrace
+    /// </summary>
+    /// <param name="trace">Stacktrace to be set.</param>
+    /// <param name="e">exception to be raised.</param>
     let inline raiseWithStackTrace (trace : string) (e : #exn) =
-        do remoteStackTraceField.SetValue(e, trace)
+        do e.SetStackTrace trace
         raise e
 
+    /// <summary>
+    /// Reraise operator; exception keeps its previously recorded stacktrace.
+    /// </summary>
+    /// <param name="e">exception to be raised.</param>
     let inline reraiseWithStackTrace (e : #exn) = raiseWithStackTrace (e.StackTrace + System.Environment.NewLine) e
 
 
