@@ -5,6 +5,11 @@ open System.Threading
 open System.Threading.Tasks
 
 type System.Threading.Tasks.Task<'T> with
+    
+    /// <summary>
+    ///     Creates a new task that terminates with None if supplied timeout interval has expired.
+    /// </summary>
+    /// <param name="timeout">Timeout in milliseconds.</param>
     member self.TimeoutAfter(timeout : int) : Task<'T option> = 
         if self.IsCompleted || (timeout = Timeout.Infinite) then 
             self.ContinueWith(

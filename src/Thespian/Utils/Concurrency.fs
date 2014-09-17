@@ -69,40 +69,46 @@ module Atom =
 
 
 /// <summary>
-/// Thread-safe latch
+///     Thread-safe latch
 /// </summary>
 type Latch() =
+    [<VolatileField>]
     let mutable switch = 0
-    member __.Trigger() = Interlocked.CompareExchange(&switch, 1, 0) = 0
+
+    /// <summary>
+    ///     Trigger the latch; returns true iff call was successful.
+    /// </summary>
+    member __.Trigger() : bool = Interlocked.CompareExchange(&switch, 1, 0) = 0
 
 /// <summary>
-/// thread safe counter implementation
+///     Thread safe counter implementation
 /// </summary>
 type ConcurrentCounter (?start : int64) =
-    let count = ref <| defaultArg start 0L
-
+    [<VolatileField>]
+    let mutable counter = defaultArg start 0L
 
     /// <summary>
-    /// Increment the counter
+    ///     Increment the counter
     /// </summary>
-    member __.Incr () = System.Threading.Interlocked.Increment count
+    member __.Increment () = Interlocked.Increment &counter
+
     /// <summary>
-    /// Current counter value
+    ///     Current counter value
     /// </summary>
-    member __.Value = count
+    member __.Value = counter
 
 /// <summary>
-/// Thread-safe countdown latch.
+///     Thread-safe countdown latch.
 /// </summary>
 type CountdownLatch() =
     [<VolatileField>]
     let mutable counter = 0
 
-    ///Set the latch
-    member self.Increment(): unit = Interlocked.Increment(&counter) |> ignore
+    /// Set the latch
+    member __.Increment () = Interlocked.Increment &counter
 
-    ///Reset the latch
-    member __.Decrement(): unit = Interlocked.Decrement(&counter) |> ignore
+    /// Reset the latch
+    member __.Decrement () = Interlocked.Decrement &counter
 
-    ///Spin-wait until the latch is reset
+    /// Spin-wait until the latch is reset
     member __.WaitToZero(): unit = while (Interlocked.CompareExchange(&counter, 0, 0) <> 0) do Thread.SpinWait 20

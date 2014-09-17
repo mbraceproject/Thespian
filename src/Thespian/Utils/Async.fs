@@ -14,7 +14,6 @@ type private SuccessException<'T> (value : 'T) =
     inherit Exception()
     member __.Value = value
 
-
 // Task monadic bind extensions
 type AsyncBuilder with
     member __.Bind(f : Task<'T>, g : 'T -> Async<'S>) = __.Bind(Async.AwaitTask f, g)
@@ -50,10 +49,10 @@ type Async with
 #endif
 
     /// <summary>
-    /// 
+    ///     Wraps a workflow that can be cancelled once a conditional workflow is satisfied.
     /// </summary>
-    /// <param name="condition"></param>
-    /// <param name="computation"></param>
+    /// <param name="condition">Conditional that triggers cancellation if true.</param>
+    /// <param name="computation">Wrapped computation.</param>
     static member ConditionalCancel (condition: Async<bool>) (computation: Async<'T>): Async<'T option> = async {
         let! ct = Async.CancellationToken
         return! Async.FromContinuations(fun (success, error, _) ->
@@ -86,16 +85,21 @@ type Async with
     }
 
     /// <summary>
-    ///   Async timeout combinator.
+    ///     Cancels a workflow once timeout has expired.
     /// </summary>
-    /// <param name="timeout"></param>
-    /// <param name="computation"></param>
+    /// <param name="timeout">timeout in milliseconds.</param>
+    /// <param name="computation">Computation to be executed.</param>
     static member WithTimeout (timeout: int) (computation: Async<'T>): Async<'T option> =
         if timeout = Timeout.Infinite then async { let! r = computation in return Some r }
         elif timeout = 0 then async.Return None
         else async { let t = Async.StartAsTask computation in return! Async.AwaitTask <| t.TimeoutAfter(timeout) }
 
-    static member AwaitTask(task: Task<'T>, timeout: int) =
+    /// <summary>
+    ///     Async.AwaitTask extension with timeout.
+    /// </summary>
+    /// <param name="task">Task to be awaited.</param>
+    /// <param name="timeout">Timeout in milliseconds.</param>
+    static member AwaitTask(task: Task<'T>, timeout: int) : Async<'T option> =
         if timeout = Timeout.Infinite then async { let! r = Async.AwaitTask task in return Some r }
         elif timeout = 0 then async.Return None
         else Async.AwaitTask <| task.TimeoutAfter timeout
@@ -108,10 +112,10 @@ type Async with
     ///     particular resource the async operation is acting on. In the case of a Socket
     ///     the socket instance would have to be disposed.
     /// </summary>
-    /// <param name="beginF"></param>
-    /// <param name="endF"></param>
-    /// <param name="timeout"></param>
-    /// <param name="timeoutDisposeF"></param>
+    /// <param name="beginF">The function initiating a traditional CLI asynchronous operation.</param>
+    /// <param name="endF">The function completing a traditional CLI asynchronous operation.</param>
+    /// <param name="timeout">Timeout in milliseconds.</param>
+    /// <param name="timeoutDisposeF">Disposal function to be executed on timeout.</param>
     static member TryFromBeginEnd(beginF: AsyncCallback * obj -> IAsyncResult, endF: IAsyncResult -> 'T, timeout: int, timeoutDisposeF: unit -> unit): Async<'T option> =
         if timeout = 0 then async.Return None
         else
@@ -145,38 +149,53 @@ type Async with
                     else try let _ = endF(iar) in None with :? ObjectDisposedException -> None))
 
     /// <summary>
-    /// 
+    ///     A version of Async.FromBeginEnd with a timeout parameter
+    ///     the async workflow returns a Some value when the operation completes in time
+    ///     otherwise returns a None value.
+    ///     On timeout, the async operation needs to be cancelled. This depends on the
+    ///     particular resource the async operation is acting on. In the case of a Socket
+    ///     the socket instance would have to be disposed.
     /// </summary>
-    /// <param name="arg"></param>
-    /// <param name="beginF"></param>
-    /// <param name="endF"></param>
-    /// <param name="timeout"></param>
-    /// <param name="timeoutDisposeF"></param>
+    /// <param name="arg">Input argument.</param>
+    /// <param name="beginF">The function initiating a traditional CLI asynchronous operation.</param>
+    /// <param name="endF">The function completing a traditional CLI asynchronous operation.</param>
+    /// <param name="timeout">Timeout in milliseconds.</param>
+    /// <param name="timeoutDisposeF">Disposal function to be executed on timeout.</param>
     static member TryFromBeginEnd(arg: 'U, beginF: 'U * AsyncCallback * obj -> IAsyncResult, endF: IAsyncResult -> 'T, timeout: int, timeoutDisposeF: unit -> unit): Async<'T option> =
         Async.TryFromBeginEnd((fun (callback, state) -> beginF(arg, callback, state)), endF, timeout, timeoutDisposeF)
 
     /// <summary>
-    /// 
+    ///     A version of Async.FromBeginEnd with a timeout parameter
+    ///     the async workflow returns a Some value when the operation completes in time
+    ///     otherwise returns a None value.
+    ///     On timeout, the async operation needs to be cancelled. This depends on the
+    ///     particular resource the async operation is acting on. In the case of a Socket
+    ///     the socket instance would have to be disposed.
     /// </summary>
-    /// <param name="arg1"></param>
-    /// <param name="arg2"></param>
-    /// <param name="beginF"></param>
-    /// <param name="endF"></param>
-    /// <param name="timeout"></param>
-    /// <param name="timeoutDisposeF"></param>
+    /// <param name="arg1">Input argument.</param>
+    /// <param name="arg2">Input argument.</param>
+    /// <param name="beginF">The function initiating a traditional CLI asynchronous operation.</param>
+    /// <param name="endF">The function completing a traditional CLI asynchronous operation.</param>
+    /// <param name="timeout">Timeout in milliseconds.</param>
+    /// <param name="timeoutDisposeF">Disposal function to be executed on timeout.</param>
     static member TryFromBeginEnd(arg1: 'U1, arg2: 'U2, beginF: 'U1 * 'U2 * AsyncCallback * obj -> IAsyncResult, endF: IAsyncResult -> 'T, timeout: int, timeoutDisposeF: unit -> unit): Async<'T option> =
         Async.TryFromBeginEnd((fun (callback, state) -> beginF(arg1, arg2, callback, state)), endF, timeout, timeoutDisposeF)
 
     /// <summary>
-    /// 
+    ///     A version of Async.FromBeginEnd with a timeout parameter
+    ///     the async workflow returns a Some value when the operation completes in time
+    ///     otherwise returns a None value.
+    ///     On timeout, the async operation needs to be cancelled. This depends on the
+    ///     particular resource the async operation is acting on. In the case of a Socket
+    ///     the socket instance would have to be disposed.
     /// </summary>
-    /// <param name="arg1"></param>
-    /// <param name="arg2"></param>
-    /// <param name="arg3"></param>
-    /// <param name="beginF"></param>
-    /// <param name="endF"></param>
-    /// <param name="timeout"></param>
-    /// <param name="timeoutDisposeF"></param>
+    /// <param name="arg1">Input argument.</param>
+    /// <param name="arg2">Input argument.</param>
+    /// <param name="arg3">Input argument.</param>
+    /// <param name="beginF">The function initiating a traditional CLI asynchronous operation.</param>
+    /// <param name="endF">The function completing a traditional CLI asynchronous operation.</param>
+    /// <param name="timeout">Timeout in milliseconds.</param>
+    /// <param name="timeoutDisposeF">Disposal function to be executed on timeout.</param>
     static member TryFromBeginEnd(arg1: 'U1, arg2: 'U2, arg3: 'U3, beginF: 'U1 * 'U2 * 'U3 * AsyncCallback * obj -> IAsyncResult, endF: IAsyncResult -> 'T, timeout: int, timeoutDisposeF: unit -> unit): Async<'T option> =
       Async.TryFromBeginEnd((fun (callback, state) -> beginF(arg1, arg2, arg3, callback, state)), endF, timeout, timeoutDisposeF)
 
@@ -243,6 +262,12 @@ type Async with
             with :? SuccessException<'T> as ex -> return Some ex.Value
         }
 
+    /// <summary>
+    ///     Asynchronously await an IObservable to yield results.
+    ///     Returns the first value to be observed.
+    /// </summary>
+    /// <param name="observable">Observable source.</param>
+    /// <param name="timeout">Timeout in milliseconds. Defaults to no timeout.</param>
     static member AwaitObservable(observable: IObservable<'T>, ?timeout) =
         let tcs = new TaskCompletionSource<'T>()
         let rec observer = (fun result ->
@@ -263,6 +288,11 @@ type Async with
 
 
 type Stream with
+
+    /// <summary>
+    ///     Asynchronously write entire byte array to stream.
+    /// </summary>
+    /// <param name="bytes">Input byte array.</param>
     member self.AsyncWriteBytes(bytes: byte []) =
         async {
             do! self.AsyncWrite(BitConverter.GetBytes bytes.Length, 0, 4)
@@ -270,6 +300,10 @@ type Stream with
             do! self.FlushAsync()
         }
 
+    /// <summary>
+    ///     Asynchronously read length of bytes from stream.
+    /// </summary>
+    /// <param name="length">Number of bytes to be read.</param>
     member self.AsyncReadBytes(length: int) =
         let rec readSegment buf offset remaining =
             async {
@@ -284,6 +318,9 @@ type Stream with
             return bytes
         }
 
+    /// <summary>
+    ///     Asynchronously read a length-prefixed byte array from stream.
+    /// </summary>
     member self.AsyncReadBytes() =
         async {
             let! lengthArr = self.AsyncReadBytes 4
@@ -398,4 +435,5 @@ module Array =
                     let! nextState = foldF state' items.[index]
                     return! foldArrayAsync foldF nextState (index + 1)
             }
+
         foldArrayAsync foldF state 0
