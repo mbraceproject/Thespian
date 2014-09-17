@@ -16,7 +16,7 @@ type TcpActorId(actorName : string, protocolName : string, address : Address) =
     override self.CompareTo(otherActorId : ActorId) : int = 
         match otherActorId with
         | :? TcpActorId as otherId -> 
-            compareOn (fun (aid : TcpActorId) -> (aid.ProtocolName + aid.Name), aid.Address) self otherId
+            FSharpClass.compareBy (fun (aid : TcpActorId) -> (aid.ProtocolName + aid.Name), aid.Address) self otherId
         | _ -> self.ToString().CompareTo(otherActorId.ToString())
     
     override __.ToString() = toString

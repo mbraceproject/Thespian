@@ -1,42 +1,25 @@
 namespace Nessos.Thespian.Utils
 
 open System
-open System.IO
 open System.Reflection
-open System.Threading
 open System.Collections.Concurrent
 
 [<AutoOpen>]
-module internal Utility =
-    /// detect the running version of F#
-    let fsharpVersion = typeof<int option>.Assembly.GetName().Version
+module Utility =
 
-    let isFsharp31 = fsharpVersion >= System.Version("4.3.1")
+    /// detect the running version of F#
+    let internal fsharpVersion = typeof<int option>.Assembly.GetName().Version
+
+    /// Returns true if runtime F# version is at least 3.1
+    let internal isFsharp31 = fsharpVersion >= System.Version("4.3.1")
 
     /// <summary>
-    /// Thread-safe memoization combinator.
+    ///     Thread-safe memoization combinator.
     /// </summary>
     /// <param name="f">Function to be memoized.</param>
     let memoize (f : 'a -> 'b) =
         let cache = new ConcurrentDictionary<'a,'b>()
         fun x -> cache.GetOrAdd(x, f)
-
-    let compareOn (f: 'T -> 'U when 'U : comparison) (x: 'T) (other: obj): int =
-        match other with
-        | :? 'T as y -> compare (f x) (f y)
-        | _ -> invalidArg "other" "Unable to compare values of incompatible types."
-
-    let hashOn (f: 'T -> 'U when 'U : equality) (x: 'T): int = hash (f x)
-
-    let equalsOn (f: 'T -> 'U when 'U : equality) (x: 'T) (other: obj): bool =
-        match other with
-        | :? 'T as y -> (f x = f y)
-        | _ -> false
-
-    let equalsOnComparison (f: 'T -> 'U when 'U : comparison) (x: 'T) (other: obj): bool =
-        match other with
-        | :? 'T as y -> compareOn f x y = 0
-        | _ -> false
 
     // http://t0yv0.blogspot.com/2012/07/speeding-up-f-printf.html
     type private Cache<'T> private () =
@@ -51,35 +34,86 @@ module internal Utility =
                 let _ = cache.TryAdd(key, f)
                 f
 
-    /// fast sprintf
+    /// <summary>
+    ///     Fast sprintf function; used instead of inefficient sprintf found in FSharp.Core v.3.0 and below.
+    /// </summary>
     let sprintf fmt =
         if isFsharp31 then sprintf fmt
         else Cache<_>.Format(fmt)
 
 
+/// A collection of utilities for authoring F# classes
+[<RequireQualifiedAccess>]
+module FSharpClass =
+
+    /// <summary>
+    ///     Comparison by projection.
+    /// </summary>
+    /// <param name="proj">Projection function.</param>
+    /// <param name="this">this value.</param>
+    /// <param name="that">that value.</param>
+    let inline compareBy (proj : 'T -> 'U) (this : 'T) (that : obj) : int =
+        match that with
+        | :? 'T as that -> compare (proj this) (proj that)
+        | _ -> invalidArg "that" <| sprintf "invalid comparand %A." that
+
+    /// <summary>
+    ///     Hashcode by projection.
+    /// </summary>
+    /// <param name="proj">Projection function.</param>
+    /// <param name="this">this value.</param>
+    let inline hashBy (proj : 'T -> 'U) (this : 'T) : int = hash (proj this)
+
+    /// <summary>
+    ///     Equality by projection.
+    /// </summary>
+    /// <param name="proj">Projection function.</param>
+    /// <param name="this">this value.</param>
+    /// <param name="that">that value.</param>
+    let inline equalsBy (proj : 'T -> 'U) (this : 'T) (that : obj): bool =
+        match that with
+        | :? 'T as that -> proj this = proj that
+        | _ -> false
+
+    /// <summary>
+    ///     Equality by comparison projection.
+    /// </summary>
+    /// <param name="proj">Projection function.</param>
+    /// <param name="this">this value.</param>
+    /// <param name="that">that value.</param>
+    let inline equalsByComparison (proj : 'T -> 'U) (this : 'T) (that : obj) : bool =
+        match that with
+        | :? 'T as that -> compareBy proj this that = 0
+        | _ -> false
+
+
 [<AutoOpen>]
 module Control =
-    /// stackless raise operator
-    //let inline raise (e: System.Exception) = (# "throw" e : 'T #)
 
+    // resolve the internal stacktrace field in exception
+    // this is implementation-sensitive so not guarantee to work. 
     let private remoteStackTraceField : FieldInfo =
         let bfs = BindingFlags.NonPublic ||| BindingFlags.Instance
         match typeof<System.Exception>.GetField("remote_stack_trace", bfs) with
         | null ->
             match typeof<System.Exception>.GetField("_remoteStackTraceString", bfs) with
-            | null -> failwith "Could not locate RemoteStackTrace field for System.Exception."
+            | null -> null
             | f -> f
         | f -> f
 
     type Exception with
         /// <summary>
-        /// Set a custom stacktrace to given exception.
+        ///     Set a custom stacktrace to given exception.
         /// </summary>
         /// <param name="trace">Stacktrace to be set.</param>
-        member self.SetStackTrace(trace : string) = remoteStackTraceField.SetValue(self, trace)
+        member self.SetStackTrace(trace : string) =
+            if obj.ReferenceEquals(remoteStackTraceField, null) then
+                failwith "Could not locate RemoteStackTrace field for System.Exception."
+            
+            remoteStackTraceField.SetValue(self, trace)
 
     /// <summary>
-    /// Raise exception with given stacktrace
+    ///     Raise exception with given stacktrace
     /// </summary>
     /// <param name="trace">Stacktrace to be set.</param>
     /// <param name="e">exception to be raised.</param>
@@ -88,14 +122,19 @@ module Control =
         raise e
 
     /// <summary>
-    /// Reraise operator; exception keeps its previously recorded stacktrace.
+    ///     Reraise operator that can be used everywhere.
     /// </summary>
-    /// <param name="e">exception to be raised.</param>
-    let inline reraiseWithStackTrace (e : #exn) = raiseWithStackTrace (e.StackTrace + System.Environment.NewLine) e
+    /// <param name="e">exception to be reraised.</param>
+    let inline reraise' (e : #exn) = raiseWithStackTrace (e.StackTrace + System.Environment.NewLine) e
 
 
 [<RequireQualifiedAccess>]
 module Choice =
+    
+    /// <summary>
+    ///     Split a list of Choice values.
+    /// </summary>
+    /// <param name="inputs">choice values.</param>
     let split (inputs : Choice<'T, 'S> list) =
         let rec helper (ts, ss, rest) =
             match rest with
@@ -105,54 +144,107 @@ module Choice =
 
         helper ([], [], inputs)
 
+    /// <summary>
+    ///     Split an array of Choice values.
+    /// </summary>
+    /// <param name="inputs">choice values.</param>
     let splitArray (inputs: Choice<'T, 'U> []): 'T[] * 'U[] =
-            inputs |> Array.choose (function Choice1Of2 r -> Some r | _ -> None),
+        inputs |> Array.choose (function Choice1Of2 r -> Some r | _ -> None),
             inputs |> Array.choose (function Choice2Of2 r -> Some r | _ -> None)
 
 
 [<RequireQualifiedAccess>]
 module Seq =
 
-    let ofOption (xs : seq<'a> option) : seq<'a> =
-        match xs with
-        | None -> seq []
-        | Some xs -> xs
-
-    let toOption (xs : seq<'a>) : seq<'a> option =
-        if Seq.isEmpty xs then None else Some xs
-
-    let tryHead (xs: seq<'a>): 'a option =
+    /// <summary>
+    ///     Try reading the head of given sequence.
+    /// </summary>
+    /// <param name="xs">Input sequence.</param>
+    let tryHead (xs: seq<'a>) : 'a option =
         if Seq.isEmpty xs then None else xs |> Seq.head |> Some
 
 [<RequireQualifiedAccess>]
 module Option =
 
-    let filter f x =
-        match x with
+    /// <summary>
+    ///     Returns 'Some x' iff f x is satisfied.
+    /// </summary>
+    /// <param name="f">predicate to be evaluated.</param>
+    /// <param name="opt">Input optional.</param>
+    let filter f opt =
+        match opt with
         | None -> None
-        | Some x -> if f x then Some x else None
+        | Some x -> if f x then opt else None
 
-    let ofNullable<'T when 'T : null> (x : 'T) = 
-        match x with null -> None | x -> Some x
+    /// <summary>
+    ///     Returns 'Some t' iff t is not null.
+    /// </summary>
+    /// <param name="t">Value to be examined.</param>
+    let ofNull<'T when 'T : not struct> (t : 'T) = 
+        if obj.ReferenceEquals(t, null) then None
+        else
+            Some t
 
-    /// returns the head of a list if nonempty
-    let ofList = function [] -> None | h :: _ -> Some h
+    /// <summary>
+    ///     Attempt to return the head of a list.
+    /// </summary>
+    /// <param name="xs">Input list.</param>
+    let ofList xs = match xs with [] -> None | h :: _ -> Some h
 
-    /// match t with None -> s | Some t0 -> f t0
+    /// <summary>
+    ///     match t with None -> s | Some t0 -> f t0
+    /// </summary>
+    /// <param name="f">Mapping function.</param>
+    /// <param name="s">Default value.</param>
+    /// <param name="t">Optional input.</param>
     let bind2 (f : 'T -> 'S) (s : 'S) (t : 'T option) =
         match t with None -> s | Some t0 -> f t0
 
 
-module RegExp =
+[<RequireQualifiedAccess>]
+module RegEx =
 
-    open System
     open System.Text.RegularExpressions
 
-    let (|Match|_|) =
-        let regex = memoize(fun pattern -> Regex(pattern))
+    let private regexMemo = memoize(fun pattern -> new Regex(pattern))
 
-        fun (pat : string) (inp : string) ->
-            let m = (regex pat).Match inp in
-            if m.Success 
-            then Some (List.tail [ for g in m.Groups -> g.Value ])
-            else None
+    /// <summary>
+    ///     Memoized RegEx matching. 
+    ///     Returns the values of the first matching pattern and its groupings.
+    /// </summary>
+    /// <param name="pattern">RegEx pattern.</param>
+    /// <param name="input">input text.</param>
+    let tryMatch (pattern:string) (input:string) =
+        let m = (regexMemo pattern).Match input
+        if m.Success then
+            Some [ for g in m.Groups -> g.Value ]
+        else
+            None
+
+    /// <summary>
+    ///     Memoized RegEx matching. 
+    ///     Returns all matches in text for pattern.
+    /// </summary>
+    /// <param name="pattern">RegEx pattern.</param>
+    /// <param name="input">input text.</param>
+    let tryMatches (pattern:string) (input:string) =
+        let matches = (regexMemo pattern).Matches input
+        if matches.Count = 0 then None
+        else
+            Some [ for m in matches -> m.Value ]
+
+    /// <summary>
+    ///     Memoized RegEx active pattern.
+    ///     Returns the values of the first matching pattern and its groupings.
+    /// </summary>
+    /// <param name="pattern">RegEx pattern.</param>
+    /// <param name="input">input text.</param>
+    let (|Match|_|) (pattern : string) (input : string) = tryMatch pattern input
+
+    /// <summary>
+    ///     Memoized RegEx active pattern.
+    ///     Returns all matches in text for pattern.
+    /// </summary>
+    /// <param name="pattern">RegEx pattern.</param>
+    /// <param name="input">input text.</param>
+    let (|Matches|_|) (pattern : string) (input : string) = tryMatches pattern input

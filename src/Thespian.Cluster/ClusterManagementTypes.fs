@@ -253,13 +253,13 @@ and [<AbstractClass>] Definition(parent: DefinitionPath) as self =
     default __.OnDependencyLossRecovery(_, _) = async.Zero()
 
     override def.Equals(other: obj) =
-        equalsOn (fun (def': Definition) -> def'.Path) def other
+        FSharpClass.equalsBy (fun (def': Definition) -> def'.Path) def other
 
-    override def.GetHashCode() = def |> hashOn (fun def' -> def'.Path)
+    override def.GetHashCode() = def |> FSharpClass.hashBy (fun def' -> def'.Path)
 
     interface IComparable with
         member def.CompareTo(other: obj) =
-            compareOn (fun (def': Definition) -> def'.Path) def other
+            FSharpClass.compareBy (fun (def': Definition) -> def'.Path) def other
 
 and [<AbstractClass>] Activation(instanceId: int, definition: Definition) =
     

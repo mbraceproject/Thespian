@@ -91,7 +91,7 @@ type Address(hostnameOrAddress : string, ?port : int) =
             else stringCmp
 
     member self.CompareTo(otherAddress: Address): int =
-        compareOn (fun (ha: Address) -> HostOrAddress ha.HostnameOrAddress, ha.Port) self otherAddress
+        FSharpClass.compareBy (fun (ha: Address) -> HostOrAddress ha.HostnameOrAddress, ha.Port) self otherAddress
 
     override __.ToString() = toString
 
@@ -134,7 +134,7 @@ type Address(hostnameOrAddress : string, ?port : int) =
 
     static member TryParse(addressString: string): Address option = 
         match addressString with
-        | RegExp.Match "(.+):(\d+)$" (hostnameOrAddress::portString::[]) ->
+        | RegEx.Match "(.+):(\d+)$" (_ :: hostnameOrAddress::portString::[]) ->
             match Int32.TryParse portString with
             | (true, port) -> Some <| Address(hostnameOrAddress, port)
             | _ -> None

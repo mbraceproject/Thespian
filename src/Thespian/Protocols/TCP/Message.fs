@@ -287,10 +287,10 @@ type ProtocolStream(msgId : MsgId, stream : ProtocolNetworkStream, ?readTimeout 
     member __.Dispose() = stream.Dispose()
     member __.Acquire() = stream.Acquire()
     override __.GetHashCode() = hash msgId
-    override self.Equals(other : obj) = equalsOn getMsgId self other
+    override self.Equals(other : obj) = FSharpClass.equalsBy getMsgId self other
     
     interface IComparable with
-        member self.CompareTo(other : obj) = compareOn getMsgId self other
+        member self.CompareTo(other : obj) = FSharpClass.compareBy getMsgId self other
     
     interface IDisposable with
         member self.Dispose() = self.Dispose()

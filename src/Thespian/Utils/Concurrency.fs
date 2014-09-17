@@ -18,25 +18,25 @@ type Atom<'T when 'T : not struct>(value : 'T) =
         swap f' ; result.Value
 
     /// Get Current Value
-    member self.Value with get() : 'T = !refCell
+    member __.Value with get() : 'T = !refCell
 
     /// <summary>
     /// Atomically updates the container.
     /// </summary>
     /// <param name="updateF">updater function.</param>
-    member self.Swap (f : 'T -> 'T) : unit = swap f
+    member __.Swap (f : 'T -> 'T) : unit = swap f
 
     /// <summary>
     /// Perform atomic transaction on container.
     /// </summary>
     /// <param name="transactionF">transaction function.</param>
-    member self.Transact(f : 'T -> 'T * 'R) : 'R = transact f
-    member self.Set (t : 'T) = swap (fun _ -> t)
+    member __.Transact(f : 'T -> 'T * 'R) : 'R = transact f
+
     /// <summary>
     /// Force a new value on container.
     /// </summary>
     /// <param name="value">value to be set.</param>
-    member self.Force (value : 'T) = refCell := value
+    member __.Force (value : 'T) = refCell := value
 
 [<RequireQualifiedAccess>]
 module Atom =
@@ -61,11 +61,11 @@ module Atom =
     let transact (atom : Atom<'T>) f : 'R = atom.Transact f
 
     /// <summary>
-    /// Force value on given atom.
+    ///     Force value on given atom.
     /// </summary>
     /// <param name="atom">Atom to be updated.</param>
     /// <param name="value">Value to be set.</param>
-    let set (atom : Atom<'T>) t = atom.Set t
+    let force (atom : Atom<'T>) t = atom.Force t
 
 
 /// <summary>

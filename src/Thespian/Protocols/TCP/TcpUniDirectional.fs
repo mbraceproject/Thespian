@@ -602,7 +602,7 @@ and [<Serializable>] UTcpFactory =
 
 // let tryFromUri (uri: string) =
 //   match uri with
-//   | RegExp.Match @"^(.+)://(.+):(\d+)/(.+)$" (protocol::hostnameOrAddress::Port(port)::name::[]) when protocol = ProtocolName ->
+//   | RegEx.Match @"^(.+)://(.+):(\d+)/(.+)$" (_ :: protocol::hostnameOrAddress::Port(port)::name::[]) when protocol = ProtocolName ->
 //     let address = new Address(hostnameOrAddress, port)
 //     let factory = new UTcpFactory(Client address)
 //     let client = factory.CreateClientInstance(name)

@@ -28,23 +28,24 @@ type ActorId(actorName : string) =
 type Reply<'T> = 
     | Value of 'T
     | Exception of exn
+with
     member self.GetValue(?keepOriginalStackTrace : bool) = 
         match self with
         | Value t -> t
         | Exception e -> 
-            if defaultArg keepOriginalStackTrace false then reraiseWithStackTrace e
+            if defaultArg keepOriginalStackTrace false then reraise' e
             else raise e
 
 type LogLevel = 
     | Info
     | Warning
     | Error
-    with
-        override self.ToString() =
-            match self with
-            | Info -> "INFO"
-            | Warning -> "WARNING"
-            | Error -> "ERROR"
+with
+    override self.ToString() =
+        match self with
+        | Info -> "INFO"
+        | Warning -> "WARNING"
+        | Error -> "ERROR"
 
 type LogSource = 
     | Actor of string
