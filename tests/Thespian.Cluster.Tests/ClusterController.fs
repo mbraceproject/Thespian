@@ -14,9 +14,8 @@ type Node() =
                  | null -> false
                  | _ -> true
             
-    let executable =
-        let location = System.Reflection.Assembly.GetExecutingAssembly().Location
-        System.IO.Path.Combine(System.IO.Path.GetDirectoryName(location), "Thespian.TestCluster.exe")
+    let executable = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "Thespian.TestCluster.exe")
+    
     let command =
         if onMono then "mono"
         else executable
