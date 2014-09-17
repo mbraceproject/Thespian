@@ -86,6 +86,10 @@ type ClusterController(nodes: Node list) =
 
     let mutable currentReplicationFactor = 0
     let mutable currentFailoverFactor = 0
+     
+    let mutable timeout = 5 * 1000
+
+    member __.Timeout with get () = timeout and set t = timeout <- t
         
     member __.KillCluster() = for node in nodes do node.Kill()
 
@@ -99,11 +103,11 @@ type ClusterController(nodes: Node list) =
             FailoverFactor = failoverFactor
             NodeDeadNotify = fun _ -> async.Zero()
         }
-        let _ = nodeManagers.Head <!= fun ch -> InitCluster(ch, clusterConfiguration)
+        let _ = nodeManagers.Head.PostWithReply((fun ch -> InitCluster(ch, clusterConfiguration)), timeout = timeout)
         currentReplicationFactor <- replicationFactor
         currentFailoverFactor <- failoverFactor
 
-    member __.Shutdown() = let _ = clusterManager <!= KillClusterSync in ()
+    member __.Shutdown() = let _ = clusterManager.PostWithReply(KillClusterSync, timeout = timeout)in ()
 
     member self.Reboot(?replicationFactor: int, ?failoverFactor: int) =
         let replicationFactor = defaultArg replicationFactor currentReplicationFactor
