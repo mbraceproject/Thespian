@@ -11,6 +11,7 @@ open System.Collections.Concurrent
 
 open Nessos.Thespian
 open Nessos.Thespian.Utils.Async
+open Nessos.Thespian.Logging
 open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Remote.TcpProtocol.ConnectionPool
 open Nessos.Thespian.Serialization

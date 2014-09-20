@@ -6,6 +6,7 @@ open System
 open Nessos.Thespian
 open Nessos.Thespian.Utils
 open Nessos.Thespian.Utils.Async
+open Nessos.Thespian.Logging
 
 exception BroadcastPartialFailureException of string * (ActorRef * exn) list
 exception BroadcastFailureException of string

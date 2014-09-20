@@ -3,6 +3,8 @@ module Nessos.Thespian.Mailbox
 open System
 open System.Threading
 
+open Nessos.Thespian.Logging
+
 let ProtocolName = "mailbox"
 
 [<Serializable>]

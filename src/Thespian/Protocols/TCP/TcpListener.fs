@@ -5,8 +5,10 @@ open System.Collections.Concurrent
 open System.Net
 open System.Net.Sockets
 open System.Threading
+
 open Nessos.Thespian
 open Nessos.Thespian.Utils
+open Nessos.Thespian.Logging
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.SocketExtensions
 

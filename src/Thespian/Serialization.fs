@@ -66,4 +66,4 @@
 
 
     /// Gets or sets the default global serializer used by Thespian
-    let mutable defaultSerializer = new FsPicklerMessageSerializer() :> IMessageSerializer
+    let mutable defaultSerializer : IMessageSerializer = new FsPicklerMessageSerializer() :> _

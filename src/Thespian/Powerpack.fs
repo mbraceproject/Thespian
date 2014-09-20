@@ -3,8 +3,10 @@ namespace Nessos.Thespian.PowerPack
 open System
 open System.Net
 open System.Runtime.Serialization
+
 open Nessos.Thespian
 open Nessos.Thespian.Utils.Async
+open Nessos.Thespian.Logging
 
 type Rely<'T> = IReplyChannel<unit> * 'T
 

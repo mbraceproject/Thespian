@@ -1,7 +1,9 @@
 module Nessos.Thespian.TestCluster.Service
 
 open System
+
 open Nessos.Thespian
+open Nessos.Thespian.Logging
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Cluster
@@ -23,7 +25,7 @@ let mainLoop () : 'T =
 let main argv =
     let startupReceiverUri = argv.[0]
     
-    Logger.Register(new ConsoleLogger() :> ILogger)
+    Logging.DefaultLogger <- ConsoleLogger()
 
     TcpListenerPool.DefaultHostname <- "localhost"                                    
     TcpListenerPool.RegisterListener(0)

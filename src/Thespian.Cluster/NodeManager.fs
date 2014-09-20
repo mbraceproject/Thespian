@@ -4,11 +4,10 @@ open System
 open Nessos.Thespian
 open Nessos.Thespian.Utils
 open Nessos.Thespian.Utils.Async
+open Nessos.Thespian.Logging
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Cluster.BehaviorExtensions.FSM
 open Nessos.Thespian.Cluster
-
-type private LogLevel = Nessos.Thespian.LogLevel
 
 //let triggerNodeEvent (ctx: BehaviorContext<_>) (handle: Async<unit>) = 
 //    async {

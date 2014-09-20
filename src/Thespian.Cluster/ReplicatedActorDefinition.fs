@@ -4,12 +4,11 @@ open System
 open Nessos.Thespian
 open Nessos.Thespian.Utils
 open Nessos.Thespian.Utils.Async
+open Nessos.Thespian.Logging
 open Nessos.Thespian.Remote
 open Nessos.Thespian.PowerPack
 open Nessos.Thespian.Cluster.BehaviorExtensions
 open Nessos.Thespian.Cluster.ActorExtensions
-
-type private LogLevel = Nessos.Thespian.LogLevel
 
 [<Struct; CustomComparison; CustomEquality>]
 type StateGenerationNumber =

@@ -3,10 +3,9 @@
 open System
 
 open Nessos.Thespian
+open Nessos.Thespian.Logging
 open Nessos.Thespian.Utils.Concurrency
 open Nessos.Thespian.PowerPack
-
-type private LogLevel = Nessos.Thespian.LogLevel
 
 // TODO: Thespian's Atom should not be part of the public API
 

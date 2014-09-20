@@ -3,8 +3,21 @@ namespace Nessos.Thespian
 open System
 open System.Runtime.Serialization
 
-open Nessos.Thespian.Serialization
+open Nessos.Thespian.Utils
 open Nessos.Thespian.Utils.Concurrency
+open Nessos.Thespian.Logging
+open Nessos.Thespian.Serialization
+
+type Reply<'T> = 
+    | Value of 'T
+    | Exception of exn
+with
+    member self.GetValue(?keepOriginalStackTrace : bool) = 
+        match self with
+        | Value t -> t
+        | Exception e -> 
+            if defaultArg keepOriginalStackTrace false then reraise' e
+            else raise e
 
 [<Serializable>]
 type IProtocolFactory =

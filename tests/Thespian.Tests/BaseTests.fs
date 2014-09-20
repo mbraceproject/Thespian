@@ -3,7 +3,9 @@
 open System
 open NUnit.Framework
 open FsUnit
+
 open Nessos.Thespian
+open Nessos.Thespian.Logging
 open Nessos.Thespian.Tests.TestDefinitions
 
 [<AbstractClass>]
@@ -359,7 +361,7 @@ type PrimaryProtocolTests(primaryProtocolFactory : IPrimaryProtocolFactory) =
         
         use d = 
             actor.Log |> Observable.subscribe (function 
-                             | Error, _, :? ActorFailedException -> caught := true
+                             | LogLevel.Error, _, :? ActorFailedException -> caught := true
                              | _ -> caught := false)
         !actor <!= fun ch -> TestSync(ch, ())
         //do some work

@@ -7,6 +7,7 @@ open Nessos.Thespian
 open Nessos.Thespian.Utils
 open Nessos.Thespian.Utils.Async
 open Nessos.Thespian.Utils.Concurrency
+open Nessos.Thespian.Logging
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol
 open Nessos.Thespian.Remote.TcpProtocol.Unidirectional
@@ -54,7 +55,7 @@ module Default =
             Log.logNow logLevel entryMsg
 
         match logLevel, payload with
-        | Nessos.Thespian.LogLevel.Error, (:? ActorFailedException as e) -> onActorFailure e
+        | LogLevel.Error, (:? ActorFailedException as e) -> onActorFailure e
         | _ -> ()
 
     let actorEventHandler = actorEventHandlerNoProtocol
@@ -206,7 +207,7 @@ and [<AbstractClass>] Definition(parent: DefinitionPath) as self =
     default def.Path = parent/def.Name
 
     abstract Logger : ILogger
-    default def.Logger = Logger.DefaultLogger
+    default def.Logger = DefaultLogger
 //    abstract LogEntry: LogEntry -> unit
 //    default def.LogEntry entry =
 //        let (SystemLog(msg, level, time)) = entry
