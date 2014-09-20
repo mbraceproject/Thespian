@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Actor - Thespian</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content=""/>
+    <meta name="author" content="Jan Dzik (Nessos IT)"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/Thespian/content/style.css" />
+    <script type="text/javascript" src="/Thespian/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://nessos.github.io/">nessos</a></li>
+          <li><a href="http://github.com/nessos/Thespian">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/Thespian/index.html">Thespian</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+
+
+
+<h1>Actor</h1>
+<div class="xmldoc">
+</div>
+
+<!-- Render nested types and modules, if there are any -->
+
+  <h3>Functions and values</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Function or value</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '73', 73)" onmouseover="showTip(event, '73', 73)">
+            asyncReplicated replicated
+          </code>
+          <div class="tip" id="73">
+            <strong>Signature:</strong> replicated:Actor&lt;Replicated&lt;&#39;T&gt;&gt; -&gt; Actor&lt;AsyncReplicated&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L296-296" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '76', 76)" onmouseover="showTip(event, '76', 76)">
+            failover first second
+          </code>
+          <div class="tip" id="76">
+            <strong>Signature:</strong> first:Actor&lt;&#39;T&gt; -&gt; second:Actor&lt;&#39;T&gt; -&gt; Actor&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L307-307" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '77', 77)" onmouseover="showTip(event, '77', 77)">
+            failoverOnResult msgBuilderF actors
+          </code>
+          <div class="tip" id="77">
+            <strong>Signature:</strong> msgBuilderF:(&#39;T -&gt; (IReplyChannel&lt;&#39;R&gt; * (IReplyChannel&lt;&#39;R&gt; -&gt; &#39;T)) option) -&gt; actors:&#39;?27407 -&gt; Actor&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T, 'R, '?27407          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L204-204" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '78', 78)" onmouseover="showTip(event, '78', 78)">
+            mapMany mapManyF actor
+          </code>
+          <div class="tip" id="78">
+            <strong>Signature:</strong> mapManyF:(&#39;U -&gt; seq&lt;&#39;T&gt;) -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;&#39;U&gt;<br />
+                          <strong>Type parameters:</strong> 'U, 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L259-259" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '79', 79)" onmouseover="showTip(event, '79', 79)">
+            parallelPostWithReply (...)
+          </code>
+          <div class="tip" id="79">
+            <strong>Signature:</strong> msgBuilder:(IReplyChannel&lt;&#39;R&gt; -&gt; &#39;T) -&gt; actorRefs:ActorRef&lt;&#39;T&gt; list -&gt; Async&lt;Reply&lt;&#39;R&gt; []&gt;<br />
+                          <strong>Type parameters:</strong> 'R, 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L192-192" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '80', 80)" onmouseover="showTip(event, '80', 80)">
+            reliableBroadcast actors
+          </code>
+          <div class="tip" id="80">
+            <strong>Signature:</strong> actors:&#39;?27396 -&gt; Actor&lt;Rely&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> '?27396, 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L152-152" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '81', 81)" onmouseover="showTip(event, '81', 81)">
+            reliablePostAction postActionF actor
+          </code>
+          <div class="tip" id="81">
+            <strong>Signature:</strong> postActionF:(Rely&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) -&gt; actor:Actor&lt;Rely&lt;&#39;T&gt;&gt; -&gt; Actor&lt;Rely&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L266-266" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '82', 82)" onmouseover="showTip(event, '82', 82)">
+            reliablyBroadcastMsg (...)
+          </code>
+          <div class="tip" id="82">
+            <strong>Signature:</strong> msgBuilder:(IReplyChannel&lt;&#39;R&gt; -&gt; &#39;T) -&gt; actorRefs:ActorRef&lt;&#39;T&gt; list -&gt; Async&lt;&#39;R&gt;<br />
+                          <strong>Type parameters:</strong> 'R, 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L179-179" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '83', 83)" onmouseover="showTip(event, '83', 83)">
+            replicate replicas actor
+          </code>
+          <div class="tip" id="83">
+            <strong>Signature:</strong> replicas:&#39;?27428 -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;Rely&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> '?27428, 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L273-273" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '84', 84)" onmouseover="showTip(event, '84', 84)">
+            replicated replicas actor
+          </code>
+          <div class="tip" id="84">
+            <strong>Signature:</strong> replicas:&#39;?27434 -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;Replicated&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> '?27434, 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L285-285" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '85', 85)" onmouseover="showTip(event, '85', 85)">
+            replicateSome predicate replicas actor
+          </code>
+          <div class="tip" id="85">
+            <strong>Signature:</strong> predicate:(&#39;T -&gt; bool) -&gt; replicas:&#39;?27432 -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;Rely&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> 'T, '?27432          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L280-280" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '86', 86)" onmouseover="showTip(event, '86', 86)">
+            subscribeLog observerF actor
+          </code>
+          <div class="tip" id="86">
+            <strong>Signature:</strong> observerF:(Log -&gt; unit) -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L256-256" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '87', 87)" onmouseover="showTip(event, '87', 87)">
+            suicidal actor
+          </code>
+          <div class="tip" id="87">
+            <strong>Signature:</strong> actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;Suicidal&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L310-310" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+        </div>
+        <div class="span3">
+          <a target="_blank" href="http://www.nessos.gr/">
+      <img src="/Thespian/img/nessos.png" alt="F# Project" style="width:150px;margin:10px" /> 
+      </a>
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">Thespian</li>
+            <li><a href="/Thespian/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://www.nuget.org/packages/Thespian">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/nessos/Thespian">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/nessos/Thespian/blob/master/License.md">License</a></li>
+            <li><a href="http://github.com/nessos/Thespian/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+
+            <li class="nav-header">Documentation</li>
+            <li><a href="/Thespian/tutorial.html">Tutorial</a></li>
+            <li><a href="/Thespian/reference/index.html">API Reference</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/nessos/Thespian"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>
