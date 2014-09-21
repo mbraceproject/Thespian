@@ -1,8 +1,10 @@
-﻿namespace Nessos.ImemDb
+﻿/// In-memory database implementation
+module Nessos.Thespian.Utils.ImemDb
 
 open System
 open System.Collections
 open System.Reflection
+
 open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.Patterns
 open Microsoft.FSharp.Quotations.DerivedPatterns
@@ -10,7 +12,7 @@ open Microsoft.FSharp.Quotations.ExprShape
 open Microsoft.FSharp.Reflection
 
 
-// TODO : make ImemDb a separate project, perhaps part of LinqOptimizer?
+// TODO : deprecate
 
 [<CustomEquality>][<CustomComparison>]
 type Attribute = {
@@ -653,11 +655,13 @@ module Query =
         let optionExprValuePropertyInfo (optionExpr: Expr) =
             optionExpr.Type.GetProperty("Value")
 
+        let unionFlags = BindingFlags.NonPublic ||| BindingFlags.Public ||| BindingFlags.Instance
+
         let someUnionCaseInfo (t: Type) =
-            FSharpType.GetUnionCases(typedefof<_ option>.MakeGenericType([| t |])) |> Array.find (fun uc -> uc.Name = "Some")
+            FSharpType.GetUnionCases(typedefof<_ option>.MakeGenericType([| t |]), unionFlags) |> Array.find (fun uc -> uc.Name = "Some")
 
         let noneUnionCaseInfo (t: Type) =
-            FSharpType.GetUnionCases(typedefof<_ option>.MakeGenericType([| t |])) |> Array.find (fun uc -> uc.Name = "None")
+            FSharpType.GetUnionCases(typedefof<_ option>.MakeGenericType([| t |]), unionFlags) |> Array.find (fun uc -> uc.Name = "None")
 
         let compileCollectByIndex attribute indexedRelationId idxName queryType =
             let env, bindingsBuilder = buildLambdaBodyBindings queryType
@@ -1321,17 +1325,16 @@ module Database =
         database |> Swensen.Unquote.Operators.eval tableExpr
 
     let private updatedTableList (db: 'Db) (table: Table<'Record>) =
-        [ for tableProperty in FSharpType.GetRecordFields(typeof<'Db>, BindingFlags.Instance|||BindingFlags.Public) ->  //typeof<'Db>.GetProperties(BindingFlags.Instance|||BindingFlags.Public) ->
+        [ for tableProperty in FSharpType.GetRecordFields(typeof<'Db>, BindingFlags.Instance|||BindingFlags.Public|||BindingFlags.NonPublic) ->
             let tableType = tableProperty.PropertyType
             if tableType = typeof<Table<'Record>> then Expr.Value table
             else Expr.PropertyGet(Expr.Value db, tableProperty)
         ]
 
     let private updateDb (database: 'D) (table: Table<'T>) =
-        let lst = updatedTableList database table
-        Expr.NewRecord(typeof<'D>, lst)
-        |> Expr.Cast 
-        |> Swensen.Unquote.Operators.eval
+        let lst = updatedTableList database table |> List.map (fun e -> Expr.Coerce(e, typeof<obj>))
+        let values = Expr.NewArray(typeof<obj>, lst) |> Swensen.Unquote.Operators.evalRaw : obj []
+        FSharpValue.MakeRecord(typeof<'D>, values, BindingFlags.NonPublic ||| BindingFlags.Public) :?> 'D
 
     let private update database tableExpr tableUpdate =
         extractTable database tableExpr |> tableUpdate |> updateDb database
