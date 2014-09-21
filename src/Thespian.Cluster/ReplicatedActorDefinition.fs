@@ -67,9 +67,9 @@ type Stateful<'S> =
 [<AutoOpen>]
 module StatefulUtils =
     let (|StatefulReplyException|) ctx =
-        function GetState(RR ctx reply) -> reply << Exception
+        function GetState(RR ctx reply) -> reply << Exn
                  | SetState _ -> fun e -> ctx.LogEvent(LogLevel.Error, sprintf "SetState Exception:: %A" e)
-                 | GetGeneration(RR ctx reply) -> reply << Exception
+                 | GetGeneration(RR ctx reply) -> reply << Exn
 
 type Replicated<'T, 'S> =
     //Throws
@@ -109,7 +109,7 @@ module Actor =
                     reply nothing
                     actor <-- payload
                 | (BroadcastFailureException _) as e ->
-                    reply <| Exception e
+                    reply <| Exn e
         }
 
     let private singular (ctx: BehaviorContext<_>) payload actor = 
@@ -212,7 +212,7 @@ module Actor =
     }
 
     let private (|ReplicatedExceptionReply|) ctx stateExceptionReplyExtract =
-        function Replicated(RR ctx reply, _) -> reply << Exception
+        function Replicated(RR ctx reply, _) -> reply << Exn
                  | Singular(Choice1Of2 payload) -> stateExceptionReplyExtract ctx payload
                  | Singular(Choice2Of2 (StatefulReplyException ctx reply)) -> reply
                  | ResetReplicants _ -> fun e -> ctx.LogEvent(LogLevel.Error, sprintf "ResetReplicants Exception :: %A" e)
@@ -220,10 +220,10 @@ module Actor =
     let private (|AsyncReplicatedExceptionReply|) ctx stateExceptionReplyExtract = 
         function AsyncReplicated(Choice1Of2 payload) -> stateExceptionReplyExtract ctx payload
                  | AsyncReplicated(Choice2Of2 (StatefulReplyException ctx reply)) -> reply
-                 | SyncReplicated(RR ctx reply, _) -> reply << Exception
+                 | SyncReplicated(RR ctx reply, _) -> reply << Exn
                  | AsyncSingular(Choice1Of2 payload) -> stateExceptionReplyExtract ctx payload
                  | AsyncSingular(Choice2Of2 (StatefulReplyException ctx reply)) -> reply
-                 | AsyncResetReplicants(RR ctx reply, _) -> reply << Exception
+                 | AsyncResetReplicants(RR ctx reply, _) -> reply << Exn
 
 
     let replicatedProxyBehavior stateExceptionReplyExtract (ctx: BehaviorContext<_>) (state: ReplicatedProxyState<'T, 'S>) (msg: ReplicatedProxy<'T, 'S>) = async {

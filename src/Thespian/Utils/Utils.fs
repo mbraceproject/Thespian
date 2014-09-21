@@ -88,8 +88,12 @@ module FSharpClass =
         | _ -> false
 
 /// Exception handling utilities
-[<AutoOpen>]
 module Control =
+
+#if NET40
+#else
+    open System.Runtime.ExceptionServices
+#endif
 
     // resolve the internal stacktrace field in exception
     // this is implementation-sensitive so not guarantee to work. 
@@ -122,11 +126,22 @@ module Control =
         do e.SetStackTrace trace
         raise e
 
+    let private reraiseMessage = 
+        let nl = System.Environment.NewLine in
+        nl + "--- End of stack trace from previous location where exception was thrown ---" + nl
+
     /// <summary>
     ///     Reraise operator that can be used everywhere.
     /// </summary>
     /// <param name="e">exception to be reraised.</param>
-    let inline reraise' (e : #exn) = raiseWithStackTrace (e.StackTrace + System.Environment.NewLine) e
+    let inline reraise' (e : #exn) : 'T = 
+#if NET40
+        raiseWithStackTrace (e.StackTrace + reraiseMessage) e
+#else
+        let edi = ExceptionDispatchInfo.Capture e
+        edi.Throw()
+        Unchecked.defaultof<'T> // force a generic type, won't be called
+#endif
 
 /// Extensions for F# Choice types
 [<RequireQualifiedAccess>]

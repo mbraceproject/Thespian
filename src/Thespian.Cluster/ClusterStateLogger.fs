@@ -11,7 +11,7 @@ let private clusterStateLoggerBehavior (ctx: BehaviorContext<ClusterStateLogger>
             return ClusterUpdate.Update(state, clusterUpdate)
 
         | GetClusterState(RR ctx reply) ->
-            reply <| Value state
+            reply <| Ok state
             return state
     }
 

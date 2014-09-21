@@ -956,32 +956,32 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
                 //OutOfNodesExceptions => unable to recover due to lack of node;; SYSTEM FAULT
                 let! transition = updateState stateUpdates
 
-                replyF <| Value (List.toArray activations, List.toArray activeDefinitions)
+                replyF <| Ok (List.toArray activations, List.toArray activeDefinitions)
 
                 return transition
             with InvalidActivationStrategy _ 
                 | CyclicDefininitionDependency _
                 | OutOfNodesException _ as e ->
-                    replyF <| Exception e
+                    replyF <| Exn e
                     return stay state
                 | :? System.Collections.Generic.KeyNotFoundException as e ->
-                    replyF <| Exception e
+                    replyF <| Exn e
                     return stay state
                 | ActivationFailureException _ as e ->
-                    replyF <| Exception e
+                    replyF <| Exn e
                     return stay state
                 | CompensationFault _
                 | FinalizationFault _ as e ->
-                    replyF <| Exception(SystemCorruptionException("Unrecoverable system failure.", e))
+                    replyF <| Exn(SystemCorruptionException("Unrecoverable system failure.", e))
                     return! triggerSystemFault ctx state e
                 | PartialActivationException _ as e ->
-                    replyF <| Exception(SystemCorruptionException("Unrecoverable system failure.", e))
+                    replyF <| Exn(SystemCorruptionException("Unrecoverable system failure.", e))
                     return! triggerSystemFault ctx state e
                 | SystemCorruptionException _ as e ->
-                    replyF <| Exception e
+                    replyF <| Exn e
                     return! triggerSystemFault ctx state e
                 | e ->
-                    replyF <| Exception(SystemCorruptionException("Unrecoverable system failure.", e))
+                    replyF <| Exn(SystemCorruptionException("Unrecoverable system failure.", e))
                     return! triggerSystemFault ctx state e
         }
 
@@ -989,7 +989,7 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
         match msg with
         | ActivateDefinition(RR ctx reply, activationRecord) ->
             //ASSUME ALL EXCEPTIONS PROPERLY HANDLED AND DOCUMENTED
-            return! activateDef ctx true (function Value _ -> reply nothing | Exception e -> reply (Exception e)) activationRecord ([], [])
+            return! activateDef ctx true (function Ok _ -> reply nothing | Exn e -> reply (Exn e)) activationRecord ([], [])
 
         | ActivateDefinitionWithResults(RR ctx reply, activateExternalDependencies, activationRecord, externalActivations, externalActiveDefinitions) ->
             //ASSUME ALL EXCEPTIONS PROPERLY HANDLED AND DOCUMENTED
@@ -1010,10 +1010,10 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
                 return! deactivations |> Seq.map ClusterDeActivateDefinition |> updateState
             with SystemCorruptionException _
                 | OutOfNodesException _ as e->
-                    reply <| Exception e
+                    reply <| Exn e
                     return! triggerSystemFault ctx state e
                 | e ->
-                    reply <| Exception(SystemCorruptionException("Unexpected failure occurred.", e))
+                    reply <| Exn(SystemCorruptionException("Unexpected failure occurred.", e))
                     return! triggerSystemFault ctx state e
 
         | ResolveActivationRefs(RR ctx reply, activationReference) ->
@@ -1027,11 +1027,11 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
                     |> Seq.choose id
                     |> Seq.toArray
 
-                reply (Value results)
+                reply (Ok results)
 
                 return stay state
             with e ->
-                reply <| Exception(SystemCorruptionException("Unexpected failure occurred.", e))
+                reply <| Exn(SystemCorruptionException("Unexpected failure occurred.", e))
                 return! triggerSystemFault ctx state e
 
         | ResolveActivationInstances(RR ctx reply, definitionPath) ->
@@ -1041,33 +1041,33 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
                 |> Query.where <@ fun clusterActivation -> clusterActivation.ActivationReference.Definition = definitionPath @>
                 |> Query.toSeq
                 |> Seq.toArray
-                |> Value
+                |> Ok
                 |> reply
 
                 return stay state
             with e ->
-                reply <| Exception(SystemCorruptionException("Unexpected failure occurred.", e))
+                reply <| Exn(SystemCorruptionException("Unexpected failure occurred.", e))
                 return! triggerSystemFault ctx state e
 
         | GetAltNodes(RR ctx reply) ->
             try
-                state.AltMasterNodes |> Seq.toArray |> Value |> reply
+                state.AltMasterNodes |> Seq.toArray |> Ok |> reply
 
                 return stay state
             with e ->
-                reply <| Exception(SystemCorruptionException("Unexpected failure occurred.", e))
+                reply <| Exn(SystemCorruptionException("Unexpected failure occurred.", e))
                 return! triggerSystemFault ctx state e
 
         | GetAllNodes(RR ctx reply) ->
             try
                 state.Nodes |> Seq.append (Seq.singleton Cluster.NodeManager)
                 |> Seq.toArray
-                |> Value
+                |> Ok
                 |> reply
 
                 return stay state
             with e ->
-                reply <| Exception(SystemCorruptionException("Unexpected failure occurred.", e))
+                reply <| Exn(SystemCorruptionException("Unexpected failure occurred.", e))
                 return! triggerSystemFault ctx state e
 
         | RemoveNode nodeManager ->
@@ -1246,7 +1246,7 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
                 return! deactivations |> Seq.map ClusterDeActivateDefinition |> updateState
             with e ->
                 //unexpected error
-                reply (Exception e)
+                reply (Exn e)
                 return! triggerSystemFault ctx state e
 
         | FailCluster e ->
@@ -1283,7 +1283,7 @@ and private triggerSystemFault (ctx: BehaviorContext<_>) (state: ClusterState) (
     }
 
 and private clusterManagerBehaviorSystemFault (ctx: BehaviorContext<ClusterManager>) (state: ClusterState) (msg: ClusterManager) =
-    let reply r = r <| Exception(SystemFailureException "System is in failed state.")
+    let reply r = r <| Exn(SystemFailureException "System is in failed state.")
     let warning () = ctx.LogWarning "System is in failed state. No message is processed."
     async {
         match msg with

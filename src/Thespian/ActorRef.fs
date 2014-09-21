@@ -8,17 +8,6 @@ open Nessos.Thespian.Utils.Concurrency
 open Nessos.Thespian.Logging
 open Nessos.Thespian.Serialization
 
-type Reply<'T> = 
-    | Value of 'T
-    | Exception of exn
-with
-    member self.GetValue(?keepOriginalStackTrace : bool) = 
-        match self with
-        | Value t -> t
-        | Exception e -> 
-            if defaultArg keepOriginalStackTrace false then reraise' e
-            else raise e
-
 [<Serializable>]
 type IProtocolFactory =
     abstract ProtocolName: string
@@ -71,10 +60,10 @@ and internal ReplyChannelUtils private () =
             override __.Timeout with get() = replyChannel.Timeout
                                  and set(timeout) = replyChannel.Timeout <- timeout
             override self.WithTimeout(timeout) = self.Timeout <- timeout; self
-            override __.ReplyUntyped(reply) = replyChannel.ReplyUntyped(match reply with Value(:? 'U as value) -> Value(mapF value |> box) | Exception e -> Reply.Exception e | _ -> invalidArg "reply" "Reply object not of proper type.")
-            override __.AsyncReplyUntyped(reply) = replyChannel.AsyncReplyUntyped(match reply with Value(:? 'U as value) -> Value(mapF value |> box) | Exception e -> Reply.Exception e | _ -> invalidArg "reply" "Reply object not of proper type.")
-            override __.Reply(reply) = replyChannel.Reply(match reply with Value value -> Value(mapF value) | Exception e -> Reply.Exception e)
-            override __.AsyncReply(reply) = replyChannel.AsyncReply(match reply with Value value -> Value(mapF value) | Exception e -> Reply.Exception e)
+            override __.ReplyUntyped(reply) = replyChannel.ReplyUntyped(Result.map (unbox >> mapF >> box) reply)
+            override __.AsyncReplyUntyped(reply) = replyChannel.AsyncReplyUntyped(Result.map (unbox >> mapF >> box) reply)
+            override __.Reply(reply) = replyChannel.Reply(Result.map mapF reply)
+            override __.AsyncReply(reply) = replyChannel.AsyncReply(Result.map mapF reply)
         }
 
 and Default() =
@@ -250,13 +239,13 @@ and [<Serializable>] ActorRef<'T> =
 and IReplyChannel =
     abstract Protocol: string
     abstract Timeout: int with get, set
-    abstract ReplyUntyped: Reply<obj> -> unit
-    abstract AsyncReplyUntyped: Reply<obj> -> Async<unit>
+    abstract ReplyUntyped: Result<obj> -> unit
+    abstract AsyncReplyUntyped: Result<obj> -> Async<unit>
 
 and IReplyChannel<'T> =
     inherit IReplyChannel
-    abstract Reply: Reply<'T> -> unit
-    abstract AsyncReply: Reply<'T> -> Async<unit>
+    abstract Reply: Result<'T> -> unit
+    abstract AsyncReply: Result<'T> -> Async<unit>
     abstract WithTimeout: int -> IReplyChannel<'T>
 
 and IReplyChannelFactory =
@@ -313,18 +302,18 @@ module Reply =
     //convenience active pattern for getting a reply func
     let (|R|) (replyChannel: IReplyChannel<'T>) = replyChannel.Reply
 
-    module Reply =
-        let exn (e : #exn) : Reply<'T> = Reply.Exception(e :> exn)
+//    module Reply =
+//        let exn (e : #exn) : Result<'T> = Result.Exception(e :> exn)
 
-        let box (reply: Reply<'T>): Reply<obj> =
-            match reply with
-            | Value v -> Value(box v)
-            | Exception e -> Reply.Exception e
-
-        let unbox<'T> (reply: Reply<obj>): Reply<'T> =
-            match reply with
-            | Value v -> Value(unbox<'T> v)
-            | Exception e -> Reply.Exception e
+//        let box (reply: Result<'T>): Result<obj> =
+//            match reply with
+//            | Value v -> Value(box v)
+//            | Exception e -> Result.Exception e
+//
+//        let unbox<'T> (reply: Result<obj>): Result<'T> =
+//            match reply with
+//            | Value v -> Value(unbox<'T> v)
+//            | Exception e -> Result.Exception e
 
     module ReplyChannel =
         let map (mapF: 'U -> 'T) (replyChannel: IReplyChannel<'T>): IReplyChannel<'U> = ReplyChannelUtils.Map mapF replyChannel

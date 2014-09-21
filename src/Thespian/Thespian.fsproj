@@ -65,6 +65,7 @@
     <Compile Include="Utils\Async.fs" />
     <Compile Include="Utils\IOExtensions.fs" />
     <Compile Include="ActorId.fs" />
+    <Compile Include="Result.fs" />
     <Compile Include="Logging.fs" />
     <Compile Include="Exceptions.fs" />
     <Compile Include="Serialization.fs" />

@@ -23,8 +23,8 @@ namespace Nessos.Thespian.Agents
             async {
                 match msg with
                 | Swap swap -> unsafeSwap swap
-                | SafeSwap(R(reply), swap) -> try safeSwap swap; reply nothing with e -> reply <| Exception e
-                | Read(R(reply)) -> reply <| Value refCell.Value
+                | SafeSwap(R(reply), swap) -> try safeSwap swap; reply nothing with e -> reply <| Exn e
+                | Read(R(reply)) -> reply <| Ok refCell.Value
             }
     
         let actor = Actor.bind <| Behavior.stateless agentBehavior

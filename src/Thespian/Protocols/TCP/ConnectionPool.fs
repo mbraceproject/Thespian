@@ -29,7 +29,7 @@ and private ConnectionPoolMsg =
 
 and SequentialClientConnectionPool(endPoint: IPEndPoint, minConnections: int, maxConnections: int, retryInterval: int) as self =
     let available = new Queue<TcpClient>()
-    let pendingReplies = new Queue<Reply<PooledTcpClient> -> unit>()
+    let pendingReplies = new Queue<Result<PooledTcpClient> -> unit>()
     let mutable occupied = 0
 
     let isConnected (client: TcpClient) =
@@ -86,7 +86,7 @@ and SequentialClientConnectionPool(endPoint: IPEndPoint, minConnections: int, ma
 
     let poolClient tracePrefix client = new PooledTcpClient(tracePrefix, client, self :> IClientConnectionPool)
 
-    let asyncAcquireClient (tracePrefix: string) (reply: Reply<PooledTcpClient> -> unit) = 
+    let asyncAcquireClient (tracePrefix: string) (reply: Result<PooledTcpClient> -> unit) = 
         async {
             if available.Count = 0 then 
                 pendingReplies.Enqueue reply
@@ -100,13 +100,13 @@ and SequentialClientConnectionPool(endPoint: IPEndPoint, minConnections: int, ma
                     match newClientResult with
                     | Choice1Of2 newClient ->
                         occupied <- occupied + 1
-                        return reply <| Value(poolClient tracePrefix newClient)
+                        return reply <| Ok(poolClient tracePrefix newClient)
                     | Choice2Of2 e -> 
                         available.Enqueue(new TcpClient()) 
-                        return reply (Exception e)
+                        return reply (Exn e)
                 else
                     occupied <- occupied + 1
-                    return reply <| Value(poolClient tracePrefix freeClient)
+                    return reply <| Ok(poolClient tracePrefix freeClient)
         }
 
     let releaseConnection(client: PooledTcpClient) =
@@ -119,13 +119,13 @@ and SequentialClientConnectionPool(endPoint: IPEndPoint, minConnections: int, ma
                     //ensure disposal
                     client.UnderlyingClient.Close()
                     let! client' = getAvailableAsync() 
-                    reply <| Value(poolClient client.TracePrefix client')
+                    reply <| Ok(poolClient client.TracePrefix client')
                 with e ->
                     occupied <- occupied - 1
                     available.Enqueue (new TcpClient())
-                    reply (Exception e)
+                    reply (Exn e)
             else 
-                reply <| Value(poolClient client.TracePrefix client.UnderlyingClient)
+                reply <| Ok(poolClient client.TracePrefix client.UnderlyingClient)
         else
             occupied <- occupied - 1
             available.Enqueue client.UnderlyingClient
@@ -145,11 +145,11 @@ and SequentialClientConnectionPool(endPoint: IPEndPoint, minConnections: int, ma
                 try
                     do! asyncAcquireClient tracePrefix reply
 //                    printfn "Acquired: %A" <| getCounters()
-                with e -> reply <| Exception e
+                with e -> reply <| Exn e
                 
                 return! messageLoop()
             | GetCounters(R reply) ->
-               reply <| Value (getCounters())
+               reply <| Ok (getCounters())
                return! messageLoop()
             | ReleaseConnection client ->
                 do! releaseConnection client

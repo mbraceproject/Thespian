@@ -65,7 +65,7 @@ let private asyncExecutorBehavior =
                     do! computation //perform computation
                     reply nothing //say when finished
                 with e -> //something went wrong with the reply
-                    reply <| Exception e
+                    reply <| Exn e
 
                 return isStarted, pending
 
@@ -134,12 +134,12 @@ type ReplyChannel<'T> =
         if self.replyWriter <> Unchecked.defaultof<ActorRef<AsyncExecutor>> then self.replyWriter
         else invalidOp "ReplyWriter is not accessible from client side code."
 
-    member private self.AsyncReplyOp(reply: Reply<'T>) =
+    member private self.AsyncReplyOp(reply: Result<'T>) =
         async {
             try
                 use _ = self.stream
 
-                let! r = self.stream.TryAsyncWriteProtocolMessage(self.MessageId, self.ActorId, Reply.box reply)
+                let! r = self.stream.TryAsyncWriteProtocolMessage(self.MessageId, self.ActorId, Result.box reply)
                 match r with
                 | Some() ->
                     let! r' = self.stream.ProtocolStream.TryAsyncReadResponse()
@@ -156,7 +156,7 @@ type ReplyChannel<'T> =
             | e -> return! Async.Raise <| new CommunicationException("Failure occurred while trying to reply.", self.ActorId, e)
         }
 
-    member self.AsyncReply(reply: Reply<'T>) = async {
+    member self.AsyncReply(reply: Result<'T>) = async {
         try do! self.replyWriter <!- fun ch -> Exec(ch.WithTimeout(Timeout.Infinite), self.AsyncReplyOp(reply))
         with 
         | MessageHandlingException(_, e) -> return! Async.Raise e
@@ -165,27 +165,27 @@ type ReplyChannel<'T> =
         | e -> return! Async.Raise <| new CommunicationException("Failure occurred while trying to reply.", self.ActorId, e)
     }
 
-    member self.Reply(reply: Reply<'T>) = Async.RunSynchronously <| self.AsyncReply(reply)
-    member self.AsyncReplyUtyped(reply: Reply<obj>) = self.AsyncReply(Reply.unbox reply)
-    member self.ReplyUntyped(reply: Reply<obj>) = self.Reply(Reply.unbox reply)
+    member self.Reply(reply: Result<'T>) = Async.RunSynchronously <| self.AsyncReply(reply)
+    member self.AsyncReplyUtyped(reply: Result<obj>) = self.AsyncReply(Result.unbox reply)
+    member self.ReplyUntyped(reply: Result<obj>) = self.Reply(Result.unbox reply)
 
     interface IReplyChannel with
         override __.Protocol = ProtocolName
         override self.Timeout with get() = self.Timeout and set(timeout': int) = self.Timeout <- timeout'    
-        override self.ReplyUntyped(reply: Reply<obj>): unit = self.ReplyUntyped(reply)
-        override self.AsyncReplyUntyped(reply: Reply<obj>): Async<unit> = self.AsyncReplyUtyped(reply)
+        override self.ReplyUntyped(reply: Result<obj>): unit = self.ReplyUntyped(reply)
+        override self.AsyncReplyUntyped(reply: Result<obj>): Async<unit> = self.AsyncReplyUtyped(reply)
 
     interface IReplyChannel<'T> with
         override self.WithTimeout(timeout: int) = self.Timeout <- timeout; self :> IReplyChannel<'T>
-        override self.Reply(reply: Reply<'T>) = self.Reply(reply)
-        override self.AsyncReply(reply: Reply<'T>) = self.AsyncReply(reply)
+        override self.Reply(reply: Result<'T>) = self.Reply(reply)
+        override self.AsyncReply(reply: Result<'T>) = self.AsyncReply(reply)
 
     interface ISerializable with
         override __.GetObjectData(info: SerializationInfo, context: StreamingContext) = base.GetObjectData(info, context)
 
 
 type ReplyResultsRegistry() =
-    let results = new ConcurrentDictionary<MsgId, TaskCompletionSource<Choice<Reply<obj>, exn>>>()
+    let results = new ConcurrentDictionary<MsgId, TaskCompletionSource<Choice<Result<obj>, exn>>>()
 
     member self.RegisterAndWaitForResponse(msgId: MsgId, timeout: int) =
         let tcs = new TaskCompletionSource<_>()
@@ -199,7 +199,7 @@ type ReplyResultsRegistry() =
         let isValid, tcs = results.TryRemove(msgId)
         if isValid then tcs.TrySetCanceled() |> ignore
 
-    member __.TrySetResult(msgId: MsgId, value: Choice<Reply<obj>, exn>) =
+    member __.TrySetResult(msgId: MsgId, value: Choice<Result<obj>, exn>) =
         let isValid, tcs = results.TryRemove(msgId)
         if isValid then tcs.TrySetResult(value) |> ignore
         isValid
@@ -241,7 +241,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
             match r with
             | Some(replyMsgId, actorId, payload) ->
                 try
-                    let reply = serializer.Deserialize<obj>(payload) :?> Reply<obj>
+                    let reply = serializer.Deserialize<obj>(payload) :?> Result<obj>
                     if not <| replyRegistry.TrySetResult(replyMsgId, Choice1Of2 reply) then
                         let! r' = protocolStream.TryAsyncWriteResponse(UnknownRecipient(replyMsgId, actorId))
                         match r' with
@@ -271,7 +271,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
             match response with
             | Some reply ->
                 //forward to foreign rc
-                try do! foreignRc.AsyncReplyUntyped <| match reply with Choice1Of2 r -> r | Choice2Of2 e -> Exception e
+                try do! foreignRc.AsyncReplyUntyped <| match reply with Choice1Of2 r -> r | Choice2Of2 e -> Exn e
                 with e -> logEvent.Trigger(Warning, LogSource.Protocol ProtocolName, new CommunicationException("Failed to forward a reply.", e) |> box)
             | None -> () //timeout on nativeRc, no need to do anything, timeout will eventually occur on the other side as well
         }
@@ -423,8 +423,8 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
         async {
             let! response = postMessageWithReply msgId msg timeout'
             match response with
-            | Some(Value v) -> return Some (v :?> 'R)
-            | Some(Exception e) -> return! Async.Raise (new MessageHandlingException("Remote Actor threw exception while handling message.", actorId, e))
+            | Some(Ok v) -> return Some (v :?> 'R)
+            | Some(Exn e) -> return! Async.Raise (new MessageHandlingException("Remote Actor threw exception while handling message.", actorId, e))
             | None -> return None
         }
 

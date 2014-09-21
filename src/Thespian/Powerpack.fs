@@ -166,7 +166,7 @@ module Actor =
                     |> Seq.choose id
                 if recipientCount > 0 && exceptions
                                          |> Seq.length = recipientCount then 
-                    reply << Exception 
+                    reply << Exn 
                     <| (CommunicationException
                             ("Broadcast has failed. Unable to send message to any target.", exceptions |> Seq.head) :> exn)
                 else 
@@ -191,13 +191,13 @@ module Actor =
                 with :? CommunicationException -> return! reliablyBroadcastMsg msgBuilder rest
         }
     
-    let parallelPostWithReply (msgBuilder : IReplyChannel<'R> -> 'T) (actorRefs : ActorRef<'T> list) : Async<Reply<'R> []> = 
+    let parallelPostWithReply (msgBuilder : IReplyChannel<'R> -> 'T) (actorRefs : ActorRef<'T> list) : Async<Result<'R> []> = 
         let post actorRef = 
             async { 
                 try 
                     let result = actorRef <!= msgBuilder
-                    return Value result
-                with e -> return Exception e
+                    return Ok result
+                with e -> return Exn e
             }
         actorRefs
         |> Seq.map post
@@ -225,7 +225,7 @@ module Actor =
                     do! actors
                         |> Seq.toList
                         |> failoverLoop (fun actor -> async { let! result = !actor <!- msgBuilder
-                                                              reply <| Value result }) (reply << Exception)
+                                                              reply <| Ok result }) (reply << Exn)
                 | None -> 
                     do! actors
                         |> Seq.toList
@@ -367,10 +367,10 @@ module Failover =
                             | Choice2Of2 msgBuilder -> 
                                 try
                                     let! res = candidate <!- msgBuilder
-                                    return res |> Value |> Some
+                                    return res |> Ok |> Some
                                 with
                                 | MessageHandlingException(_, e) -> 
-                                    return e |> Exception |> Some
+                                    return e |> Exn |> Some
                             }
 
                         if firstAttempt then return reply, actors

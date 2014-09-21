@@ -182,7 +182,7 @@ module Operators =
     let inline (!) (actor: Actor<'T>): ActorRef<'T> = actor.Ref
 
     //convenience for replying
-    let nothing = Value ()
+    let nothing = Ok ()
                 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Actor =
@@ -267,7 +267,7 @@ module Actor =
         }) (actors |> Seq.map (fun a -> a :> Actor))
 
     let scatter (choiceF: 'T -> (IReplyChannel<'R> * (IReplyChannel<'R> -> 'T)) option) 
-        (gatherF: seq<Reply<'R>> -> Reply<'R>) 
+        (gatherF: seq<Result<'R>> -> Result<'R>) 
         (actors: #seq<Actor<'T>>): Actor<'T> =
 
         spawnLinked (fun msg -> async {
@@ -277,9 +277,9 @@ module Actor =
                     [ for actor in actors -> async {
                             try
                                 let! result = !actor <!- msgBuilder
-                                return Value result
+                                return Ok result
                             with e ->
-                                return Reply.Exception e
+                                return Exn e
                         }
                     ] |> Async.Parallel
                 results |> Array.toSeq |> gatherF |> replyChannel.Reply

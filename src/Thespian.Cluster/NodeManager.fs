@@ -32,7 +32,7 @@ let private assumeAltMaster (ctx: BehaviorContext<_>) (state: NodeState) reply c
         if state.ClusterStateLogger.IsSome then
             let e = new InvalidOperationException(sprintf "Node %O is already an AltMaster." state.Address)
             ctx.LogError e
-            reply <| Exception e
+            reply <| Exn e
             return stay state
         else
             try
@@ -40,12 +40,12 @@ let private assumeAltMaster (ctx: BehaviorContext<_>) (state: NodeState) reply c
                 //Should be exception free
                 let state' = createAltMaster state clusterState
 
-                reply <| Value state'.ClusterStateLogger.Value.Ref
+                reply <| Ok state'.ClusterStateLogger.Value.Ref
 
                 return stay state'
             with e ->
                 ctx.LogError e
-                reply <| Exception e
+                reply <| Exn e
 
                 return stay state
     }
@@ -185,9 +185,9 @@ let rec private initCluster (ctx: BehaviorContext<_>)
 
                 //reply the addresses of alt master nodes
                 if totalAltMasterFailure then
-                    reply <| Value Array.empty
+                    reply <| Ok Array.empty
                 else
-                    clusterState'''.AltMasters |> List.toArray |> Value |> reply
+                    clusterState'''.AltMasters |> List.toArray |> Ok |> reply
 
                 ctx.LogInfo "Attaching slave nodes to cluster..."
 
@@ -251,7 +251,7 @@ let rec private initCluster (ctx: BehaviorContext<_>)
                     return stay state'
             with e ->
                 //unexpected exception occurred ;; goto failed state
-                reply (Exception <| SystemCorruptionException("Unexpected exception in cluster initialization.", e))
+                reply (Exn <| SystemCorruptionException("Unexpected exception in cluster initialization.", e))
                 
                 return! gotoNodeSystemFault ctx state e
         }
@@ -261,7 +261,7 @@ let rec private initCluster (ctx: BehaviorContext<_>)
             return! initClusterProper()
         else
             ctx.LogWarning <| sprintf "Managed cluster with id %A already initialized." clusterConfiguration.ClusterId
-            state.ManagedClusters.[clusterConfiguration.ClusterId].AltMasters |> List.toArray |> Value |> reply
+            state.ManagedClusters.[clusterConfiguration.ClusterId].AltMasters |> List.toArray |> Ok |> reply
             return stay state
     }
 
@@ -272,26 +272,26 @@ and private resolve (ctx: BehaviorContext<_>) reply state activationRef =
         try
             //Throws
             //ActivationResolutionException => activationRef not found;; reply to client
-            NodeRegistry.Registry.ResolveLocal activationRef |> Value |> reply
+            NodeRegistry.Registry.ResolveLocal activationRef |> Ok |> reply
 
             return stay state
         with ActivationResolutionException _ as e ->
-                reply <| Exception (new System.Collections.Generic.KeyNotFoundException("Activation reference not found in this node.", e))
+                reply <| Exn (new System.Collections.Generic.KeyNotFoundException("Activation reference not found in this node.", e))
 
                 return stay state
             | e ->
-                reply <| Exception(SystemCorruptionException(sprintf "An unpected error occured while trying to resolve %A." activationRef, e))
+                reply <| Exn(SystemCorruptionException(sprintf "An unpected error occured while trying to resolve %A." activationRef, e))
                 return! gotoNodeSystemFault ctx state e
     }
 
 and private tryResolve (ctx: BehaviorContext<_>) reply state activationRef =
     async {
         try
-            NodeRegistry.Registry.TryResolveLocal activationRef |> Value |> reply
+            NodeRegistry.Registry.TryResolveLocal activationRef |> Ok |> reply
 
             return stay state
         with e ->
-            reply <| Exception(SystemCorruptionException(sprintf "An unpected error occured while trying to resolve %A." activationRef, e))
+            reply <| Exn(SystemCorruptionException(sprintf "An unpected error occured while trying to resolve %A." activationRef, e))
             return! gotoNodeSystemFault ctx state e
     }
 
@@ -302,7 +302,7 @@ and private tryGetManagedCluster (ctx: BehaviorContext<_>) reply state clusterId
         try
             state.ManagedClusters |> Map.tryFind clusterId
             |> Option.map (fun managedCluster -> managedCluster.ClusterManager.Ref)
-            |> Value
+            |> Ok
             |> reply
         with e -> ctx.LogError e
 
@@ -428,11 +428,11 @@ and private getNodeType (ctx: BehaviorContext<_>) reply (state: NodeState) =
                 else if state.ClusterInfo.IsNone then NodeType.Master
                 else NodeType.Slave
 
-            reply (Value nodeType)
+            reply (Ok nodeType)
 
             return stay state
         with e ->
-            reply <| Exception(SystemCorruptionException("Unexpected failure occurred.", e))
+            reply <| Exn(SystemCorruptionException("Unexpected failure occurred.", e))
             return! gotoNodeSystemFault ctx state e
     }
 
@@ -469,7 +469,7 @@ and private syncNodeEvents (ctx: BehaviorContext<_>) reply (state: NodeState) =
                 reply nothing
             with e ->
                 ctx.LogError e
-                reply (Exception e)
+                reply (Exn e)
         } |> Async.Start
 
         return stay state
@@ -542,7 +542,7 @@ and private nodeManagerInit (ctx: BehaviorContext<NodeManager>) (state: NodeStat
                 return stay state'
             with e ->
                 //unexpected error
-                reply (Exception e)
+                reply (Exn e)
                 return! gotoNodeSystemFault ctx state e
 
         | DisposeFinalizedClusters ->
@@ -556,12 +556,12 @@ and private nodeManagerInit (ctx: BehaviorContext<NodeManager>) (state: NodeStat
                 return! gotoNodeSystemFault ctx state e
 
         | Activate(RR ctx reply, _, _, _, _) ->
-            reply <| Exception(NodeNotInClusterException <| sprintf "Node %O is not part of an active cluster." state.Address)
+            reply <| Exn(NodeNotInClusterException <| sprintf "Node %O is not part of an active cluster." state.Address)
 
             return stay state
 
         | DeActivate(RR ctx reply, _, _) ->
-            reply <| Exception(NodeNotInClusterException <| sprintf "Node %O is not part of an active cluster." state.Address)
+            reply <| Exn(NodeNotInClusterException <| sprintf "Node %O is not part of an active cluster." state.Address)
 
             return stay state
 
@@ -614,7 +614,7 @@ and private nodeManagerInit (ctx: BehaviorContext<NodeManager>) (state: NodeStat
                 return goto nodeManagerProper state'
             with e ->
                 ctx.LogWarning e
-                reply (Exception e)
+                reply (Exn e)
                 return stay state
 
         | DetachFromCluster ->
@@ -865,7 +865,7 @@ and private nodeManagerProper (ctx: BehaviorContext<NodeManager>) (state: NodeSt
                         |> Seq.collect (fun activation -> activation.DefinitionActivationResults)
                         |> Seq.toArray
                 
-                    reply <| Value (actorActivationResults, definitionActivationResults)
+                    reply <| Ok (actorActivationResults, definitionActivationResults)
 
                     ctx.LogInfo (sprintf "%O :: activation completed." activationRef.Definition)
 
@@ -882,7 +882,7 @@ and private nodeManagerProper (ctx: BehaviorContext<NodeManager>) (state: NodeSt
 
                     (Seq.toArray activations, 
                      Seq.toArray activeDefinitions)
-                    |> Value
+                    |> Ok
                     |> reply
 
                     return stay state
@@ -890,11 +890,11 @@ and private nodeManagerProper (ctx: BehaviorContext<NodeManager>) (state: NodeSt
             with (ActivationFailureException _ | PartialActivationException _) as e ->
                     ctx.LogWarning (sprintf "Failed to activate %O" activationRef.Definition)
                     ctx.LogError e
-                    reply (Exception e)
+                    reply (Exn e)
                     return stay state
                 | e -> 
                     ctx.LogWarning (sprintf "Unexpected failure while activating %O" activationRef.Definition)
-                    reply (Exception e)
+                    reply (Exn e)
                     return stay state
 
         | DeActivate(RR ctx reply, activationRef, throwOnNotExisting) ->
@@ -905,7 +905,7 @@ and private nodeManagerProper (ctx: BehaviorContext<NodeManager>) (state: NodeSt
 
                 return stay state'
             with e ->
-                reply (Exception e)
+                reply (Exn e)
                 return stay state
 
         | Resolve(RR ctx reply, activationRef) ->
@@ -989,7 +989,7 @@ and private nodeManagerProper (ctx: BehaviorContext<NodeManager>) (state: NodeSt
             return stay state
 
         | AttachToClusterSync(RR ctx reply, _) ->
-            reply <| Exception(new InvalidOperationException(sprintf "Unable to process %A in current node state." msg))
+            reply <| Exn(new InvalidOperationException(sprintf "Unable to process %A in current node state." msg))
 
             return stay state
 
@@ -1137,7 +1137,7 @@ and private nodeManagerProper (ctx: BehaviorContext<NodeManager>) (state: NodeSt
                 return stay state'
             with e ->
                 //unexpected error
-                reply <| Exception e
+                reply <| Exn e
                 return! gotoNodeSystemFault ctx state e
 
         | DisposeFinalizedClusters ->
@@ -1385,7 +1385,7 @@ and recoverMasterNode (ctx: BehaviorContext<_>) (state: NodeState) =
     }
 
 and nodeManagerSystemFault (ctx: BehaviorContext<NodeManager>) (state: NodeState) (msg: NodeManager) =
-    let reply r = r <| Exception(SystemFailureException "System is in failed state.")
+    let reply r = r <| Exn(SystemFailureException "System is in failed state.")
     let warning () = ctx.LogWarning "System is in failed state. No message is processed."
     async {
         match msg with

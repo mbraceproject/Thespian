@@ -26,7 +26,7 @@ module PrimitiveBehaviors =
             let! m = self.Receive()
             match m with
             | TestAsync _ -> ()
-            | TestSync(R reply, _) -> reply <| Value()
+            | TestSync(R reply, _) -> reply <| Ok ()
         }
     
     let rec consume (self : Actor<TestMessage<unit>>) = 
@@ -34,7 +34,7 @@ module PrimitiveBehaviors =
             let! m = self.Receive()
             match m with
             | TestAsync() -> ()
-            | TestSync(R reply, _) -> reply <| Value()
+            | TestSync(R reply, _) -> reply <| Ok ()
             return! consume self
         }
     
@@ -43,7 +43,7 @@ module PrimitiveBehaviors =
             let! m = self.Receive()
             match m with
             | TestSync(R reply, _) -> 
-                reply <| Value()
+                reply <| Ok ()
                 self.Stop()
             | _ -> self.Stop()
         }
@@ -54,7 +54,7 @@ module PrimitiveBehaviors =
             match m with
             | TestAsync s' -> return! stateful s' self
             | TestSync(R reply, s') -> 
-                reply (Value s)
+                reply (Ok s)
                 return! stateful s' self
         }
     
@@ -82,7 +82,7 @@ module Behaviors =
             match m with
             | TestAsync s -> return s
             | TestSync(R reply, s') -> 
-                reply (Value s)
+                reply (Ok s)
                 return s'
         }
     
@@ -91,7 +91,7 @@ module Behaviors =
             match m with
             | TestAsync s -> return s
             | TestSync(R reply, _) -> 
-                reply (Value s)
+                reply (Ok s)
                 return s
         }
     
@@ -101,7 +101,7 @@ module Behaviors =
             | TestAsync s -> return s
             | TestSync(R reply, t) -> 
                 do! Async.Sleep t
-                reply <| Value s
+                reply <| Ok s
                 return s
         }
     
@@ -113,7 +113,7 @@ module Behaviors =
                 do! Async.Sleep t
                 return l
             | ListGet(R reply) -> 
-                reply <| Value l
+                reply <| Ok l
                 return l
         }
     
@@ -122,7 +122,7 @@ module Behaviors =
             match m with
             | TestAsync i' -> return i + i'
             | TestSync(R reply, _) -> 
-                reply <| Value i
+                reply <| Ok i
                 return i
         }
     
@@ -133,10 +133,10 @@ module Behaviors =
             | TestSync(R reply, i') -> 
                 try 
                     let i'' = i / i'
-                    reply <| Value i'
+                    reply <| Ok i'
                     return i''
                 with e -> 
-                    reply (Exception e)
+                    reply (Exn e)
                     return i
         }
     
@@ -155,7 +155,7 @@ module Behaviors =
             | MultiRepliesAsync v -> return v
             | MultiRepliesSync(R reply1, R reply2) -> 
                 reply1 nothing
-                reply2 <| Value s
+                reply2 <| Ok s
                 return s
         }
 
