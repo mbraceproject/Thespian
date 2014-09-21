@@ -1,7 +1,7 @@
 ﻿namespace Nessos.Thespian.Cluster
 
 open Nessos.Thespian
-open Nessos.ImemDb
+open Nessos.Thespian.Utils.ImemDb
 
 type NodeSelectionStrategy(numOfNodes: int) =
     interface IActivationStrategy with
