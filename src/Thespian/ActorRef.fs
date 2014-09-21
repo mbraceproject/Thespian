@@ -267,7 +267,7 @@ and IReplyChannelFactory =
 and MessageSerializationContext(serializer: IMessageSerializer, replyChannelFactory: IReplyChannelFactory) =
     //list of foreign reply channel information gathered by the context
     //list of (foreignReplyChannel, nativeOverrideReplyChannel)
-    let replyChannels = Atom.atom List.empty<IReplyChannel * IReplyChannel>
+    let replyChannels = Atom.create List.empty<IReplyChannel * IReplyChannel>
     member __.Serializer = serializer
     member __.ReplyProtocol = replyChannelFactory.Protocol
     member __.ForeignFilter<'T>(rc: IReplyChannel<'T>) = replyChannelFactory.Filter(rc)

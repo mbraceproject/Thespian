@@ -627,7 +627,7 @@ and [<Serializable>] BTcpFactory =
 //             //a response is either a Reply, in which case a proper reply has been received,
 //             //or not a reply, in which case Some(exn) indicates a communication failure
 //             //while None indicates a timeout or cancellation
-//             let registeredResponseAsyncWaits = Atom.atom Map.empty<MsgId, AsyncResultCell<Choice<Reply<obj>, exn option>>>
+//             let registeredResponseAsyncWaits = Atom.create Map.empty<MsgId, AsyncResultCell<Choice<Reply<obj>, exn option>>>
 //             //unregister a wait for response
 //             let unregisterResponseAsyncWait msgId = Atom.swap registeredResponseAsyncWaits (fun regs -> Map.remove msgId regs)
 //             //register and get an async that waits for a response

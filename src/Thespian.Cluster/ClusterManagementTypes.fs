@@ -378,7 +378,7 @@ and ClusterActivationsDb = {
 
 
 and NodeRegistry private () =
-    static let registry = Atom.atom ClusterActivationsDb.Empty
+    static let registry = Atom.create ClusterActivationsDb.Empty
 
     static let mutable instance = new NodeRegistry()
 
@@ -1444,7 +1444,7 @@ and ClusterProxyManager =
     | UnregisterProxy of ActivationReference
 
 and Cluster() =
-    static let customRegistry = Atom.atom Map.empty
+    static let customRegistry = Atom.create Map.empty
     static let nodeManager = ref None : ActorRef<NodeManager> option ref
     static let clusterManager = ref None : ReliableActorRef<ClusterManager> option ref
     static let definitionRegistry = ref None : DefinitionRegistry option ref

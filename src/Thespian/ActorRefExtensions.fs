@@ -61,7 +61,7 @@ module Uri =
                   |> Map.add NPP nppParser
     
     type Config private() =
-        static let parsers = Atom.atom <| initParsers()
+        static let parsers = Atom.create <| initParsers()
         static member TryGetParser(protocol: string) = parsers.Value.TryFind protocol
 
 module ActorRef =

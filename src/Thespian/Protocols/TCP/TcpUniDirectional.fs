@@ -652,7 +652,7 @@ and [<Serializable>] UTcpFactory =
 
 
 //         and internal ServerSideProtocolPool() =
-//             static let pool = Atom.atom Map.empty<TcpActorId, IActorProtocol>
+//             static let pool = Atom.create Map.empty<TcpActorId, IActorProtocol>
 
 //             static member Register(actorId: TcpActorId, protocol: IActorProtocol) =
 //                 Atom.swap pool (Map.add actorId protocol)
@@ -757,10 +757,10 @@ and [<Serializable>] UTcpFactory =
 //             //There may be many client instances for the same actor
 //             //When posting with reply each registers a handler here per msgid
 //             //The handler is deregistered on response process
-//             static let responseHandleRegistry = Atom.atom Map.empty<MsgId, ProtocolStream -> MsgId -> obj -> Async<unit>>
+//             static let responseHandleRegistry = Atom.create Map.empty<MsgId, ProtocolStream -> MsgId -> obj -> Async<unit>>
 
 //             //response waiting registry
-//             let registeredResponseAsyncWaits = Atom.atom Map.empty<MsgId, AsyncResultCell<Reply<obj> option>>
+//             let registeredResponseAsyncWaits = Atom.create Map.empty<MsgId, AsyncResultCell<Reply<obj> option>>
 //             //unregister a wait for response
 //             let unregisterResponseAsyncWait msgId = Atom.swap registeredResponseAsyncWaits (fun regs -> Map.remove msgId regs)
 //             //cancel waiting for a response, cancelling causes the same result as timeout

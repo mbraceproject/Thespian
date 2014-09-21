@@ -203,7 +203,7 @@ and [<AbstractClass>] Activation(instanceId: int, definition: Definition) =
         member a.Dispose() = a.Deactivate()
 
 and NodeRegistry private (currentNode: ActorRef<NodeManager>) =
-    let registry = Atom.atom (Table.create <@ fun (ca: ClusterActivation) -> ca.Key @>)
+    let registry = Atom.create (Table.create <@ fun (ca: ClusterActivation) -> ca.Key @>)
 
     static let mutable instance = Unchecked.defaultof<NodeRegistry>
 

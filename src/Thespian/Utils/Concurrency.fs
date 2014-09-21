@@ -38,13 +38,15 @@ type Atom<'T when 'T : not struct>(value : 'T) =
     /// <param name="value">value to be set.</param>
     member __.Force (value : 'T) = refCell := value
 
+/// Atom utilities module
 [<RequireQualifiedAccess>]
 module Atom =
+
     /// <summary>
     /// Initialize a new atomic container with given value.
     /// </summary>
     /// <param name="value">Initial value.</param>
-    let atom<'T when 'T : not struct> value = new Atom<'T>(value)
+    let create<'T when 'T : not struct> value = new Atom<'T>(value)
     
     /// <summary>
     /// Atomically updates the container with given function.
