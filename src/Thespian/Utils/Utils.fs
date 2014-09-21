@@ -4,6 +4,7 @@ open System
 open System.Reflection
 open System.Collections.Concurrent
 
+/// Collection of general-purpose utility functions
 [<AutoOpen>]
 module Utility =
 
@@ -86,7 +87,7 @@ module FSharpClass =
         | :? 'T as that -> compareBy proj this that = 0
         | _ -> false
 
-
+/// Exception handling utilities
 [<AutoOpen>]
 module Control =
 
@@ -127,7 +128,7 @@ module Control =
     /// <param name="e">exception to be reraised.</param>
     let inline reraise' (e : #exn) = raiseWithStackTrace (e.StackTrace + System.Environment.NewLine) e
 
-
+/// Extensions for F# Choice types
 [<RequireQualifiedAccess>]
 module Choice =
     
@@ -152,7 +153,7 @@ module Choice =
         inputs |> Array.choose (function Choice1Of2 r -> Some r | _ -> None),
             inputs |> Array.choose (function Choice2Of2 r -> Some r | _ -> None)
 
-
+/// IEnumerable extensions
 [<RequireQualifiedAccess>]
 module Seq =
 
@@ -163,6 +164,7 @@ module Seq =
     let tryHead (xs: seq<'a>) : 'a option =
         if Seq.isEmpty xs then None else xs |> Seq.head |> Some
 
+/// F# option extensions
 [<RequireQualifiedAccess>]
 module Option =
 
@@ -200,7 +202,7 @@ module Option =
     let bind2 (f : 'T -> 'S) (s : 'S) (t : 'T option) =
         match t with None -> s | Some t0 -> f t0
 
-
+/// Regular Expression extensions
 [<RequireQualifiedAccess>]
 module RegEx =
 

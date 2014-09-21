@@ -1,4 +1,5 @@
-﻿module Nessos.Thespian.Utils.Task
+﻿/// System.Threading.Task extensions
+module Nessos.Thespian.Utils.Task
 
 open System
 open System.Threading

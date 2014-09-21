@@ -6,7 +6,6 @@ open System
 open Nessos.Thespian
 open Nessos.Thespian.Utils
 open Nessos.Thespian.Utils.Async
-open Nessos.Thespian.Utils.Concurrency
 open Nessos.Thespian.Logging
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.TcpProtocol

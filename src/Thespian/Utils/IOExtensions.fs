@@ -1,4 +1,4 @@
-module Nessos.Thespian.Utils.IOExtensions
+module internal Nessos.Thespian.Utils.IOExtensions
 
     open System.IO
 

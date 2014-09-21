@@ -3,8 +3,8 @@
 open System
 
 open Nessos.Thespian
+open Nessos.Thespian.Utils
 open Nessos.Thespian.Logging
-open Nessos.Thespian.Utils.Concurrency
 open Nessos.Thespian.PowerPack
 
 // TODO: Thespian's Atom should not be part of the public API

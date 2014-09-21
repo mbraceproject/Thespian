@@ -4,7 +4,6 @@ open System
 open System.Runtime.Serialization
 
 open Nessos.Thespian.Utils
-open Nessos.Thespian.Utils.Concurrency
 open Nessos.Thespian.Logging
 open Nessos.Thespian.Serialization
 

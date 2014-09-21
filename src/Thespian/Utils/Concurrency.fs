@@ -1,4 +1,4 @@
-namespace Nessos.Thespian.Utils.Concurrency
+namespace Nessos.Thespian.Utils
 
 open System.Threading
 
