@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>CountdownLatch - Thespian</title>
+    <title>Latch - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,9 +35,9 @@
 
 
 
-<h1>CountdownLatch</h1>
+<h1>Latch</h1>
 <div class="xmldoc">
-<p>Thread-safe countdown latch.</p>
+<p>Thread-safe latch</p>
 </div>
   <h3>Constructors</h3>
   <table class="table table-bordered member-list">
@@ -48,15 +48,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '534', 534)" onmouseover="showTip(event, '534', 534)">
+          <code onmouseout="hideTip(event, '560', 560)" onmouseover="showTip(event, '560', 560)">
             new()
           </code>
-          <div class="tip" id="534">
-            <strong>Signature:</strong> unit -&gt; CountdownLatch<br />
+          <div class="tip" id="560">
+            <strong>Signature:</strong> unit -&gt; Latch<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L105-105" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L77-77" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -74,57 +74,19 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '540', 540)" onmouseover="showTip(event, '540', 540)">
-            Decrement()
+          <code onmouseout="hideTip(event, '569', 569)" onmouseover="showTip(event, '569', 569)">
+            Trigger()
           </code>
-          <div class="tip" id="540">
-            <strong>Signature:</strong> unit -&gt; int<br />
+          <div class="tip" id="569">
+            <strong>Signature:</strong> unit -&gt; bool<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L113-113" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L84-84" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Reset the latch</p>
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '541', 541)" onmouseover="showTip(event, '541', 541)">
-            Increment()
-          </code>
-          <div class="tip" id="541">
-            <strong>Signature:</strong> unit -&gt; int<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L110-110" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Set the latch</p>
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '542', 542)" onmouseover="showTip(event, '542', 542)">
-            WaitToZero()
-          </code>
-          <div class="tip" id="542">
-            <strong>Signature:</strong> unit -&gt; unit<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L116-116" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Spin-wait until the latch is reset</p>
+          <p>Trigger the latch; returns true iff call was successful.</p>
 
         </td>
       </tr>

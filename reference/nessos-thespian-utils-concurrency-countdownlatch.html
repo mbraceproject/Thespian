@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>Atom - Thespian</title>
+    <title>CountdownLatch - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,92 +35,96 @@
 
 
 
-<h1>Atom</h1>
+<h1>CountdownLatch</h1>
 <div class="xmldoc">
-<p>Atom utilities module</p>
+<p>Thread-safe countdown latch.</p>
 </div>
-
-<!-- Render nested types and modules, if there are any -->
-
-  <h3>Functions and values</h3>
+  <h3>Constructors</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Function or value</td><td>Description</td></tr>
+      <tr><td>Constructor</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '159', 159)" onmouseover="showTip(event, '159', 159)">
-            create(value)
+          <code onmouseout="hideTip(event, '607', 607)" onmouseover="showTip(event, '607', 607)">
+            new()
           </code>
-          <div class="tip" id="159">
-            <strong>Signature:</strong> value:&#39;T -&gt; Atom&lt;&#39;T&gt;<br />
-                          <strong>Type parameters:</strong> 'T          </div>
+          <div class="tip" id="607">
+            <strong>Signature:</strong> unit -&gt; CountdownLatch<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L49-49" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L106-106" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Initialize a new atomic container with given value.</p>
+          
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>Instance members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Instance member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '608', 608)" onmouseover="showTip(event, '608', 608)">
+            Decrement()
+          </code>
+          <div class="tip" id="608">
+            <strong>Signature:</strong> unit -&gt; int<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L114-114" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Reset the latch</p>
 
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '160', 160)" onmouseover="showTip(event, '160', 160)">
-            force(atom t)
+          <code onmouseout="hideTip(event, '609', 609)" onmouseover="showTip(event, '609', 609)">
+            Increment()
           </code>
-          <div class="tip" id="160">
-            <strong>Signature:</strong> atom:Atom&lt;&#39;T&gt; -&gt; t:&#39;T -&gt; unit<br />
-                          <strong>Type parameters:</strong> 'T          </div>
+          <div class="tip" id="609">
+            <strong>Signature:</strong> unit -&gt; int<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L70-70" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L111-111" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Force value on given atom.</p>
+          <p>Set the latch</p>
 
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '161', 161)" onmouseover="showTip(event, '161', 161)">
-            swap(atom f)
+          <code onmouseout="hideTip(event, '610', 610)" onmouseover="showTip(event, '610', 610)">
+            WaitToZero()
           </code>
-          <div class="tip" id="161">
-            <strong>Signature:</strong> atom:Atom&lt;&#39;T&gt; -&gt; f:(&#39;T -&gt; &#39;T) -&gt; unit<br />
-                          <strong>Type parameters:</strong> 'T          </div>
+          <div class="tip" id="610">
+            <strong>Signature:</strong> unit -&gt; unit<br />
+                      </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L56-56" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L117-117" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Atomically updates the container with given function.</p>
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '162', 162)" onmouseover="showTip(event, '162', 162)">
-            transact(atom f)
-          </code>
-          <div class="tip" id="162">
-            <strong>Signature:</strong> atom:Atom&lt;&#39;T&gt; -&gt; f:(&#39;T -&gt; &#39;T * &#39;R) -&gt; &#39;R<br />
-                          <strong>Type parameters:</strong> 'T, 'R          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L63-63" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Perform atomic transaction on container.</p>
+          <p>Spin-wait until the latch is reset</p>
 
         </td>
       </tr>

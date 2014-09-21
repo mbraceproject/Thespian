@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>Latch - Thespian</title>
+    <title>Concurrency - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,63 +35,66 @@
 
 
 
-<h1>Latch</h1>
+<h1>Concurrency</h1>
 <div class="xmldoc">
-<p>Thread-safe latch</p>
+<p>Collection of Concurrency-related utilities</p>
 </div>
-  <h3>Constructors</h3>
-  <table class="table table-bordered member-list">
+
+<!-- Render nested types and modules, if there are any -->
+  <h2>Nested types and modules</h2>
+  <div>
+      <table class="table table-bordered type-list">
     <thead>
-      <tr><td>Constructor</td><td>Description</td></tr>
+      <tr><td>Type</td><td>Description</td></tr>
     </thead>
     <tbody>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '565', 565)" onmouseover="showTip(event, '565', 565)">
-            new()
-          </code>
-          <div class="tip" id="565">
-            <strong>Signature:</strong> unit -&gt; Latch<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L76-76" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
+        <tr>
+          <td class="type-name">
+            <a href="nessos-thespian-utils-concurrency-atom-1.html">Atom<'T></a>
+          </td>
+          <td class="xmldoc"><p>Thread-safe value container with optimistic update semantics</p>
+</td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="nessos-thespian-utils-concurrency-concurrentcounter.html">ConcurrentCounter</a>
+          </td>
+          <td class="xmldoc"><p>Thread safe counter implementation</p>
+</td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="nessos-thespian-utils-concurrency-countdownlatch.html">CountdownLatch</a>
+          </td>
+          <td class="xmldoc"><p>Thread-safe countdown latch.</p>
+</td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="nessos-thespian-utils-concurrency-latch.html">Latch</a>
+          </td>
+          <td class="xmldoc"><p>Thread-safe latch</p>
+</td>
+        </tr>
     </tbody>
   </table>
-  <h3>Instance members</h3>
-  <table class="table table-bordered member-list">
+  <table class="table table-bordered module-list">
     <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
+      <tr><td>Module</td><td>Description</td></tr>
     </thead>
     <tbody>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '569', 569)" onmouseover="showTip(event, '569', 569)">
-            Trigger()
-          </code>
-          <div class="tip" id="569">
-            <strong>Signature:</strong> unit -&gt; bool<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L83-83" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Trigger the latch; returns true iff call was successful.</p>
-
-        </td>
-      </tr>
+        <tr>
+          <td class="module-name">
+            <a href="nessos-thespian-utils-concurrency-atom.html">Atom</a>
+          </td>
+          <td class="xmldoc"><p>Atom utilities module</p>
+</td>
+        </tr>
     </tbody>
   </table>
+
+  </div>
+
 
         </div>
         <div class="span3">

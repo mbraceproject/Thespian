@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>Receiver<'T> - Thespian</title>
+    <title>Atom - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,75 +35,93 @@
 
 
 
-<h1>Receiver<'T></h1>
+<h1>Atom</h1>
 <div class="xmldoc">
+<p>Atom utilities module</p>
 </div>
-  <h3>Constructors</h3>
+
+<!-- Render nested types and modules, if there are any -->
+
+  <h3>Functions and values</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Constructor</td><td>Description</td></tr>
+      <tr><td>Function or value</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '333', 333)" onmouseover="showTip(event, '333', 333)">
-            new(name)
+          <code onmouseout="hideTip(event, '154', 154)" onmouseover="showTip(event, '154', 154)">
+            create(value)
           </code>
-          <div class="tip" id="333">
-            <strong>Signature:</strong> name:string -&gt; Receiver&lt;&#39;T&gt;<br />
-                      </div>
+          <div class="tip" id="154">
+            <strong>Signature:</strong> value:&#39;T -&gt; Atom&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Receiver.fs#L17-17" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L50-50" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Initialize a new atomic container with given value.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '334', 334)" onmouseover="showTip(event, '334', 334)">
-            new(name, protocols)
+          <code onmouseout="hideTip(event, '155', 155)" onmouseover="showTip(event, '155', 155)">
+            force(atom t)
           </code>
-          <div class="tip" id="334">
-            <strong>Signature:</strong> (name:string * protocols:IProtocolServer&lt;&#39;T&gt; []) -&gt; Receiver&lt;&#39;T&gt;<br />
-                      </div>
+          <div class="tip" id="155">
+            <strong>Signature:</strong> atom:Atom&lt;&#39;T&gt; -&gt; t:&#39;T -&gt; unit<br />
+                          <strong>Type parameters:</strong> 'T          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Receiver.fs#L6-6" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L71-71" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Force value on given atom.</p>
+
         </td>
       </tr>
-    </tbody>
-  </table>
-  <h3>Instance members</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
-    </thead>
-    <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '337', 337)" onmouseover="showTip(event, '337', 337)">
-            ReceiveEvent
+          <code onmouseout="hideTip(event, '156', 156)" onmouseover="showTip(event, '156', 156)">
+            swap(atom f)
           </code>
-          <div class="tip" id="337">
-            <strong>Signature:</strong> IEvent&lt;&#39;T&gt;<br />
-                      </div>
+          <div class="tip" id="156">
+            <strong>Signature:</strong> atom:Atom&lt;&#39;T&gt; -&gt; f:(&#39;T -&gt; &#39;T) -&gt; unit<br />
+                          <strong>Type parameters:</strong> 'T          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Receiver.fs#L33-33" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L57-57" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Atomically updates the container with given function.</p>
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '157', 157)" onmouseover="showTip(event, '157', 157)">
+            transact(atom f)
+          </code>
+          <div class="tip" id="157">
+            <strong>Signature:</strong> atom:Atom&lt;&#39;T&gt; -&gt; f:(&#39;T -&gt; &#39;T * &#39;R) -&gt; &#39;R<br />
+                          <strong>Type parameters:</strong> 'T, 'R          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L64-64" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Perform atomic transaction on container.</p>
+
         </td>
       </tr>
     </tbody>

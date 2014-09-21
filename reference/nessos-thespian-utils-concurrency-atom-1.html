@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>ConcurrentCounter - Thespian</title>
+    <title>Atom<'T> - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,9 +35,9 @@
 
 
 
-<h1>ConcurrentCounter</h1>
+<h1>Atom<'T></h1>
 <div class="xmldoc">
-<p>Thread safe counter implementation</p>
+<p>Thread-safe value container with optimistic update semantics</p>
 </div>
   <h3>Constructors</h3>
   <table class="table table-bordered member-list">
@@ -48,15 +48,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '566', 566)" onmouseover="showTip(event, '566', 566)">
-            new(?start)
+          <code onmouseout="hideTip(event, '586', 586)" onmouseover="showTip(event, '586', 586)">
+            new(value)
           </code>
-          <div class="tip" id="566">
-            <strong>Signature:</strong> (start:int64 option) -&gt; ConcurrentCounter<br />
+          <div class="tip" id="586">
+            <strong>Signature:</strong> value:&#39;T -&gt; Atom&lt;&#39;T&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L88-88" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L7-7" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -74,38 +74,76 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '570', 570)" onmouseover="showTip(event, '570', 570)">
-            Increment()
+          <code onmouseout="hideTip(event, '587', 587)" onmouseover="showTip(event, '587', 587)">
+            Force(value)
           </code>
-          <div class="tip" id="570">
-            <strong>Signature:</strong> unit -&gt; int64<br />
+          <div class="tip" id="587">
+            <strong>Signature:</strong> value:&#39;T -&gt; unit<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L95-95" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L40-40" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Increment the counter</p>
+          <p>Force a new value on container.</p>
 
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '571', 571)" onmouseover="showTip(event, '571', 571)">
-            Value
+          <code onmouseout="hideTip(event, '588', 588)" onmouseover="showTip(event, '588', 588)">
+            Swap(f)
           </code>
-          <div class="tip" id="571">
-            <strong>Signature:</strong> int64<br />
+          <div class="tip" id="588">
+            <strong>Signature:</strong> (f:(&#39;T -&gt; &#39;T)) -&gt; unit<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L100-100" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L28-28" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Current counter value</p>
+          <p>Atomically updates the container.</p>
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '589', 589)" onmouseover="showTip(event, '589', 589)">
+            Transact(f)
+          </code>
+          <div class="tip" id="589">
+            <strong>Signature:</strong> (f:(&#39;T -&gt; &#39;T * &#39;R)) -&gt; &#39;R<br />
+                          <strong>Type parameters:</strong> 'R          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L34-34" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Perform atomic transaction on container.</p>
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '590', 590)" onmouseover="showTip(event, '590', 590)">
+            Value
+          </code>
+          <div class="tip" id="590">
+            <strong>Signature:</strong> &#39;T<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L22-22" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Get Current Value</p>
 
         </td>
       </tr>

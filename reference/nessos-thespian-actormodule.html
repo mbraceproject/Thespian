@@ -54,8 +54,8 @@
             balance select actors
           </code>
           <div class="tip" id="1">
-            <strong>Signature:</strong> select:(seq&lt;ActorRef&lt;&#39;T&gt;&gt; -&gt; ActorRef&lt;&#39;T&gt;) -&gt; actors:&#39;?28014 -&gt; Actor&lt;&#39;T&gt;<br />
-                          <strong>Type parameters:</strong> 'T, '?28014          </div>
+            <strong>Signature:</strong> select:(seq&lt;ActorRef&lt;&#39;T&gt;&gt; -&gt; ActorRef&lt;&#39;T&gt;) -&gt; actors:&#39;?28017 -&gt; Actor&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T, '?28017          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L251-251" class="github-link">
@@ -90,8 +90,8 @@
             bindLinked body linkedActors
           </code>
           <div class="tip" id="3">
-            <strong>Signature:</strong> body:(Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) -&gt; linkedActors:&#39;?27991 -&gt; Actor&lt;&#39;T&gt;<br />
-                          <strong>Type parameters:</strong> 'T, '?27991          </div>
+            <strong>Signature:</strong> body:(Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) -&gt; linkedActors:&#39;?27994 -&gt; Actor&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T, '?27994          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L204-204" class="github-link">
@@ -126,8 +126,8 @@
             broadcast actors
           </code>
           <div class="tip" id="5">
-            <strong>Signature:</strong> actors:&#39;?28008 -&gt; Actor&lt;&#39;T&gt;<br />
-                          <strong>Type parameters:</strong> '?28008, 'T          </div>
+            <strong>Signature:</strong> actors:&#39;?28011 -&gt; Actor&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> '?28011, 'T          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L230-230" class="github-link">
@@ -216,8 +216,8 @@
             partition partitionF actors
           </code>
           <div class="tip" id="10">
-            <strong>Signature:</strong> partitionF:(&#39;T -&gt; int) -&gt; actors:&#39;?28020 -&gt; Actor&lt;&#39;T&gt;<br />
-                          <strong>Type parameters:</strong> 'T, '?28020          </div>
+            <strong>Signature:</strong> partitionF:(&#39;T -&gt; int) -&gt; actors:&#39;?28023 -&gt; Actor&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T, '?28023          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L263-263" class="github-link">
@@ -234,8 +234,8 @@
             publish protocolFactories actor
           </code>
           <div class="tip" id="11">
-            <strong>Signature:</strong> protocolFactories:&#39;?27996 -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;&#39;T&gt;<br />
-                          <strong>Type parameters:</strong> '?27996, 'U, 'T          </div>
+            <strong>Signature:</strong> protocolFactories:&#39;?27999 -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> '?27999, 'U, 'T          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L214-214" class="github-link">
@@ -288,8 +288,8 @@
             scatter choiceF gatherF actors
           </code>
           <div class="tip" id="14">
-            <strong>Signature:</strong> choiceF:(&#39;T -&gt; (IReplyChannel&lt;&#39;R&gt; * (IReplyChannel&lt;&#39;R&gt; -&gt; &#39;T)) option) -&gt; gatherF:(seq&lt;Reply&lt;&#39;R&gt;&gt; -&gt; Reply&lt;&#39;R&gt;) -&gt; actors:&#39;?28024 -&gt; Actor&lt;&#39;T&gt;<br />
-                          <strong>Type parameters:</strong> 'T, 'R, '?28024          </div>
+            <strong>Signature:</strong> choiceF:(&#39;T -&gt; (IReplyChannel&lt;&#39;R&gt; * (IReplyChannel&lt;&#39;R&gt; -&gt; &#39;T)) option) -&gt; gatherF:(seq&lt;Reply&lt;&#39;R&gt;&gt; -&gt; Reply&lt;&#39;R&gt;) -&gt; actors:&#39;?28027 -&gt; Actor&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T, 'R, '?28027          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L269-269" class="github-link">
@@ -342,8 +342,8 @@
             spawnLinked processFunc linkedActors
           </code>
           <div class="tip" id="17">
-            <strong>Signature:</strong> processFunc:(&#39;T -&gt; Async&lt;unit&gt;) -&gt; linkedActors:&#39;?27994 -&gt; Actor&lt;&#39;T&gt;<br />
-                          <strong>Type parameters:</strong> 'T, '?27994          </div>
+            <strong>Signature:</strong> processFunc:(&#39;T -&gt; Async&lt;unit&gt;) -&gt; linkedActors:&#39;?27997 -&gt; Actor&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T, '?27997          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L206-206" class="github-link">
