@@ -6,6 +6,7 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 
+open Nessos.Thespian.Utils.Concurrency
 open Nessos.Thespian.Utils.Task
 
 

@@ -1,4 +1,5 @@
-namespace Nessos.Thespian.Utils
+/// Collection of Concurrency-related utilities
+module Nessos.Thespian.Utils.Concurrency
 
 open System.Threading
 
