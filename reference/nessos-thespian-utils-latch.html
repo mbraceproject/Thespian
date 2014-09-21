@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>Log - Thespian</title>
+    <title>Latch - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,9 +35,63 @@
 
 
 
-<h1>Log</h1>
+<h1>Latch</h1>
 <div class="xmldoc">
+<p>Thread-safe latch</p>
 </div>
+  <h3>Constructors</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Constructor</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '565', 565)" onmouseover="showTip(event, '565', 565)">
+            new()
+          </code>
+          <div class="tip" id="565">
+            <strong>Signature:</strong> unit -&gt; Latch<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L76-76" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>Instance members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Instance member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '569', 569)" onmouseover="showTip(event, '569', 569)">
+            Trigger()
+          </code>
+          <div class="tip" id="569">
+            <strong>Signature:</strong> unit -&gt; bool<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L83-83" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Trigger the latch; returns true iff call was successful.</p>
+
+        </td>
+      </tr>
+    </tbody>
+  </table>
 
         </div>
         <div class="span3">

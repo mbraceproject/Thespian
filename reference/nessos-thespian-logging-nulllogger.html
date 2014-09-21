@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>CountdownLatch - Thespian</title>
+    <title>NullLogger - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,9 +35,9 @@
 
 
 
-<h1>CountdownLatch</h1>
+<h1>NullLogger</h1>
 <div class="xmldoc">
-<p>Thread-safe countdown latch.</p>
+<p>A logger implementation that does nothing.</p>
 </div>
   <h3>Constructors</h3>
   <table class="table table-bordered member-list">
@@ -48,84 +48,19 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '635', 635)" onmouseover="showTip(event, '635', 635)">
+          <code onmouseout="hideTip(event, '194', 194)" onmouseover="showTip(event, '194', 194)">
             new()
           </code>
-          <div class="tip" id="635">
-            <strong>Signature:</strong> unit -&gt; CountdownLatch<br />
+          <div class="tip" id="194">
+            <strong>Signature:</strong> unit -&gt; NullLogger<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L103-103" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Logging.fs#L37-37" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
           
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <h3>Instance members</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '647', 647)" onmouseover="showTip(event, '647', 647)">
-            Decrement()
-          </code>
-          <div class="tip" id="647">
-            <strong>Signature:</strong> unit -&gt; int<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L111-111" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Reset the latch</p>
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '648', 648)" onmouseover="showTip(event, '648', 648)">
-            Increment()
-          </code>
-          <div class="tip" id="648">
-            <strong>Signature:</strong> unit -&gt; int<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L108-108" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Set the latch</p>
-
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '649', 649)" onmouseover="showTip(event, '649', 649)">
-            WaitToZero()
-          </code>
-          <div class="tip" id="649">
-            <strong>Signature:</strong> unit -&gt; unit<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L114-114" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          <p>Spin-wait until the latch is reset</p>
-
         </td>
       </tr>
     </tbody>

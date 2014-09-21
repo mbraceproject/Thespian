@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>Log - Thespian</title>
+    <title>CountdownLatch - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,124 +35,97 @@
 
 
 
-<h1>Log</h1>
+<h1>CountdownLatch</h1>
 <div class="xmldoc">
+<p>Thread-safe countdown latch.</p>
 </div>
-
-<!-- Render nested types and modules, if there are any -->
-
-  <h3>Functions and values</h3>
+  <h3>Constructors</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Function or value</td><td>Description</td></tr>
+      <tr><td>Constructor</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '37', 37)" onmouseover="showTip(event, '37', 37)">
-            log time lvl msg
+          <code onmouseout="hideTip(event, '534', 534)" onmouseover="showTip(event, '534', 534)">
+            new()
           </code>
-          <div class="tip" id="37">
-            <strong>Signature:</strong> time:DateTime -&gt; lvl:LogLevel -&gt; msg:string -&gt; unit<br />
+          <div class="tip" id="534">
+            <strong>Signature:</strong> unit -&gt; CountdownLatch<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Types.fs#L72-72" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L105-105" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
           
         </td>
       </tr>
+    </tbody>
+  </table>
+  <h3>Instance members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Instance member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '38', 38)" onmouseover="showTip(event, '38', 38)">
-            logError msg
+          <code onmouseout="hideTip(event, '540', 540)" onmouseover="showTip(event, '540', 540)">
+            Decrement()
           </code>
-          <div class="tip" id="38">
-            <strong>Signature:</strong> msg:string -&gt; unit<br />
+          <div class="tip" id="540">
+            <strong>Signature:</strong> unit -&gt; int<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Types.fs#L76-76" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L113-113" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Reset the latch</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '39', 39)" onmouseover="showTip(event, '39', 39)">
-            logException e msg
+          <code onmouseout="hideTip(event, '541', 541)" onmouseover="showTip(event, '541', 541)">
+            Increment()
           </code>
-          <div class="tip" id="39">
-            <strong>Signature:</strong> e:exn -&gt; msg:string -&gt; unit<br />
+          <div class="tip" id="541">
+            <strong>Signature:</strong> unit -&gt; int<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Types.fs#L78-78" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L110-110" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Set the latch</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '40', 40)" onmouseover="showTip(event, '40', 40)">
-            logInfo msg
+          <code onmouseout="hideTip(event, '542', 542)" onmouseover="showTip(event, '542', 542)">
+            WaitToZero()
           </code>
-          <div class="tip" id="40">
-            <strong>Signature:</strong> msg:string -&gt; unit<br />
+          <div class="tip" id="542">
+            <strong>Signature:</strong> unit -&gt; unit<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Types.fs#L74-74" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L116-116" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
+          <p>Spin-wait until the latch is reset</p>
 
-          <code onmouseout="hideTip(event, '41', 41)" onmouseover="showTip(event, '41', 41)">
-            logNow lvl msg
-          </code>
-          <div class="tip" id="41">
-            <strong>Signature:</strong> lvl:LogLevel -&gt; msg:string -&gt; unit<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Types.fs#L73-73" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '42', 42)" onmouseover="showTip(event, '42', 42)">
-            logWarning msg
-          </code>
-          <div class="tip" id="42">
-            <strong>Signature:</strong> msg:string -&gt; unit<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Types.fs#L75-75" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
         </td>
       </tr>
     </tbody>

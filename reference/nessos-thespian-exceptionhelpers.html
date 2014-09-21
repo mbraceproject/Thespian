@@ -37,6 +37,7 @@
 
 <h1>ExceptionHelpers</h1>
 <div class="xmldoc">
+<p>A collection of active patterns for handling Thespian exceptions.</p>
 </div>
 
 <!-- Render nested types and modules, if there are any -->
@@ -50,109 +51,135 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '31', 31)" onmouseover="showTip(event, '31', 31)">
+          <code onmouseout="hideTip(event, '37', 37)" onmouseover="showTip(event, '37', 37)">
             ( |CommunicationException|_| ) e
           </code>
-          <div class="tip" id="31">
+          <div class="tip" id="37">
             <strong>Signature:</strong> e:exn -&gt; (string * exn) option<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L284-284" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L377-377" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>CommunicationException active pattern</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '32', 32)" onmouseover="showTip(event, '32', 32)">
+          <code onmouseout="hideTip(event, '38', 38)" onmouseover="showTip(event, '38', 38)">
             ( |CommunicationTimeoutException|_| ) e
           </code>
-          <div class="tip" id="32">
+          <div class="tip" id="38">
             <strong>Signature:</strong> e:exn -&gt; (string * obj * exn) option<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L279-279" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L371-371" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>CommunicationTimeoutException active pattern</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '33', 33)" onmouseover="showTip(event, '33', 33)">
+          <code onmouseout="hideTip(event, '39', 39)" onmouseover="showTip(event, '39', 39)">
             ( |DeliveryException|_| ) e
           </code>
-          <div class="tip" id="33">
+          <div class="tip" id="39">
             <strong>Signature:</strong> e:exn -&gt; (string * exn) option<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L296-296" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L391-391" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>DeliveryException active pattern</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '34', 34)" onmouseover="showTip(event, '34', 34)">
+          <code onmouseout="hideTip(event, '40', 40)" onmouseover="showTip(event, '40', 40)">
             ( |InnerException|_| ) e
           </code>
-          <div class="tip" id="34">
+          <div class="tip" id="40">
             <strong>Signature:</strong> e:exn -&gt; exn option<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L302-302" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L398-398" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Inner exception active pattern</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '35', 35)" onmouseover="showTip(event, '35', 35)">
+          <code onmouseout="hideTip(event, '41', 41)" onmouseover="showTip(event, '41', 41)">
             ( |MessageHandlingException|_| ) e
           </code>
-          <div class="tip" id="35">
+          <div class="tip" id="41">
             <strong>Signature:</strong> e:exn -&gt; (string * exn) option<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L274-274" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L353-353" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>MessageHandlingException active pattern</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '36', 36)" onmouseover="showTip(event, '36', 36)">
-            ( |UnknownRecipientException|_| ) e
+          <code onmouseout="hideTip(event, '42', 42)" onmouseover="showTip(event, '42', 42)">
+            ( |MessageHandlingExceptionRec|_| ) e
           </code>
-          <div class="tip" id="36">
+          <div class="tip" id="42">
             <strong>Signature:</strong> e:exn -&gt; (string * exn) option<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L290-290" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L360-360" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>recursively traverses through MessageHandlingExceptions, 
+retrieving the innermost exception raised by the original actor.</p>
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '43', 43)" onmouseover="showTip(event, '43', 43)">
+            ( |UnknownRecipientException|_| ) e
+          </code>
+          <div class="tip" id="43">
+            <strong>Signature:</strong> e:exn -&gt; (string * exn) option<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Exceptions.fs#L384-384" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>UnknownRecipientException active pattern</p>
+
         </td>
       </tr>
     </tbody>

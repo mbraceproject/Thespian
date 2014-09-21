@@ -37,6 +37,7 @@
 
 <h1>IMessageSerializer</h1>
 <div class="xmldoc">
+<p>Abstract message serialization interface used by Thespian</p>
 </div>
   <h3>Instance members</h3>
   <table class="table table-bordered member-list">
@@ -47,58 +48,61 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '212', 212)" onmouseover="showTip(event, '212', 212)">
+          <code onmouseout="hideTip(event, '205', 205)" onmouseover="showTip(event, '205', 205)">
             Deserialize(data, ?context)
           </code>
-          <div class="tip" id="212">
+          <div class="tip" id="205">
             <strong>Signature:</strong> (data:byte [] * context:StreamingContext option) -&gt; &#39;T<br />
               <strong>Modifiers:</strong> abstract<br />
                           <strong>Type parameters:</strong> 'T          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Serialization.fs#L13-13" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Serialization.fs#L26-26" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Deserialize a value of byte array.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '213', 213)" onmouseover="showTip(event, '213', 213)">
+          <code onmouseout="hideTip(event, '206', 206)" onmouseover="showTip(event, '206', 206)">
             Name
           </code>
-          <div class="tip" id="213">
+          <div class="tip" id="206">
             <strong>Signature:</strong> string<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Serialization.fs#L11-11" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '214', 214)" onmouseover="showTip(event, '214', 214)">
-            Serialize(arg1, ?context)
-          </code>
-          <div class="tip" id="214">
-            <strong>Signature:</strong> (&#39;T * context:StreamingContext option) -&gt; byte []<br />
-              <strong>Modifiers:</strong> abstract<br />
-                          <strong>Type parameters:</strong> 'T          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Serialization.fs#L12-12" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Serialization identifier</p>
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '207', 207)" onmouseover="showTip(event, '207', 207)">
+            Serialize(arg1, ?context)
+          </code>
+          <div class="tip" id="207">
+            <strong>Signature:</strong> (&#39;T * context:StreamingContext option) -&gt; byte []<br />
+              <strong>Modifiers:</strong> abstract<br />
+                          <strong>Type parameters:</strong> 'T          </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Serialization.fs#L19-19" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Serialize a value to byte array.</p>
+
         </td>
       </tr>
     </tbody>

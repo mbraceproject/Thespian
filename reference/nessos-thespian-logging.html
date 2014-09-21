@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>Latch - Thespian</title>
+    <title>Logging - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,58 +35,94 @@
 
 
 
-<h1>Latch</h1>
+<h1>Logging</h1>
 <div class="xmldoc">
-<p>Thread-safe latch</p>
 </div>
-  <h3>Constructors</h3>
-  <table class="table table-bordered member-list">
+
+<!-- Render nested types and modules, if there are any -->
+  <h2>Nested types and modules</h2>
+  <div>
+      <table class="table table-bordered type-list">
     <thead>
-      <tr><td>Constructor</td><td>Description</td></tr>
+      <tr><td>Type</td><td>Description</td></tr>
     </thead>
     <tbody>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '570', 570)" onmouseover="showTip(event, '570', 570)">
-            new()
-          </code>
-          <div class="tip" id="570">
-            <strong>Signature:</strong> unit -&gt; Latch<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L74-74" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
+        <tr>
+          <td class="type-name">
+            <a href="nessos-thespian-logging-ilogger.html">ILogger</a>
+          </td>
+          <td class="xmldoc"><p>Abstract logger implementation</p>
+</td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="nessos-thespian-logging-log.html">Log</a>
+          </td>
+          <td class="xmldoc"><p>Actor Log event type</p>
+</td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="nessos-thespian-logging-loglevel.html">LogLevel</a>
+          </td>
+          <td class="xmldoc"><p>LogLevel of a log event.</p>
+</td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="nessos-thespian-logging-logsource.html">LogSource</a>
+          </td>
+          <td class="xmldoc"><p>Specifies the log source of a log event.</p>
+</td>
+        </tr>
+        <tr>
+          <td class="type-name">
+            <a href="nessos-thespian-logging-nulllogger.html">NullLogger</a>
+          </td>
+          <td class="xmldoc"><p>A logger implementation that does nothing.</p>
+</td>
+        </tr>
     </tbody>
   </table>
-  <h3>Instance members</h3>
+  <table class="table table-bordered module-list">
+    <thead>
+      <tr><td>Module</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td class="module-name">
+            <a href="nessos-thespian-logging-logmodule.html">Log</a>
+          </td>
+          <td class="xmldoc"><p>A collection of logging functions that write entries to the default logger.</p>
+</td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+  <h3>Functions and values</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
+      <tr><td>Function or value</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '600', 600)" onmouseover="showTip(event, '600', 600)">
-            Trigger()
+          <code onmouseout="hideTip(event, '44', 44)" onmouseover="showTip(event, '44', 44)">
+            DefaultLogger 
           </code>
-          <div class="tip" id="600">
-            <strong>Signature:</strong> unit -&gt; bool<br />
+          <div class="tip" id="44">
+            <strong>Signature:</strong> ILogger<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L81-81" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Logging.fs#L42-42" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          <p>Trigger the latch; returns true iff call was successful.</p>
+          <p>Gets or sets the default logger implementation used by Thespian.</p>
 
         </td>
       </tr>

@@ -47,11 +47,29 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '185', 185)" onmouseover="showTip(event, '185', 185)">
+          <code onmouseout="hideTip(event, '200', 200)" onmouseover="showTip(event, '200', 200)">
             new(otherActor)
           </code>
-          <div class="tip" id="185">
+          <div class="tip" id="200">
             <strong>Signature:</strong> otherActor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;&#39;T&gt;<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L66-66" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '201', 201)" onmouseover="showTip(event, '201', 201)">
+            new(behavior, ?linkedActors)
+          </code>
+          <div class="tip" id="201">
+            <strong>Signature:</strong> (behavior:(Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) * linkedActors:seq&lt;Actor&gt; option) -&gt; Actor&lt;&#39;T&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
@@ -65,11 +83,11 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '186', 186)" onmouseover="showTip(event, '186', 186)">
-            new(behavior, ?linkedActors)
+          <code onmouseout="hideTip(event, '202', 202)" onmouseover="showTip(event, '202', 202)">
+            new(name, behavior, ?linkedActors)
           </code>
-          <div class="tip" id="186">
-            <strong>Signature:</strong> (behavior:(Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) * linkedActors:seq&lt;Actor&gt; option) -&gt; Actor&lt;&#39;T&gt;<br />
+          <div class="tip" id="202">
+            <strong>Signature:</strong> (name:string * behavior:(Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) * linkedActors:seq&lt;Actor&gt; option) -&gt; Actor&lt;&#39;T&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
@@ -83,33 +101,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '187', 187)" onmouseover="showTip(event, '187', 187)">
-            new(name, behavior, ?linkedActors)
-          </code>
-          <div class="tip" id="187">
-            <strong>Signature:</strong> (name:string * behavior:(Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) * linkedActors:seq&lt;Actor&gt; option) -&gt; Actor&lt;&#39;T&gt;<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L63-63" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '188', 188)" onmouseover="showTip(event, '188', 188)">
+          <code onmouseout="hideTip(event, '203', 203)" onmouseover="showTip(event, '203', 203)">
             new(...)
           </code>
-          <div class="tip" id="188">
+          <div class="tip" id="203">
             <strong>Signature:</strong> (name:string * protocols:IProtocolServer&lt;&#39;T&gt; [] * behavior:(Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) * linkedActors:seq&lt;Actor&gt; option) -&gt; Actor&lt;&#39;T&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L31-31" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L32-32" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -127,15 +127,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '192', 192)" onmouseover="showTip(event, '192', 192)">
+          <code onmouseout="hideTip(event, '217', 217)" onmouseover="showTip(event, '217', 217)">
             Name
           </code>
-          <div class="tip" id="192">
+          <div class="tip" id="217">
             <strong>Signature:</strong> string<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L71-71" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L72-72" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -145,15 +145,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '194', 194)" onmouseover="showTip(event, '194', 194)">
+          <code onmouseout="hideTip(event, '218', 218)" onmouseover="showTip(event, '218', 218)">
             PendingMessages
           </code>
-          <div class="tip" id="194">
+          <div class="tip" id="218">
             <strong>Signature:</strong> int<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L75-75" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L76-76" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -163,16 +163,16 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '195', 195)" onmouseover="showTip(event, '195', 195)">
+          <code onmouseout="hideTip(event, '219', 219)" onmouseover="showTip(event, '219', 219)">
             Publish(arg1)
           </code>
-          <div class="tip" id="195">
-            <strong>Signature:</strong> &#39;?25256 -&gt; Actor&lt;&#39;T&gt;<br />
+          <div class="tip" id="219">
+            <strong>Signature:</strong> &#39;?25230 -&gt; Actor&lt;&#39;T&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
-                          <strong>Type parameters:</strong> '?25256, 'U          </div>
+                          <strong>Type parameters:</strong> '?25230, 'U          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L92-92" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L93-93" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -182,16 +182,16 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '196', 196)" onmouseover="showTip(event, '196', 196)">
+          <code onmouseout="hideTip(event, '220', 220)" onmouseover="showTip(event, '220', 220)">
             Publish(arg1)
           </code>
-          <div class="tip" id="196">
+          <div class="tip" id="220">
             <strong>Signature:</strong> (IProtocolServer&lt;&#39;T&gt; []) -&gt; Actor&lt;&#39;T&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L89-89" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L90-90" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -201,16 +201,16 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '197', 197)" onmouseover="showTip(event, '197', 197)">
+          <code onmouseout="hideTip(event, '221', 221)" onmouseover="showTip(event, '221', 221)">
             ReBind(arg1)
           </code>
-          <div class="tip" id="197">
+          <div class="tip" id="221">
             <strong>Signature:</strong> ((Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;)) -&gt; unit<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L155-155" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L156-156" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -220,16 +220,16 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '198', 198)" onmouseover="showTip(event, '198', 198)">
+          <code onmouseout="hideTip(event, '222', 222)" onmouseover="showTip(event, '222', 222)">
             Receive(?timeout)
           </code>
-          <div class="tip" id="198">
+          <div class="tip" id="222">
             <strong>Signature:</strong> (timeout:int option) -&gt; Async&lt;&#39;T&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L114-114" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L115-115" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -239,16 +239,16 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '199', 199)" onmouseover="showTip(event, '199', 199)">
+          <code onmouseout="hideTip(event, '223', 223)" onmouseover="showTip(event, '223', 223)">
             Ref
           </code>
-          <div class="tip" id="199">
+          <div class="tip" id="223">
             <strong>Signature:</strong> ActorRef&lt;&#39;T&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L111-111" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L112-112" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -258,16 +258,16 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '200', 200)" onmouseover="showTip(event, '200', 200)">
+          <code onmouseout="hideTip(event, '224', 224)" onmouseover="showTip(event, '224', 224)">
             Rename(arg1)
           </code>
-          <div class="tip" id="200">
+          <div class="tip" id="224">
             <strong>Signature:</strong> string -&gt; Actor&lt;&#39;T&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L96-96" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L97-97" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -277,16 +277,16 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '201', 201)" onmouseover="showTip(event, '201', 201)">
+          <code onmouseout="hideTip(event, '225', 225)" onmouseover="showTip(event, '225', 225)">
             TryReceive(?timeout)
           </code>
-          <div class="tip" id="201">
+          <div class="tip" id="225">
             <strong>Signature:</strong> (timeout:int option) -&gt; Async&lt;&#39;T option&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L117-117" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L118-118" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>

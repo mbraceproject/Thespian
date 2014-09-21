@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>IOExtensions - Thespian</title>
+    <title>ConcurrentCounter - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,12 +35,82 @@
 
 
 
-<h1>IOExtensions</h1>
+<h1>ConcurrentCounter</h1>
 <div class="xmldoc">
+<p>Thread safe counter implementation</p>
 </div>
+  <h3>Constructors</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Constructor</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
 
-<!-- Render nested types and modules, if there are any -->
+          <code onmouseout="hideTip(event, '566', 566)" onmouseover="showTip(event, '566', 566)">
+            new(?start)
+          </code>
+          <div class="tip" id="566">
+            <strong>Signature:</strong> (start:int64 option) -&gt; ConcurrentCounter<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L88-88" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>Instance members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Instance member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
 
+          <code onmouseout="hideTip(event, '570', 570)" onmouseover="showTip(event, '570', 570)">
+            Increment()
+          </code>
+          <div class="tip" id="570">
+            <strong>Signature:</strong> unit -&gt; int64<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L95-95" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Increment the counter</p>
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '571', 571)" onmouseover="showTip(event, '571', 571)">
+            Value
+          </code>
+          <div class="tip" id="571">
+            <strong>Signature:</strong> int64<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Utils/Concurrency.fs#L100-100" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Current counter value</p>
+
+        </td>
+      </tr>
+    </tbody>
+  </table>
 
         </div>
         <div class="span3">
