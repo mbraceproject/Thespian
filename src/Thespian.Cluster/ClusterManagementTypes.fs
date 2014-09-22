@@ -913,7 +913,7 @@ and NodeState = {
                 try
                     do! handler
                 with e -> ctx.LogError e
-            | ExecSync(R reply) -> reply nothing
+            | ExecSync(reply) -> do! reply.Reply ()
         })
         |> Actor.start
 

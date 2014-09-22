@@ -3,6 +3,7 @@ namespace Nessos.Thespian.Utils
 open System
 open System.Reflection
 open System.Collections.Concurrent
+open System.Runtime.Serialization
 
 /// Collection of general-purpose utility functions
 [<AutoOpen>]
@@ -41,6 +42,22 @@ module Utility =
     let sprintf fmt =
         if isFsharp31 then sprintf fmt
         else Cache<_>.Format(fmt)
+
+    type SerializationInfo with
+        /// <summary>
+        ///     Write value to SerializationInfo.
+        /// </summary>
+        /// <param name="id">value identifier.</param>
+        /// <param name="value">value to be written.</param>
+        member inline sI.Write<'T> (id : string) (value : 'T) =
+            sI.AddValue(id, value, typeof<'T>)
+
+        /// <summary>
+        ///     Read value from SerializationInfo.
+        /// </summary>
+        /// <param name="id">value identifier.</param>
+        member inline sI.Read<'T>(id : string) =
+            sI.GetValue(id, typeof<'T>) :?> 'T
 
 
 /// A collection of utilities for authoring F# classes

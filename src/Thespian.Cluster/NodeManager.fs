@@ -40,7 +40,7 @@ let private assumeAltMaster (ctx: BehaviorContext<_>) (state: NodeState) reply c
                 //Should be exception free
                 let state' = createAltMaster state clusterState
 
-                reply <| Ok state'.ClusterStateLogger.Value.Ref
+                reply <| Value state'.ClusterStateLogger.Value.Ref
 
                 return stay state'
             with e ->
@@ -185,9 +185,9 @@ let rec private initCluster (ctx: BehaviorContext<_>)
 
                 //reply the addresses of alt master nodes
                 if totalAltMasterFailure then
-                    reply <| Ok Array.empty
+                    reply <| Value Array.empty
                 else
-                    clusterState'''.AltMasters |> List.toArray |> Ok |> reply
+                    clusterState'''.AltMasters |> List.toArray |> Value |> reply
 
                 ctx.LogInfo "Attaching slave nodes to cluster..."
 
@@ -261,7 +261,7 @@ let rec private initCluster (ctx: BehaviorContext<_>)
             return! initClusterProper()
         else
             ctx.LogWarning <| sprintf "Managed cluster with id %A already initialized." clusterConfiguration.ClusterId
-            state.ManagedClusters.[clusterConfiguration.ClusterId].AltMasters |> List.toArray |> Ok |> reply
+            state.ManagedClusters.[clusterConfiguration.ClusterId].AltMasters |> List.toArray |> Value |> reply
             return stay state
     }
 
@@ -272,7 +272,7 @@ and private resolve (ctx: BehaviorContext<_>) reply state activationRef =
         try
             //Throws
             //ActivationResolutionException => activationRef not found;; reply to client
-            NodeRegistry.Registry.ResolveLocal activationRef |> Ok |> reply
+            NodeRegistry.Registry.ResolveLocal activationRef |> Value |> reply
 
             return stay state
         with ActivationResolutionException _ as e ->
@@ -287,7 +287,7 @@ and private resolve (ctx: BehaviorContext<_>) reply state activationRef =
 and private tryResolve (ctx: BehaviorContext<_>) reply state activationRef =
     async {
         try
-            NodeRegistry.Registry.TryResolveLocal activationRef |> Ok |> reply
+            NodeRegistry.Registry.TryResolveLocal activationRef |> Value |> reply
 
             return stay state
         with e ->
@@ -302,7 +302,7 @@ and private tryGetManagedCluster (ctx: BehaviorContext<_>) reply state clusterId
         try
             state.ManagedClusters |> Map.tryFind clusterId
             |> Option.map (fun managedCluster -> managedCluster.ClusterManager.Ref)
-            |> Ok
+            |> Value
             |> reply
         with e -> ctx.LogError e
 
@@ -428,7 +428,7 @@ and private getNodeType (ctx: BehaviorContext<_>) reply (state: NodeState) =
                 else if state.ClusterInfo.IsNone then NodeType.Master
                 else NodeType.Slave
 
-            reply (Ok nodeType)
+            reply (Value nodeType)
 
             return stay state
         with e ->
@@ -865,7 +865,7 @@ and private nodeManagerProper (ctx: BehaviorContext<NodeManager>) (state: NodeSt
                         |> Seq.collect (fun activation -> activation.DefinitionActivationResults)
                         |> Seq.toArray
                 
-                    reply <| Ok (actorActivationResults, definitionActivationResults)
+                    reply <| Value (actorActivationResults, definitionActivationResults)
 
                     ctx.LogInfo (sprintf "%O :: activation completed." activationRef.Definition)
 
@@ -882,7 +882,7 @@ and private nodeManagerProper (ctx: BehaviorContext<NodeManager>) (state: NodeSt
 
                     (Seq.toArray activations, 
                      Seq.toArray activeDefinitions)
-                    |> Ok
+                    |> Value
                     |> reply
 
                     return stay state

@@ -29,7 +29,7 @@ and private ConnectionPoolMsg =
 
 and SequentialClientConnectionPool(endPoint: IPEndPoint, minConnections: int, maxConnections: int, retryInterval: int) as self =
     let available = new Queue<TcpClient>()
-    let pendingReplies = new Queue<Result<PooledTcpClient> -> unit>()
+    let pendingReplies = new Queue<IReplyChannel<PooledTcpClient>>()
     let mutable occupied = 0
 
     let isConnected (client: TcpClient) =
@@ -86,10 +86,10 @@ and SequentialClientConnectionPool(endPoint: IPEndPoint, minConnections: int, ma
 
     let poolClient tracePrefix client = new PooledTcpClient(tracePrefix, client, self :> IClientConnectionPool)
 
-    let asyncAcquireClient (tracePrefix: string) (reply: Result<PooledTcpClient> -> unit) = 
+    let asyncAcquireClient (tracePrefix: string) (replyChannel: IReplyChannel<PooledTcpClient>) = 
         async {
             if available.Count = 0 then 
-                pendingReplies.Enqueue reply
+                pendingReplies.Enqueue replyChannel
             else
                 let freeClient = available.Dequeue()
                 if not (isConnected freeClient) then
@@ -100,32 +100,32 @@ and SequentialClientConnectionPool(endPoint: IPEndPoint, minConnections: int, ma
                     match newClientResult with
                     | Choice1Of2 newClient ->
                         occupied <- occupied + 1
-                        return reply <| Ok(poolClient tracePrefix newClient)
+                        return! replyChannel.Reply (poolClient tracePrefix newClient)
                     | Choice2Of2 e -> 
                         available.Enqueue(new TcpClient()) 
-                        return reply (Exn e)
+                        return! replyChannel.ReplyWithException e
                 else
                     occupied <- occupied + 1
-                    return reply <| Ok(poolClient tracePrefix freeClient)
+                    return! replyChannel.Reply (poolClient tracePrefix freeClient)
         }
 
     let releaseConnection(client: PooledTcpClient) =
       async {
         if pendingReplies.Count <> 0 then 
-            let reply = pendingReplies.Dequeue()
+            let rc = pendingReplies.Dequeue()
             if not (isConnected client.UnderlyingClient) then
 //                printfn "NOT CONNECTED"
                 try
                     //ensure disposal
                     client.UnderlyingClient.Close()
                     let! client' = getAvailableAsync() 
-                    reply <| Ok(poolClient client.TracePrefix client')
+                    return! rc.Reply (poolClient client.TracePrefix client')
                 with e ->
                     occupied <- occupied - 1
                     available.Enqueue (new TcpClient())
-                    reply (Exn e)
+                    return! rc.ReplyWithException e
             else 
-                reply <| Ok(poolClient client.TracePrefix client.UnderlyingClient)
+                return! rc.Reply(poolClient client.TracePrefix client.UnderlyingClient)
         else
             occupied <- occupied - 1
             available.Enqueue client.UnderlyingClient
@@ -141,15 +141,15 @@ and SequentialClientConnectionPool(endPoint: IPEndPoint, minConnections: int, ma
         let rec messageLoop() = async {
             let! msg = actor.Receive()
             match msg with
-            | AcquireConnection(R reply, tracePrefix) ->
+            | AcquireConnection(rc, tracePrefix) ->
                 try
-                    do! asyncAcquireClient tracePrefix reply
+                    do! asyncAcquireClient tracePrefix rc
 //                    printfn "Acquired: %A" <| getCounters()
-                with e -> reply <| Exn e
+                with e -> do! rc.ReplyWithException e
                 
                 return! messageLoop()
-            | GetCounters(R reply) ->
-               reply <| Ok (getCounters())
+            | GetCounters(rc) ->
+               do! rc.Reply (getCounters())
                return! messageLoop()
             | ReleaseConnection client ->
                 do! releaseConnection client

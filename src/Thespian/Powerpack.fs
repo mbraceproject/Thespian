@@ -31,7 +31,8 @@ type Guarantee<'T>(confirmChannel : IReplyChannel<unit>, msg : 'T) =
     interface IDisposable with
         member g.Dispose() = 
             if not isDisposed then 
-                confirmChannel.Reply nothing
+                // TODO: add .ReplySync extension method
+                confirmChannel.Reply () |> Async.RunSynchronously
                 isDisposed <- true
 
 type Suicidal<'T> = 
@@ -155,7 +156,7 @@ module Actor =
         let rec broadcastBehavior (self : Actor<Rely<'T>>) = 
             let recipientCount = actors |> Seq.length
             async { 
-                let! (R(reply), msg) = self.Receive()
+                let! rc, msg = self.Receive()
                 let exceptions = 
                     actors
                     |> Seq.fold (fun exceptions actor -> 
@@ -164,14 +165,14 @@ module Actor =
                                None :: exceptions
                            with e -> (Some e) :: exceptions) []
                     |> Seq.choose id
-                if recipientCount > 0 && exceptions
-                                         |> Seq.length = recipientCount then 
-                    reply << Exn 
-                    <| (CommunicationException
-                            ("Broadcast has failed. Unable to send message to any target.", exceptions |> Seq.head) :> exn)
+                if recipientCount > 0 && exceptions |> Seq.length = recipientCount then 
+                    do! rc.ReplyWithException <|
+                        new CommunicationException
+                            ("Broadcast has failed. Unable to send message to any target.", exceptions |> Seq.head)
                 else 
                     //confirm broadcast
-                    reply nothing
+                    do! rc.Reply ()
+
                 return! broadcastBehavior self
             }
         actors
@@ -191,12 +192,12 @@ module Actor =
                 with :? CommunicationException -> return! reliablyBroadcastMsg msgBuilder rest
         }
     
-    let parallelPostWithReply (msgBuilder : IReplyChannel<'R> -> 'T) (actorRefs : ActorRef<'T> list) : Async<Result<'R> []> = 
+    let parallelPostWithReply (msgBuilder : IReplyChannel<'R> -> 'T) (actorRefs : ActorRef<'T> list) : Async<Reply<'R> []> = 
         let post actorRef = 
             async { 
                 try 
                     let result = actorRef <!= msgBuilder
-                    return Ok result
+                    return Value result
                 with e -> return Exn e
             }
         actorRefs
@@ -205,7 +206,7 @@ module Actor =
     
     let failoverOnResult (msgBuilderF : 'T -> (IReplyChannel<'R> * (IReplyChannel<'R> -> 'T)) option) 
         (actors : #seq<Actor<'T>>) : Actor<'T> = 
-        let rec failoverLoop post (reportException : Exception -> unit) actors = 
+        let rec failoverLoop post (reportException : Exception -> Async<unit>) actors = 
             async { 
                 match actors with
                 | actor :: rest -> 
@@ -213,7 +214,7 @@ module Actor =
                         do! post actor
                     with _ -> return! failoverLoop post reportException rest
                 | [] -> 
-                    reportException <| CommunicationException("All failovers have failed. Unable to send message.")
+                    do! reportException <| CommunicationException("All failovers have failed. Unable to send message.")
                     return ()
             }
         
@@ -221,15 +222,18 @@ module Actor =
             async { 
                 let! msg = self.Receive()
                 match msgBuilderF msg with
-                | Some(R(reply), msgBuilder) -> 
+                | Some(rc, msgBuilder) -> 
                     do! actors
                         |> Seq.toList
-                        |> failoverLoop (fun actor -> async { let! result = !actor <!- msgBuilder
-                                                              reply <| Ok result }) (reply << Exn)
+                        |> failoverLoop (fun actor -> 
+                            async { 
+                                let! result = !actor <!- msgBuilder
+                                do! rc.Reply result
+                            }) rc.ReplyWithException
                 | None -> 
                     do! actors
                         |> Seq.toList
-                        |> failoverLoop (fun actor -> async { !actor <-- msg }) self.LogError
+                        |> failoverLoop (fun actor -> async { !actor <-- msg }) (fun e -> async { return self.LogError e })
                     return! failoverBehavior self
             }
         
@@ -273,11 +277,11 @@ module Actor =
             }) [ actor ]
     
     let replicate (replicas : #seq<Actor<'T>>) (actor : Actor<'T>) : Actor<Rely<'T>> = 
-        reliableBroadcast replicas |> reliablePostAction (fun ((R(reply)), msg) -> 
-                                          async { 
-                                              !actor <-- msg
-                                              reply nothing
-                                          })
+        reliableBroadcast replicas |> reliablePostAction (fun (rc, msg) -> 
+                                            async { 
+                                                do! !actor <-!- msg
+                                                return! rc.Reply ()
+                                            })
     
     let replicateSome (predicate : 'T -> bool) (replicas : #seq<Actor<'T>>) (actor : Actor<'T>) : Actor<Rely<'T>> = 
         reliableBroadcast replicas
@@ -300,9 +304,9 @@ module Actor =
             async { 
                 match msg with
                 | AsyncReplicated payload -> do! !replicated <!- fun ch -> Replicated(ch, payload)
-                | SyncReplicated(R reply, payload) -> 
+                | SyncReplicated(rc, payload) -> 
                     do! !replicated <!- fun ch -> Replicated(ch, payload)
-                    reply nothing
+                    do! rc.Reply ()
                 | SyncSingular payload -> !replicated <-- Singular payload
             }) [ replicated ]
     
@@ -367,7 +371,7 @@ module Failover =
                             | Choice2Of2 msgBuilder -> 
                                 try
                                     let! res = candidate <!- msgBuilder
-                                    return res |> Ok |> Some
+                                    return res |> Value |> Some
                                 with
                                 | MessageHandlingException(_, e) -> 
                                     return e |> Exn |> Some

@@ -75,10 +75,14 @@ let reliableReply (retriesPerError: int) (retryInterval: int) (ctx: BehaviorCont
     | Choice2Of2 faults ->
         ctx.LogWarning(sprintf "Reply failure: %A" (ReplyFailureException faults))
 
+// TODO : deprecate ; make reliable reply an extension method
+
+let nothing = Value ()
+
 let (|RR|) (ctx: BehaviorContext<'T>) (replyChannel: IReplyChannel<'R>) =
-    reliableReply 1 1000 ctx replyChannel.Reply
+    reliableReply 1 1000 ctx replyChannel.ReplySynchronously
 
 let (|RRi|) (ctx: BehaviorContext<'T>) (replyChannel: IReplyChannel<'R>) =
-    fun retriesPerError retryInterval r -> reliableReply retriesPerError retryInterval ctx replyChannel.Reply r
+    fun retriesPerError retryInterval r -> reliableReply retriesPerError retryInterval ctx replyChannel.ReplySynchronously r
 
 

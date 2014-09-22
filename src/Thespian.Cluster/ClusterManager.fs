@@ -956,7 +956,7 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
                 //OutOfNodesExceptions => unable to recover due to lack of node;; SYSTEM FAULT
                 let! transition = updateState stateUpdates
 
-                replyF <| Ok (List.toArray activations, List.toArray activeDefinitions)
+                replyF <| Value (List.toArray activations, List.toArray activeDefinitions)
 
                 return transition
             with InvalidActivationStrategy _ 
@@ -989,7 +989,7 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
         match msg with
         | ActivateDefinition(RR ctx reply, activationRecord) ->
             //ASSUME ALL EXCEPTIONS PROPERLY HANDLED AND DOCUMENTED
-            return! activateDef ctx true (function Ok _ -> reply nothing | Exn e -> reply (Exn e)) activationRecord ([], [])
+            return! activateDef ctx true (function Value _ -> reply nothing | Exn e -> reply (Exn e)) activationRecord ([], [])
 
         | ActivateDefinitionWithResults(RR ctx reply, activateExternalDependencies, activationRecord, externalActivations, externalActiveDefinitions) ->
             //ASSUME ALL EXCEPTIONS PROPERLY HANDLED AND DOCUMENTED
@@ -1027,7 +1027,7 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
                     |> Seq.choose id
                     |> Seq.toArray
 
-                reply (Ok results)
+                reply (Value results)
 
                 return stay state
             with e ->
@@ -1041,7 +1041,7 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
                 |> Query.where <@ fun clusterActivation -> clusterActivation.ActivationReference.Definition = definitionPath @>
                 |> Query.toSeq
                 |> Seq.toArray
-                |> Ok
+                |> Value
                 |> reply
 
                 return stay state
@@ -1051,7 +1051,7 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
 
         | GetAltNodes(RR ctx reply) ->
             try
-                state.AltMasterNodes |> Seq.toArray |> Ok |> reply
+                state.AltMasterNodes |> Seq.toArray |> Value |> reply
 
                 return stay state
             with e ->
@@ -1062,7 +1062,7 @@ let rec private clusterManagerBehaviorProper (ctx: BehaviorContext<ClusterManage
             try
                 state.Nodes |> Seq.append (Seq.singleton Cluster.NodeManager)
                 |> Seq.toArray
-                |> Ok
+                |> Value
                 |> reply
 
                 return stay state

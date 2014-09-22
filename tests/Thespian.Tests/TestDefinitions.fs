@@ -26,7 +26,7 @@ module PrimitiveBehaviors =
             let! m = self.Receive()
             match m with
             | TestAsync _ -> ()
-            | TestSync(R reply, _) -> reply <| Ok ()
+            | TestSync(rc, _) -> do! rc.Reply ()
         }
     
     let rec consume (self : Actor<TestMessage<unit>>) = 
@@ -34,7 +34,7 @@ module PrimitiveBehaviors =
             let! m = self.Receive()
             match m with
             | TestAsync() -> ()
-            | TestSync(R reply, _) -> reply <| Ok ()
+            | TestSync(rc, _) -> do! rc.Reply ()
             return! consume self
         }
     
@@ -42,8 +42,8 @@ module PrimitiveBehaviors =
         async { 
             let! m = self.Receive()
             match m with
-            | TestSync(R reply, _) -> 
-                reply <| Ok ()
+            | TestSync(rc, _) -> 
+                do! rc.Reply ()
                 self.Stop()
             | _ -> self.Stop()
         }
@@ -53,8 +53,8 @@ module PrimitiveBehaviors =
             let! m = self.Receive()
             match m with
             | TestAsync s' -> return! stateful s' self
-            | TestSync(R reply, s') -> 
-                reply (Ok s)
+            | TestSync(rc, s') -> 
+                do! rc.Reply s
                 return! stateful s' self
         }
     
@@ -62,8 +62,8 @@ module PrimitiveBehaviors =
         async { 
             let! m = self.Receive()
             match m with
-            | TestSync(R reply, _) -> 
-                reply nothing
+            | TestSync(rc, _) -> 
+                do! rc.Reply ()
                 failwith "Dead sync"
                 return! failing self
             | _ -> return! failing self
@@ -74,15 +74,15 @@ module Behaviors =
         async { 
             match m with
             | TestAsync s -> cell := s
-            | TestSync(R reply, _) -> reply nothing
+            | TestSync(rc, _) -> do! rc.Reply ()
         }
     
     let state (s : 'S) (m : TestMessage<'S, 'S>) = 
         async { 
             match m with
             | TestAsync s -> return s
-            | TestSync(R reply, s') -> 
-                reply (Ok s)
+            | TestSync(rc, s') -> 
+                do! rc.Reply s
                 return s'
         }
     
@@ -90,8 +90,8 @@ module Behaviors =
         async { 
             match m with
             | TestAsync s -> return s
-            | TestSync(R reply, _) -> 
-                reply (Ok s)
+            | TestSync(rc, _) -> 
+                do! rc.Reply s
                 return s
         }
     
@@ -99,9 +99,9 @@ module Behaviors =
         async { 
             match m with
             | TestAsync s -> return s
-            | TestSync(R reply, t) -> 
+            | TestSync(rc, t) -> 
                 do! Async.Sleep t
-                reply <| Ok s
+                do! rc.Reply s
                 return s
         }
     
@@ -112,8 +112,8 @@ module Behaviors =
             | Delay t -> 
                 do! Async.Sleep t
                 return l
-            | ListGet(R reply) -> 
-                reply <| Ok l
+            | ListGet rc -> 
+                do! rc.Reply l
                 return l
         }
     
@@ -121,8 +121,8 @@ module Behaviors =
         async { 
             match m with
             | TestAsync i' -> return i + i'
-            | TestSync(R reply, _) -> 
-                reply <| Ok i
+            | TestSync(rc, _) -> 
+                do! rc.Reply i
                 return i
         }
     
@@ -130,13 +130,13 @@ module Behaviors =
         async { 
             match m with
             | TestAsync i' -> return i'
-            | TestSync(R reply, i') -> 
+            | TestSync(rc, i') -> 
                 try 
                     let i'' = i / i'
-                    reply <| Ok i'
+                    do! rc.Reply i'
                     return i''
                 with e -> 
-                    reply (Exn e)
+                    do! rc.ReplyWithException e
                     return i
         }
     
@@ -153,9 +153,9 @@ module Behaviors =
         async { 
             match m with
             | MultiRepliesAsync v -> return v
-            | MultiRepliesSync(R reply1, R reply2) -> 
-                reply1 nothing
-                reply2 <| Ok s
+            | MultiRepliesSync(rc1, rc2) -> 
+                do! rc1.Reply ()
+                do! rc2.Reply s
                 return s
         }
 

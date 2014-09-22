@@ -10,6 +10,8 @@ open Nessos.Thespian.Tests.TestDefinitions
 
 [<AbstractClass>]
 type PrimaryProtocolTests(primaryProtocolFactory : IPrimaryProtocolFactory) =
+
+    static do System.Threading.ThreadPool.SetMinThreads(100,100) |> ignore
  
     let mutable defaultPrimaryProtocolFactory = Unchecked.defaultof<IPrimaryProtocolFactory>
     abstract PrimaryProtocolFactory : IPrimaryProtocolFactory

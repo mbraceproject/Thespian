@@ -8,6 +8,8 @@ open FsUnit
 [<TestFixture>]
 type BaseLifetimeTests() =
 
+    static do System.Threading.ThreadPool.SetMinThreads(100,100) |> ignore
+
     let timeoutPerNode = 15 * 1000 // in ms
 
     member __.ClusterSizes = [1; 2; 4; 8]

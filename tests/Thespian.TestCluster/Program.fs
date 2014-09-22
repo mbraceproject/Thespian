@@ -23,6 +23,9 @@ let mainLoop () : 'T =
 
 [<EntryPoint>]
 let main argv =
+    
+    let isSuccess = System.Threading.ThreadPool.SetMinThreads(100,100)
+
     let startupReceiverUri = argv.[0]
     
     Logging.DefaultLogger <- ConsoleLogger()

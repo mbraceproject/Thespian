@@ -180,9 +180,6 @@ module Operators =
     let inline (<!=) (actorRef: ActorRef<'T>) (msgF: IReplyChannel<'R> -> 'T) = actorRef <!- msgF |> Async.RunSynchronously
 
     let inline (!) (actor: Actor<'T>): ActorRef<'T> = actor.Ref
-
-    //convenience for replying
-    let nothing = Ok ()
                 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Actor =
@@ -267,7 +264,7 @@ module Actor =
         }) (actors |> Seq.map (fun a -> a :> Actor))
 
     let scatter (choiceF: 'T -> (IReplyChannel<'R> * (IReplyChannel<'R> -> 'T)) option) 
-        (gatherF: seq<Result<'R>> -> Result<'R>) 
+        (gatherF: seq<Reply<'R>> -> Reply<'R>) 
         (actors: #seq<Actor<'T>>): Actor<'T> =
 
         spawnLinked (fun msg -> async {
@@ -277,12 +274,12 @@ module Actor =
                     [ for actor in actors -> async {
                             try
                                 let! result = !actor <!- msgBuilder
-                                return Ok result
+                                return Value result
                             with e ->
                                 return Exn e
                         }
                     ] |> Async.Parallel
-                results |> Array.toSeq |> gatherF |> replyChannel.Reply
+                return! results |> Array.toSeq |> gatherF |> replyChannel.AsyncReply
             | None -> ()
         }) (actors |> Seq.map (fun a -> a :> Actor))
 

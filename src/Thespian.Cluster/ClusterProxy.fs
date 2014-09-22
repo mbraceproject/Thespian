@@ -48,7 +48,7 @@ let clusterProxyBehavior (proxyMap: Atom<Map<ActivationReference, ReliableActorR
                 //FaultPoint
                 //e => reply the exception
                 let! r = actorRef <!- msgF
-                reply (Ok r)
+                reply (Value r)
             with e ->
                 reply <| Exn e
 
@@ -61,7 +61,7 @@ let clusterProxyBehavior (proxyMap: Atom<Map<ActivationReference, ReliableActorR
                 | PostRaw _ -> actorRef <-- payload
                 | PostWithReplyRaw(RR ctx reply, payload) ->
                     let! r = actorRef <!- fun ch -> PostWithReplyRaw(ch, payload)
-                    reply (Ok r)
+                    reply (Value r)
             with e -> ctx.LogError e
 
         | RegisterProxy(activationRef, actorRef) ->

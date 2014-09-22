@@ -38,7 +38,7 @@ type RawProxyActorDefinition<'T>(parent: DefinitionPath, normalDef: ActorDefinit
                     let! r = normal <!- msgF
 
                     Raw.fromMessage r
-                    |> Ok
+                    |> Value
                     |> reply
             with e -> ctx.LogError e
         })

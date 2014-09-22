@@ -12,7 +12,7 @@ type MailboxActorId(name : string) =
     inherit ActorId(name)
     override actorId.ToString() = name
 
-type MailboxReplyChannel<'T>(asyncReplyChannel: AsyncReplyChannel<Result<'T>> option) =
+type MailboxReplyChannel<'T>(asyncReplyChannel: AsyncReplyChannel<Reply<'T>> option) =
     let mutable timeout = Default.ReplyReceiveTimeout
     let mutable asyncRc = asyncReplyChannel
     
@@ -21,19 +21,19 @@ type MailboxReplyChannel<'T>(asyncReplyChannel: AsyncReplyChannel<Result<'T>> op
     //TODO consider making internal
     member  __.SetAsyncReplyChannel(asyncReplyChannel) = asyncRc <- asyncReplyChannel
     
-    member __.ReplyUntyped(reply: Result<obj>) = asyncRc.Value.Reply(Result.unbox<'T> reply)
-    member __.Reply(reply: Result<'T>) = asyncRc.Value.Reply(reply)
+    member __.ReplyUntyped(reply: Reply<obj>) = asyncRc.Value.Reply(Reply.unbox<'T> reply)
+    member __.Reply(reply: Reply<'T>) = asyncRc.Value.Reply(reply)
     
-    interface IReplyChannel with
-        override __.Protocol = ProtocolName
-        override __.Timeout with get() = timeout and set(timeout': int) = timeout <- timeout'
-        override self.ReplyUntyped(reply: Result<obj>) = self.ReplyUntyped(reply)
-        override self.AsyncReplyUntyped(reply: Result<obj>) = async.Return <| self.ReplyUntyped(reply)
+    interface IReplyChannel<'T> with
+        override self.Protocol = ProtocolName
+        override self.Timeout with get() = timeout and set(timeout': int) = timeout <- timeout'
+        override self.AsyncReplyUntyped(reply: Reply<obj>) = async.Return <| self.ReplyUntyped(reply)
+        override self.AsyncReply(reply: Reply<'T>) = async.Return <| self.Reply(reply)    
     
-    interface IReplyChannel<'T> with 
-        override self.WithTimeout(timeout: int) = self.WithTimeout(timeout) :> IReplyChannel<'T>
-        override self.Reply(reply: Result<'T>) = self.Reply(reply)
-        override self.AsyncReply(reply: Result<'T>) = async.Return <| self.Reply(reply)    
+//    interface IReplyChannel<'T> with 
+//        override self.WithTimeout(timeout: int) = self.WithTimeout(timeout) :> IReplyChannel<'T>
+//        override self.Reply(reply: Reply<'T>) = self.Reply(reply)
+        
 
 
 type MailboxProtocolServer<'T>(actorName: string) =
@@ -139,11 +139,11 @@ and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
 
                     let timeout' = if initTimeout <> mailboxChannel.Timeout then mailboxChannel.Timeout else timeout
                     
-                    let! reply = mailbox.PostAndAsyncReply<Result<'R>>(msgF, timeout')
+                    let! reply = mailbox.PostAndAsyncReply<Reply<'R>>(msgF, timeout')
                               
                     return 
                         match reply with
-                        | Ok value -> value
+                        | Value value -> value
                         | Exn ex -> raise (new MessageHandlingException("Actor threw exception while handling message.", srv.ActorId, ex))
                 })
         override __.TryPostWithReply(messageF: IReplyChannel<'R> -> 'T, timeout: int) =
@@ -162,11 +162,11 @@ and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
 
                   let timeout' = if initTimeout <> mailboxChannel.Timeout then mailboxChannel.Timeout else timeout
                   
-                  let! reply = mailbox.PostAndTryAsyncReply<Result<'R>>(msgF, timeout')
+                  let! reply = mailbox.PostAndTryAsyncReply<Reply<'R>>(msgF, timeout')
 
                   return 
                     match reply with
-                    | Some(Ok value) -> Some value
+                    | Some(Value value) -> Some value
                     | Some(Exn e) -> raise <| new MessageHandlingException("Actor threw exception while handling message.", srv.ActorId, e)
                     | None -> None
                 })

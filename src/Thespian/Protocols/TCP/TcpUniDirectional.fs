@@ -18,11 +18,11 @@ open Nessos.Thespian.Serialization
 
 let ProtocolName = "utcp"
 
-exception private ReplyResult of Result<obj> option
+exception private ReplyResult of Reply<obj> option
 
 type ProtocolMessage<'T> = 
     | Request of 'T
-    | Response of Result<obj>
+    | Response of Reply<obj>
 
 let rec internal attempt f = 
     async { 
@@ -157,11 +157,11 @@ type ReplyChannel<'T> =
 
     member self.ReplyAddress = self.replyAddress
 
-    member self.AsyncReplyOnEndPoint(endPoint: IPEndPoint, reply: Result<'T>) =
+    member self.AsyncReplyOnEndPoint(endPoint: IPEndPoint, reply: Reply<'T>) =
         async {
             use! connection = TcpConnectionPool.AsyncAcquireConnection(self.MessageId.ToString(), endPoint)
             use protocolMessageStream = new ProtocolMessageStream(self.MessageId, connection, self.Timeout)
-            let! r = protocolMessageStream.TryAsyncWriteProtocolMessage<obj>(self.ActorId, Response(Result.box reply))
+            let! r = protocolMessageStream.TryAsyncWriteProtocolMessage<obj>(self.ActorId, Response(Reply.box reply))
             match r with
             | Some() -> return! protocolMessageStream.ProtocolStream.TryAsyncReadResponse()
             | None -> 
@@ -169,7 +169,7 @@ type ReplyChannel<'T> =
                 return! Async.Raise (new CommunicationTimeoutException(msg, self.ActorId, TimeoutType.MessageWrite))
     }
 
-    member self.TryAsyncReplyOnEndPoint(endPoint: IPEndPoint, reply: Result<'T>) =
+    member self.TryAsyncReplyOnEndPoint(endPoint: IPEndPoint, reply: Reply<'T>) =
         async {
             try
                 let! protocolResponse = attempt <| self.AsyncReplyOnEndPoint(endPoint, reply)
@@ -187,7 +187,7 @@ type ReplyChannel<'T> =
             | e -> return Choice2Of2(new CommunicationException("Communication failure occurred while trying to send reply.", self.ActorId, e) :> exn)
         }
 
-    member self.AsyncReply(reply: Result<'T>) =
+    member self.AsyncReply(reply: Reply<'T>) =
         async {
             let! endPoints = addressToEndpoints self.ActorId self.replyAddress
 
@@ -205,21 +205,16 @@ type ReplyChannel<'T> =
             else return ()
         }
 
-    member self.AsyncReplyUntyped(reply: Result<obj>) = self.AsyncReply(Result.unbox reply)
+    member self.AsyncReplyUntyped(reply: Reply<obj>) = self.AsyncReply(Reply.unbox reply)
 
-    member self.Reply(reply: Result<'T>) = Async.RunSynchronously <| self.AsyncReply(reply)
-    member self.ReplyUntyped(reply: Result<obj>) = self.Reply(Result.unbox reply)
-
-    interface IReplyChannel with
-        override __.Protocol = ProtocolName
-        override self.Timeout with get() = self.Timeout and set(timeout': int) = self.Timeout <- timeout'    
-        override self.ReplyUntyped(reply: Result<obj>): unit = self.ReplyUntyped(reply)
-        override self.AsyncReplyUntyped(reply: Result<obj>): Async<unit> = self.AsyncReplyUntyped(reply)
+    member self.Reply(reply: Reply<'T>) = Async.RunSynchronously <| self.AsyncReply(reply)
+    member self.ReplyUntyped(reply: Reply<obj>) = self.Reply(Reply.unbox reply)
 
     interface IReplyChannel<'T> with
-        override self.WithTimeout(timeout: int) = self.Timeout <- timeout; self :> IReplyChannel<'T>
-        override self.Reply(reply: Result<'T>): unit = self.Reply(reply)
-        override self.AsyncReply(reply: Result<'T>): Async<unit> = self.AsyncReply(reply)
+        override self.Protocol = ProtocolName
+        override self.Timeout with get() = self.Timeout and set(timeout': int) = self.Timeout <- timeout'    
+        override self.AsyncReplyUntyped(reply: Reply<obj>): Async<unit> = self.AsyncReplyUntyped(reply)
+        override self.AsyncReply(reply: Reply<'T>): Async<unit> = self.AsyncReply(reply)
 
     interface ISerializable with
         override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
@@ -230,7 +225,7 @@ type ReplyChannel<'T> =
 type MessageProcessor<'T> private (actorId : TcpActorId, listener : TcpProtocolListener, processRequest : 'T -> unit) = 
     let serializer = Serialization.defaultSerializer
     let logEvent = new Event<Log>()
-    let clientRegistry = new ConcurrentDictionary<MsgId, Result<obj> -> unit>()
+    let clientRegistry = new ConcurrentDictionary<MsgId, Reply<obj> -> unit>()
     
     [<VolatileField>]
     let mutable refCount = 0
@@ -289,7 +284,7 @@ type MessageProcessor<'T> private (actorId : TcpActorId, listener : TcpProtocolL
         }
     
     static let processors = new ConcurrentDictionary<TcpActorId, MessageProcessor<'T>>()
-    member __.RegisterReplyProcessor(msgId : MsgId, replyF : Result<obj> -> unit) = clientRegistry.TryAdd(msgId, replyF) |> ignore
+    member __.RegisterReplyProcessor(msgId : MsgId, replyF : Reply<obj> -> unit) = clientRegistry.TryAdd(msgId, replyF) |> ignore
     member __.UnregisterReplyProcessor(msgId : MsgId) = clientRegistry.TryRemove(msgId) |> ignore
     
     member __.Acquire() = 
@@ -334,7 +329,7 @@ type MessageProcessor<'T> private (actorId : TcpActorId, listener : TcpProtocolL
     
 
 type ReplyResultRegistry<'T>(actorId : TcpActorId, listener : TcpProtocolListener) = 
-    let results = new ConcurrentDictionary<MsgId, TaskCompletionSource<Result<obj>>>()
+    let results = new ConcurrentDictionary<MsgId, TaskCompletionSource<Reply<obj>>>()
     
     member self.RegisterAndWaitForResponse(msgId : MsgId, timeout : int) = 
         let tcs = new TaskCompletionSource<_>()
@@ -355,7 +350,7 @@ type ReplyResultRegistry<'T>(actorId : TcpActorId, listener : TcpProtocolListene
         let isValid, tcs = results.TryRemove(msgId)
         if isValid then tcs.SetCanceled()
     
-    member __.SetResult(msgId : MsgId, value : Result<obj>) = 
+    member __.SetResult(msgId : MsgId, value : Reply<obj>) = 
         let isValid, tcs = results.TryRemove(msgId)
         if isValid then tcs.SetResult(value)
     
@@ -370,7 +365,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
             {
                 new IReplyChannelFactory with
                     override __.Protocol = ProtocolName
-                    override __.Filter<'U>(rc: IReplyChannel<'U>) = rc.Protocol <> ProtocolName
+                    override __.IsForeignChannel<'U>(rc: IReplyChannel<'U>) = rc.Protocol <> ProtocolName
                     override __.Create<'R>() = 
                         let newMsgId = MsgId.NewGuid()
                         new ReplyChannelProxy<'R>(new ReplyChannel<'R>(localListenerAddress, actorId, newMsgId))
@@ -488,7 +483,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
         async {
             let! resposne = postMessageWithReply msgId msg timeout'
             match resposne with
-            | Some (Ok v) -> return Some (v :?> 'R)
+            | Some (Value v) -> return Some (v :?> 'R)
             | Some (Exn e) -> return! Async.Raise (new MessageHandlingException("Remote Actor threw exception while handling message.", actorId, e))
             | None -> return None
         }

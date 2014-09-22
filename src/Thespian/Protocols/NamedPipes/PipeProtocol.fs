@@ -33,15 +33,15 @@ type PipeActorId internal (pipeName : string, actorName : string) =
 //  reply channels
 //
 and [<AbstractClass>] PipedReplyChannelReceiver() = 
-    abstract AwaitReplyUntyped : int -> Async<Result<obj> option>
+    abstract AwaitReplyUntyped : int -> Async<Reply<obj> option>
 
 and PipedReplyChannelReceiver<'R>(actorId : PipeActorId) = 
     inherit PipedReplyChannelReceiver()
     let chanId = Guid.NewGuid().ToString()
-    let tcs = new TaskCompletionSource<Result<'R>>()
-    let processReply (reply : Result<'R>) = tcs.TrySetResult(reply) |> ignore
+    let tcs = new TaskCompletionSource<Reply<'R>>()
+    let processReply (reply : Reply<'R>) = tcs.TrySetResult(reply) |> ignore
     let replyReceiver = 
-        PipeReceiver<Result<'R>>.Create(pipeName = chanId, processMessage = processReply, singleAccept = true)
+        PipeReceiver<Reply<'R>>.Create(pipeName = chanId, processMessage = processReply, singleAccept = true)
     do replyReceiver.Start()
     
     member __.AwaitReply(timeout : int) = 
@@ -58,7 +58,7 @@ and PipedReplyChannelReceiver<'R>(actorId : PipeActorId) =
         async { 
             let! r = self.AwaitReply(timeout)
             match r with
-            | Some(Ok v) -> return Some(Ok <| box v)
+            | Some(Value v) -> return Some(Value <| box v)
             | Some(Exn e) -> return Some(Exn e)
             | None -> 
                 replyReceiver.Stop()
@@ -76,16 +76,16 @@ and PipedReplyChannel<'R> internal (actorId : PipeActorId, chanId : string, rece
     inherit PipedReplyChannel(receiver |> Option.map (fun r -> r :> PipedReplyChannelReceiver))
     let mutable timeout = defaultArg timeout Default.ReplyReceiveTimeout
     
-    let reply (v : Result<'R>) = 
+    let reply (v : Reply<'R>) = 
         try 
-            use client = PipeSender<Result<'R>>.GetPipeSender(chanId, actorId)
+            use client = PipeSender<Reply<'R>>.GetPipeSender(chanId, actorId)
             client.Post(v)
         with e -> raise <| CommunicationException("PipeProtocol: cannot reply.", e)
     
-    let asyncReply (v : Result<'R>) = 
+    let asyncReply (v : Reply<'R>) = 
         async { 
             try 
-                use client = PipeSender<Result<'R>>.GetPipeSender(chanId, actorId)
+                use client = PipeSender<Reply<'R>>.GetPipeSender(chanId, actorId)
                 return! client.PostAsync(v)
             with e -> return! Async.Raise <| CommunicationException("PipeProtocol: cannot reply.", e)
         }
@@ -98,19 +98,9 @@ and PipedReplyChannel<'R> internal (actorId : PipeActorId, chanId : string, rece
     
     interface IReplyChannel<'R> with
         member __.Protocol = ProtocolName
-        
-        member __.Timeout 
-            with get () = timeout
-            and set t = timeout <- t
-        
-        member __.ReplyUntyped(v : Result<obj>) = reply (Result.unbox v)
-        member __.AsyncReplyUntyped(v : Result<obj>) = asyncReply (Result.unbox v)
-        member __.Reply(v : Result<'R>) = reply v
-        member __.AsyncReply(v : Result<'R>) = asyncReply v
-        member self.WithTimeout t = 
-            let self' = self :> IReplyChannel<'R>
-            self'.Timeout <- t
-            self'
+        member __.Timeout with get () = timeout and set t = timeout <- t
+        member __.AsyncReplyUntyped(v : Reply<obj>) = asyncReply (Reply.unbox v)
+        member __.AsyncReply(v : Reply<'R>) = asyncReply v
     
     interface ISerializable with
         member __.GetObjectData(sI : SerializationInfo, _ : StreamingContext) = 
@@ -187,7 +177,7 @@ and PipeProtocolClient<'T>(actorName : string, pipeName : string, processId : in
         async { 
             let! r = self.TryPostWithReplyInner(msgF, timeout)
             match r with
-            | Some(Ok v) -> return Some v
+            | Some(Value v) -> return Some v
             | Some(Exn e) -> 
                 return! Async.Raise 
                         <| new MessageHandlingException("An exception occurred while on the remote recipient while processing the message.", 
@@ -463,14 +453,15 @@ and [<AbstractClass>] internal PipeSender<'T> internal (pipeName : string, actor
     static let sync = obj()
     static let senders = new Dictionary<string, PipeSender<'T>>()
     
-    let serializationContext() = 
-        new MessageSerializationContext(serializer, 
-                                        { new IReplyChannelFactory with
-                                              member __.Protocol = ProtocolName
-                                              member __.Filter(rc : IReplyChannel<'U>) = rc.Protocol <> ProtocolName
-                                              member __.Create<'R>() = 
-                                                  let receiver = new PipedReplyChannelReceiver<'R>(actorId)
-                                                  new ReplyChannelProxy<'R>(receiver.ReplyChannel) })
+    let serializationContext() =
+        let rcf = 
+            { new IReplyChannelFactory with
+                member __.Protocol = ProtocolName
+                member __.IsForeignChannel(rc : IReplyChannel<'U>) = rc.Protocol <> ProtocolName
+                member __.Create<'R>() = 
+                    let receiver = new PipedReplyChannelReceiver<'R>(actorId)
+                    new ReplyChannelProxy<'R>(receiver.ReplyChannel) }
+        new MessageSerializationContext(serializer, rcf)
     
     let handleForeignReplyChannel (foreignRc : IReplyChannel, nativeRc : IReplyChannel) = 
         let nativeRcImpl = nativeRc :?> PipedReplyChannel
@@ -599,7 +590,7 @@ and internal PipeSenderUnix<'T> internal (pipeName : string, actorId : PipeActor
     let unlockPipe() = Syscall.unlink (flockName) |> ignore
     let mutable writing = Unchecked.defaultof<UnixStream>
     
-    let post (R reply, msg : 'T) = 
+    let post (rc : IReplyChannel<unit>, msg : 'T) = 
         async { 
             try 
                 let data = self.SerializeDataAndHandleForeignRcs(msg)
@@ -607,15 +598,14 @@ and internal PipeSenderUnix<'T> internal (pipeName : string, actorId : PipeActor
                 use reading = getReading()
                 let! replyData = reading.AsyncReadBytes()
                 match serializer.Deserialize<Response> replyData with
-                | Acknowledge -> reply nothing
+                | Acknowledge -> do! rc.Reply ()
                 | Unknownrecipient -> 
-                    reply 
-                    <| Exn
-                           (new UnknownRecipientException("npp: message recipient not found on remote target.", actorId))
-                | Error e -> reply <| Exn(new DeliveryException("npp: message delivery failure.", actorId, e))
+                    do! rc.ReplyWithException <|
+                        new UnknownRecipientException("npp: message recipient not found on remote target.", actorId)
+                | Error e -> do! rc.ReplyWithException(new DeliveryException("npp: message delivery failure.", actorId, e))
             with e -> 
                 printfn "WR-ERROR %A" e
-                reply <| Exn e
+                do! rc.ReplyWithException e
         }
     
     let poster = Actor.bind <| Behavior.stateless post
@@ -641,26 +631,24 @@ and internal PipeSenderWindows<'T> internal (pipeName : string, actorId : PipeAc
     let serializer = Serialization.defaultSerializer
     let client = new NamedPipeClientStream(pipeName)
     
-    let post (R reply, msg : 'T) = 
+    let post (rc : IReplyChannel<unit>, msg : 'T) = 
         async { 
             try 
                 if not client.IsConnected then 
-                    reply 
-                    <| Exn
-                           (new UnknownRecipientException("npp: message target is stopped or pipe is broken", actorId))
+                    do! rc.ReplyWithException <|
+                        (new UnknownRecipientException("npp: message target is stopped or pipe is broken", actorId))
                 else 
                     let data = self.SerializeDataAndHandleForeignRcs(Message msg)
                     do! client.AsyncWriteBytes data
                     let! replyData = client.AsyncReadBytes()
                     match serializer.Deserialize<Response> replyData with
-                    | Acknowledge -> reply nothing
+                    | Acknowledge -> do! rc.Reply ()
                     | Unknownrecipient -> 
-                        reply 
-                        <| Exn
-                               (new UnknownRecipientException("npp: message recipient not found on remote target.", 
+                        do! rc.ReplyWithException <|
+                            (new UnknownRecipientException("npp: message recipient not found on remote target.", 
                                                               actorId))
-                    | Error e -> reply <| Exn(new DeliveryException("npp: message delivery failure.", actorId, e))
-            with e -> reply <| Exn e
+                    | Error e -> do! rc.ReplyWithException(new DeliveryException("npp: message delivery failure.", actorId, e))
+            with e -> do! rc.ReplyWithException e
         }
     
     let poster = Actor.bind <| Behavior.stateless post
