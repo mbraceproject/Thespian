@@ -69,6 +69,7 @@
     <Compile Include="Logging.fs" />
     <Compile Include="Exceptions.fs" />
     <Compile Include="Serialization.fs" />
+    <Compile Include="ReplyChannel.fs" />
     <Compile Include="ActorRef.fs" />
     <Compile Include="MailboxPrimaryProtocol.fs" />
     <Compile Include="Actor.fs" />
