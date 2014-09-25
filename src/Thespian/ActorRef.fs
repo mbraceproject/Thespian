@@ -8,26 +8,62 @@ open Nessos.Thespian.Utils.Concurrency
 open Nessos.Thespian.Logging
 open Nessos.Thespian.Serialization
 
+
+/// Abstract actor protocol factory.
 [<Serializable>]
 type IProtocolFactory =
+    /// Protocol implementation name.
     abstract ProtocolName: string
-    abstract CreateServerInstance: string * ActorRef<'T> -> IProtocolServer<'T>
-    abstract CreateClientInstance: string -> IProtocolClient<'T>
 
+    /// <summary>
+    ///      Create an actor protocol server instance.
+    /// </summary>
+    /// <param name="actorName">Name of actor bound to server instance.</param>
+    /// <param name="actorRef">Actor reference bound to server instance.</param>
+    abstract CreateServerInstance: actorName:string * actorRef:ActorRef<'T> -> IProtocolServer<'T>
+
+    /// <summary>
+    ///      Create an actor protocol client instance.
+    /// </summary>
+    /// <param name="actorName">Name of actor to connect to.</param>
+    abstract CreateClientInstance: actorName:string -> IProtocolClient<'T>
+
+/// Abstract actor protocol server.
 and IProtocolServer<'T> =
     inherit IDisposable
+    
+    /// Protocol name of server.
     abstract ProtocolName: string
+
+    /// Recipient actor identifier.
     abstract ActorId: ActorId
+
+    /// Local client instance for current protocol.
     abstract Client: IProtocolClient<'T>
+
+    /// Actor event log.
     abstract Log: IEvent<Log>
+
+    /// Starts the actor protocol server.
     abstract Start: unit -> unit
+
+    /// Stops the actor protocol server.
     abstract Stop: unit -> unit
-      
+     
+/// Abstract actor protocol client. 
 and IProtocolClient<'T> =
+    /// Protocol name for client
     abstract ProtocolName: string
+
+    /// Recipient actor identifier.
     abstract ActorId: ActorId
+
+    /// Recipient actor uri.
     abstract Uri: string
+
+    /// Protocol factory for current implementation.
     abstract Factory: IProtocolFactory option
+
     //Asynchronous message passing
     //Succeeds only if message delivery can be guaranteed.
     //Message delivery means that on the receiving side
@@ -40,11 +76,34 @@ and IProtocolClient<'T> =
     //a). establishing connection/channel...
     //b). sending message
     //c). receiving confirmation or failure indication of message delivery
-    abstract Post: 'T -> unit
-    abstract AsyncPost: 'T -> Async<unit>
-    //Synchronous message passing
-    abstract PostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R>
-    abstract TryPostWithReply: (IReplyChannel<'R> -> 'T) * int -> Async<'R option>
+
+    /// <summary>
+    ///     Synchronously post message to recipient actor.
+    /// </summary>
+    /// <param name="message">message to be posted.</param>
+    abstract Post: message:'T -> unit
+
+    /// <summary>
+    ///     Asynchronously post message to recipient actor.
+    /// </summary>
+    /// <param name="message">message to be posted.</param>
+    abstract AsyncPost: message:'T -> Async<unit>
+    
+    /// <summary>
+    ///     Synchronously post-with-reply to recipient actor.
+    ///     Computation blocks until recipient responds to given reply channel.
+    /// </summary>
+    /// <param name="messageBuilder">Message builder for given reply channel.</param>
+    /// <param name="timeoutMilliseconds">Timeout in milliseconds.</param>
+    abstract PostWithReply: messageBuilder:(IReplyChannel<'R> -> 'T) * timeoutMilliseconds:int -> Async<'R>
+
+    /// <summary>
+    ///     Asynchronously post-with-reply to recipient actor.
+    ///     Computation blocks until recipient responds to given reply channel.
+    /// </summary>
+    /// <param name="messageBuilder">Message builder for given reply channel.</param>
+    /// <param name="timeoutMilliseconds">Timeout in milliseconds.</param>
+    abstract TryPostWithReply: messageBuilder:(IReplyChannel<'R> -> 'T) * timeoutMilliseconds:int -> Async<'R option>
 
 and IPrimaryProtocolServer<'T> =
     inherit IProtocolServer<'T>
