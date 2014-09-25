@@ -213,8 +213,8 @@ type ReplyChannel<'T> =
     interface IReplyChannel<'T> with
         override self.Protocol = ProtocolName
         override self.Timeout with get() = self.Timeout and set(timeout': int) = self.Timeout <- timeout'    
-        override self.AsyncReplyUntyped(reply: Reply<obj>): Async<unit> = self.AsyncReplyUntyped(reply)
-        override self.AsyncReply(reply: Reply<'T>): Async<unit> = self.AsyncReply(reply)
+        override self.AsyncReplyUntyped(reply: Reply<obj>): Async<unit> = Async.Isolate <| self.AsyncReplyUntyped(reply)
+        override self.AsyncReply(reply: Reply<'T>): Async<unit> = Async.Isolate <| self.AsyncReply(reply)
 
     interface ISerializable with
         override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =

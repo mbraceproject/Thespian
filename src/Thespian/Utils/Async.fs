@@ -216,6 +216,16 @@ type Async with
             with :? AggregateException as e when e.InnerExceptions.Count = 1 -> return! Async.Raise <| e.InnerExceptions.[0]
         }
 
+
+    /// <summary>
+    ///     Isolates the execution context of an asynchronous workflow by wrapping it in a System.Task.
+    /// </summary>
+    /// <param name="workflow">Workflow to be isolated.</param>
+    /// <param name="cancellationToken">Optional cancellation token used by the child workflow.</param>
+    static member Isolate (workflow : Async<'T>, ?cancellationToken : CancellationToken) =
+        let t = Async.StartAsTask(workflow, ?cancellationToken = cancellationToken)
+        Async.AwaitTask(t)
+
     /// <summary>
     ///     Correct sleep implementation.
     /// </summary>
