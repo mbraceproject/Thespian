@@ -49,10 +49,10 @@ type RawActorRef<'T> =
                    | None -> None
         }
 
-    override ref.SerializationDestructor(info: SerializationInfo, context: StreamingContext) =
+    override ref.SerializationExtractor(info: SerializationInfo, context: StreamingContext) =
         info.AddValue("rawProxyRef", ref.rawProxyRef)
 
-        base.SerializationDestructor(info, context)
+        base.SerializationExtractor(info, context)
 
     static member FromRawProxy<'T>(rawProxy: ActorRef<RawProxy>) = new RawActorRef<'T>(rawProxy) :> ActorRef<'T>
 
@@ -105,8 +105,8 @@ type ProxyActorRef =
                    | None -> None
         }
 
-    override ref.SerializationDestructor(info: SerializationInfo, context: StreamingContext) =
+    override ref.SerializationExtractor(info: SerializationInfo, context: StreamingContext) =
         info.AddValue("clusterProxyManager", ref.clusterProxyManager.UnreliableRef)
         info.AddValue("activationRef", ref.activationRef)
 
-        base.SerializationDestructor(info, context)
+        base.SerializationExtractor(info, context)

@@ -186,12 +186,12 @@ type ReliableActorRef<'T> =
                    | Choice2Of2 faults -> raise <| FailureException(faults, self.baseRef)
         }
 
-    override self.SerializationDestructor(info: SerializationInfo, context: StreamingContext) =
+    override self.SerializationExtractor(info: SerializationInfo, context: StreamingContext) =
         info.AddValue("retriesPerError", self.retriesPerError)
         info.AddValue("retryInterval", self.retryInterval)
         info.AddValue("attemptInterval", self.attemptTimeout)
         info.AddValue("underlyingRef", self.baseRef)
-        base.SerializationDestructor(info, context)
+        base.SerializationExtractor(info, context)
 
 //    interface ISerializable with
 //        override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
