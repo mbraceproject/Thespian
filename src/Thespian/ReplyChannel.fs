@@ -152,9 +152,13 @@ module ReplyChannel =
         /// <summary>
         ///     Posts an exception to reply channel; to be raised at the sender callsite.
         /// </summary>
-        /// <param name="exn"></param>
+        /// <param name="exn">Exception to be posted.</param>
         member rc.ReplyWithException (exn : #exn) = rc.AsyncReply <| Exn exn
 
+        /// <summary>
+        ///     Synchronously posts a reply to channel
+        /// </summary>
+        /// <param name="reply">reply value.</param>
         member rc.ReplySynchronously (reply : Reply<'T>) = rc.AsyncReply reply |> Async.RunSynchronously
 
         /// <summary>

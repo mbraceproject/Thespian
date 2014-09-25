@@ -31,8 +31,7 @@ type Guarantee<'T>(confirmChannel : IReplyChannel<unit>, msg : 'T) =
     interface IDisposable with
         member g.Dispose() = 
             if not isDisposed then 
-                // TODO: add .ReplySync extension method
-                confirmChannel.Reply () |> Async.RunSynchronously
+                confirmChannel.ReplySynchronously <| Value ()
                 isDisposed <- true
 
 type Suicidal<'T> = 
