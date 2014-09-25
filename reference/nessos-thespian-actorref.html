@@ -37,6 +37,7 @@
 
 <h1>ActorRef</h1>
 <div class="xmldoc">
+<p>Actor reference base type</p>
 </div>
   <h3>Record Fields</h3>
   <table class="table table-bordered member-list">
@@ -47,15 +48,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '213', 213)" onmouseover="showTip(event, '213', 213)">
+          <code onmouseout="hideTip(event, '251', 251)" onmouseover="showTip(event, '251', 251)">
             messageType
           </code>
-          <div class="tip" id="213">
+          <div class="tip" id="251">
             <strong>Signature:</strong> Type<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L85-85" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L143-143" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -65,15 +66,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '214', 214)" onmouseover="showTip(event, '214', 214)">
+          <code onmouseout="hideTip(event, '252', 252)" onmouseover="showTip(event, '252', 252)">
             name
           </code>
-          <div class="tip" id="214">
+          <div class="tip" id="252">
             <strong>Signature:</strong> string<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L84-84" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L142-142" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -83,41 +84,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '215', 215)" onmouseover="showTip(event, '215', 215)">
+          <code onmouseout="hideTip(event, '253', 253)" onmouseover="showTip(event, '253', 253)">
             protocols
           </code>
-          <div class="tip" id="215">
+          <div class="tip" id="253">
             <strong>Signature:</strong> string []<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L86-86" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <h3>Constructors</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Constructor</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '250', 250)" onmouseover="showTip(event, '250', 250)">
-            new(name, messageType, protocols)
-          </code>
-          <div class="tip" id="250">
-            <strong>Signature:</strong> (name:string * messageType:Type * protocols:seq&lt;string&gt;) -&gt; ActorRef<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L88-88" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L144-144" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -135,172 +110,181 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '262', 262)" onmouseover="showTip(event, '262', 262)">
-            AsyncPostUntyped(arg1)
+          <code onmouseout="hideTip(event, '281', 281)" onmouseover="showTip(event, '281', 281)">
+            AsyncPostUntyped(message)
           </code>
-          <div class="tip" id="262">
-            <strong>Signature:</strong> obj -&gt; Async&lt;unit&gt;<br />
+          <div class="tip" id="281">
+            <strong>Signature:</strong> message:obj -&gt; Async&lt;unit&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L113-113" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L190-190" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Asynchronously post an untyped message to actor.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '263', 263)" onmouseover="showTip(event, '263', 263)">
+          <code onmouseout="hideTip(event, '282', 282)" onmouseover="showTip(event, '282', 282)">
             Id
           </code>
-          <div class="tip" id="263">
+          <div class="tip" id="282">
             <strong>Signature:</strong> ActorId<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L110-110" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L178-178" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Actor identifier</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '264', 264)" onmouseover="showTip(event, '264', 264)">
+          <code onmouseout="hideTip(event, '283', 283)" onmouseover="showTip(event, '283', 283)">
             MessageType
           </code>
-          <div class="tip" id="264">
+          <div class="tip" id="283">
             <strong>Signature:</strong> Type<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L101-101" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L166-166" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Gets the type of messages received by this actor.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '265', 265)" onmouseover="showTip(event, '265', 265)">
+          <code onmouseout="hideTip(event, '284', 284)" onmouseover="showTip(event, '284', 284)">
             Name
           </code>
-          <div class="tip" id="265">
+          <div class="tip" id="284">
             <strong>Signature:</strong> string<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L107-107" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L174-174" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Actor name</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '266', 266)" onmouseover="showTip(event, '266', 266)">
-            PostUntyped(arg1)
+          <code onmouseout="hideTip(event, '285', 285)" onmouseover="showTip(event, '285', 285)">
+            PostUntyped(message)
           </code>
-          <div class="tip" id="266">
-            <strong>Signature:</strong> obj -&gt; unit<br />
+          <div class="tip" id="285">
+            <strong>Signature:</strong> message:obj -&gt; unit<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L112-112" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L184-184" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Post an untyped message to actor.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '267', 267)" onmouseover="showTip(event, '267', 267)">
-            PostWithReplyUntyped(arg1, ?timeout)
+          <code onmouseout="hideTip(event, '286', 286)" onmouseover="showTip(event, '286', 286)">
+            PostWithReplyUntyped(...)
           </code>
-          <div class="tip" id="267">
-            <strong>Signature:</strong> ((IReplyChannel&lt;obj&gt; -&gt; obj) * timeout:int option) -&gt; Async&lt;obj&gt;<br />
+          <div class="tip" id="286">
+            <strong>Signature:</strong> (messageBuilder:(IReplyChannel&lt;obj&gt; -&gt; obj) * timeout:int option) -&gt; Async&lt;obj&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L114-114" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L197-197" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Asynchronously post-with-reply untyped message to actor.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '268', 268)" onmouseover="showTip(event, '268', 268)">
+          <code onmouseout="hideTip(event, '287', 287)" onmouseover="showTip(event, '287', 287)">
             Protocols
           </code>
-          <div class="tip" id="268">
+          <div class="tip" id="287">
             <strong>Signature:</strong> string []<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L104-104" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L170-170" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Gets a collection of all protocol names actor is published to.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '269', 269)" onmouseover="showTip(event, '269', 269)">
-            SerializationDestructor(arg1, arg2)
+          <code onmouseout="hideTip(event, '288', 288)" onmouseover="showTip(event, '288', 288)">
+            SerializationExtractor(arg1, arg2)
           </code>
-          <div class="tip" id="269">
+          <div class="tip" id="288">
             <strong>Signature:</strong> (SerializationInfo * StreamingContext) -&gt; unit<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L117-117" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L208-208" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Overrideable serialization function used by ActorRef.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '270', 270)" onmouseover="showTip(event, '270', 270)">
+          <code onmouseout="hideTip(event, '289', 289)" onmouseover="showTip(event, '289', 289)">
             TryPostWithReplyUntyped(arg1, ?timeout)
           </code>
-          <div class="tip" id="270">
+          <div class="tip" id="289">
             <strong>Signature:</strong> ((IReplyChannel&lt;obj&gt; -&gt; obj) * timeout:int option) -&gt; Async&lt;obj option&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L115-115" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L203-203" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Asynchronously post-with-reply untyped message to actor. Returns 'None' on timeout.</p>
+
         </td>
       </tr>
     </tbody>

@@ -37,6 +37,7 @@
 
 <h1>IProtocolServer<'T></h1>
 <div class="xmldoc">
+<p>Abstract actor protocol server.</p>
 </div>
   <h3>Instance members</h3>
   <table class="table table-bordered member-list">
@@ -47,115 +48,121 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '320', 320)" onmouseover="showTip(event, '320', 320)">
+          <code onmouseout="hideTip(event, '306', 306)" onmouseover="showTip(event, '306', 306)">
             ActorId
           </code>
-          <div class="tip" id="320">
+          <div class="tip" id="306">
             <strong>Signature:</strong> ActorId<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L31-31" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L39-39" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Recipient actor identifier.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '321', 321)" onmouseover="showTip(event, '321', 321)">
+          <code onmouseout="hideTip(event, '307', 307)" onmouseover="showTip(event, '307', 307)">
             Client
           </code>
-          <div class="tip" id="321">
+          <div class="tip" id="307">
             <strong>Signature:</strong> IProtocolClient&lt;&#39;T&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L32-32" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L42-42" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Local client instance for current protocol.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '322', 322)" onmouseover="showTip(event, '322', 322)">
+          <code onmouseout="hideTip(event, '308', 308)" onmouseover="showTip(event, '308', 308)">
             Log
           </code>
-          <div class="tip" id="322">
+          <div class="tip" id="308">
             <strong>Signature:</strong> IEvent&lt;Log&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L33-33" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L45-45" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Actor event log.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '323', 323)" onmouseover="showTip(event, '323', 323)">
+          <code onmouseout="hideTip(event, '309', 309)" onmouseover="showTip(event, '309', 309)">
             ProtocolName
           </code>
-          <div class="tip" id="323">
+          <div class="tip" id="309">
             <strong>Signature:</strong> string<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L30-30" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L36-36" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Protocol name of server.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '324', 324)" onmouseover="showTip(event, '324', 324)">
+          <code onmouseout="hideTip(event, '310', 310)" onmouseover="showTip(event, '310', 310)">
             Start()
           </code>
-          <div class="tip" id="324">
+          <div class="tip" id="310">
             <strong>Signature:</strong> unit -&gt; unit<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L34-34" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L48-48" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Starts the actor protocol server.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '325', 325)" onmouseover="showTip(event, '325', 325)">
+          <code onmouseout="hideTip(event, '311', 311)" onmouseover="showTip(event, '311', 311)">
             Stop()
           </code>
-          <div class="tip" id="325">
+          <div class="tip" id="311">
             <strong>Signature:</strong> unit -&gt; unit<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L35-35" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L51-51" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Stops the actor protocol server.</p>
+
         </td>
       </tr>
     </tbody>

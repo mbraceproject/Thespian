@@ -37,6 +37,7 @@
 
 <h1>Reply<'T></h1>
 <div class="xmldoc">
+<p>Represents a reply given to a channel</p>
 </div>
   <h3>Union Cases</h3>
   <table class="table table-bordered member-list">
@@ -47,37 +48,39 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '331', 331)" onmouseover="showTip(event, '331', 331)">
-            Exception(exn)
+          <code onmouseout="hideTip(event, '318', 318)" onmouseover="showTip(event, '318', 318)">
+            Exn(exn)
           </code>
-          <div class="tip" id="331">
+          <div class="tip" id="318">
             <strong>Signature:</strong> exn<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L13-13" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ReplyChannel.fs#L15-15" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Exceptional reply</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '332', 332)" onmouseover="showTip(event, '332', 332)">
+          <code onmouseout="hideTip(event, '319', 319)" onmouseover="showTip(event, '319', 319)">
             Value(&#39;T)
           </code>
-          <div class="tip" id="332">
+          <div class="tip" id="319">
             <strong>Signature:</strong> &#39;T<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L12-12" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ReplyChannel.fs#L13-13" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Successful reply</p>
+
         </td>
       </tr>
     </tbody>
@@ -91,19 +94,20 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '342', 342)" onmouseover="showTip(event, '342', 342)">
-            GetValue(?keepOriginalStackTrace)
+          <code onmouseout="hideTip(event, '334', 334)" onmouseover="showTip(event, '334', 334)">
+            GetValue(?preserveStackTrace)
           </code>
-          <div class="tip" id="342">
-            <strong>Signature:</strong> (keepOriginalStackTrace:bool option) -&gt; &#39;T<br />
+          <div class="tip" id="334">
+            <strong>Signature:</strong> (preserveStackTrace:bool option) -&gt; &#39;T<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L15-15" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ReplyChannel.fs#L21-21" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Gets the contained value of given reply.</p>
+
         </td>
       </tr>
     </tbody>

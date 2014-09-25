@@ -37,6 +37,7 @@
 
 <h1>IReplyChannelFactory</h1>
 <div class="xmldoc">
+<p>Reply channel factory abstraction</p>
 </div>
   <h3>Instance members</h3>
   <table class="table table-bordered member-list">
@@ -47,58 +48,62 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '308', 308)" onmouseover="showTip(event, '308', 308)">
+          <code onmouseout="hideTip(event, '320', 320)" onmouseover="showTip(event, '320', 320)">
             Create()
           </code>
-          <div class="tip" id="308">
+          <div class="tip" id="320">
             <strong>Signature:</strong> unit -&gt; ReplyChannelProxy&lt;&#39;T&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                           <strong>Type parameters:</strong> 'T          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L265-265" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ReplyChannel.fs#L60-60" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Initializes a new reply channel for given implementation.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '309', 309)" onmouseover="showTip(event, '309', 309)">
-            Filter(arg1)
+          <code onmouseout="hideTip(event, '321', 321)" onmouseover="showTip(event, '321', 321)">
+            IsForeignChannel(rc)
           </code>
-          <div class="tip" id="309">
-            <strong>Signature:</strong> IReplyChannel&lt;&#39;T&gt; -&gt; bool<br />
+          <div class="tip" id="321">
+            <strong>Signature:</strong> rc:IReplyChannel&lt;&#39;T&gt; -&gt; bool<br />
               <strong>Modifiers:</strong> abstract<br />
                           <strong>Type parameters:</strong> 'T          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L264-264" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ReplyChannel.fs#L67-67" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Decides whether given reply channel is compatible
+with given reply channel protocol implementation.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '310', 310)" onmouseover="showTip(event, '310', 310)">
+          <code onmouseout="hideTip(event, '322', 322)" onmouseover="showTip(event, '322', 322)">
             Protocol
           </code>
-          <div class="tip" id="310">
+          <div class="tip" id="322">
             <strong>Signature:</strong> string<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L263-263" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ReplyChannel.fs#L57-57" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Protocol implementation name.</p>
+
         </td>
       </tr>
     </tbody>
