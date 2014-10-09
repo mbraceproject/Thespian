@@ -200,12 +200,11 @@ Target "Debug" DoNothing
   ==> "RunTests"
   ==> "Default"
 
-"Default" 
+"Build"
+  ==> "NuGet"
   ==> "CleanDocs"
   ==> "GenerateDocs"
   ==> "ReleaseDocs"
-  ==> "NuGet"
   ==> "Release"
 
 RunTargetOrDefault "Default"
-//RunTargetOrDefault "Release"
