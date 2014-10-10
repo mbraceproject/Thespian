@@ -10,7 +10,7 @@ type ObservableProtocolClient<'T>(actorName : string, observableActorRef : Actor
 
     interface IProtocolClient<'T> with
         override __.ProtocolName = "observable"
-        override __.ActorId = new Mailbox.MailboxActorId(actorName) :> ActorId
+        override __.ActorId = new MailboxProtocol.MailboxActorId(actorName) :> ActorId
         override __.Uri = String.Empty
         override __.Factory = None
         override __.Post(msg : 'T) = observableActorRef.Post(msg)
@@ -22,9 +22,9 @@ type ObservableProtocolClient<'T>(actorName : string, observableActorRef : Actor
 
 and ObservableProtocolServer<'T>(actorName : string, observable : IObservable<'T>) = 
     let observationActor = 
-        new Actor<'T>(actorName, [| new Mailbox.MailboxProtocolServer<'T>(actorName) :> IProtocolServer<'T> |], 
+        new Actor<'T>(actorName, [| new MailboxProtocol.MailboxProtocolServer<'T>(actorName) :> IProtocolServer<'T> |], 
                       fun _ -> async.Zero())
-    let actorId = new Mailbox.MailboxActorId(actorName)
+    let actorId = new MailboxProtocol.MailboxActorId(actorName)
     let client = new ObservableProtocolClient<'T>(actorName, observationActor.Ref)
 
     [<VolatileField>]

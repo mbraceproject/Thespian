@@ -1,17 +1,21 @@
-module Nessos.Thespian.Mailbox
+/// Provides a primary protocol implementation that wraps around FSharp's MailboxProcessor.
+module Nessos.Thespian.MailboxProtocol
 
 open System
 open System.Threading
 
 open Nessos.Thespian.Logging
 
+/// MailboxProtocol string identifier
 let ProtocolName = "mailbox"
 
+/// MailboxProcessor protocol ActorId
 [<Serializable>]
 type MailboxActorId(name : string) = 
     inherit ActorId(name)
     override actorId.ToString() = name
 
+/// MailboxProcessor protocol ReplyChannel
 type MailboxReplyChannel<'T>(asyncReplyChannel: AsyncReplyChannel<Reply<'T>> option) =
     let mutable timeout = Default.ReplyReceiveTimeout
     let mutable asyncRc = asyncReplyChannel
@@ -29,13 +33,8 @@ type MailboxReplyChannel<'T>(asyncReplyChannel: AsyncReplyChannel<Reply<'T>> opt
         override self.Timeout with get() = timeout and set(timeout': int) = timeout <- timeout'
         override self.AsyncReplyUntyped(reply: Reply<obj>) = async.Return <| self.ReplyUntyped(reply)
         override self.AsyncReply(reply: Reply<'T>) = async.Return <| self.Reply(reply)    
-    
-//    interface IReplyChannel<'T> with 
-//        override self.WithTimeout(timeout: int) = self.WithTimeout(timeout) :> IReplyChannel<'T>
-//        override self.Reply(reply: Reply<'T>) = self.Reply(reply)
-        
 
-
+/// MailboxProcessor protocol server implementation
 type MailboxProtocolServer<'T>(actorName: string) =
     let mutable cancellationTokenSource: CancellationTokenSource option = None
     let mutable mailboxProcessor: MailboxProcessor<'T> option = None
@@ -103,6 +102,7 @@ type MailboxProtocolServer<'T>(actorName: string) =
         override self.Dispose() = self.Stop()
 
 
+/// MailboxProcessor protocol client implementation
 and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
     let srv = server :> IProtocolServer<'T>
 

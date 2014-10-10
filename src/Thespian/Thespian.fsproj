@@ -71,7 +71,7 @@
     <Compile Include="Serialization.fs" />
     <Compile Include="ReplyChannel.fs" />
     <Compile Include="ActorRef.fs" />
-    <Compile Include="MailboxPrimaryProtocol.fs" />
+    <Compile Include="MailboxProtocol.fs" />
     <Compile Include="Actor.fs" />
     <Compile Include="ObservablePrimaryProtocol.fs" />
     <Compile Include="Agents.fs" />

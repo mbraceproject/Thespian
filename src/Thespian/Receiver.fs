@@ -17,7 +17,7 @@ type Receiver<'T>(name : string, protocols : IProtocolServer<'T> []) =
     new(name : string) = new Receiver<'T>(name, [| Actor.DefaultPrimaryProtocolFactory.Create<'T>(name) |])
 
     member private __.Publish(newProtocolsF : ActorRef<'T> -> IProtocolServer<'T> []) = 
-        let mailboxProtocol = new Mailbox.MailboxProtocolServer<_>(name) :> IPrimaryProtocolServer<_>
+        let mailboxProtocol = new MailboxProtocol.MailboxProtocolServer<_>(name) :> IPrimaryProtocolServer<_>
         let actorRef = new ActorRef<'T>(name, [| mailboxProtocol.Client |])
 
         let newProtocols = 
@@ -35,7 +35,7 @@ type Receiver<'T>(name : string, protocols : IProtocolServer<'T> []) =
     override __.Rename(newName : string) = 
         //first check new name
         if newName.Contains("/") then invalidArg "newName" "Receiver names must not contain '/'."
-        let mailboxProtocol = new Mailbox.MailboxProtocolServer<_>(newName) :> IPrimaryProtocolServer<_>
+        let mailboxProtocol = new MailboxProtocol.MailboxProtocolServer<_>(newName) :> IPrimaryProtocolServer<_>
         let actorRef = new ActorRef<'T>(newName, [| mailboxProtocol.Client |])
 
         let newProtocols = 

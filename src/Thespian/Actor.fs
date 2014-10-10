@@ -11,7 +11,7 @@ type IPrimaryProtocolFactory =
     abstract Create: string -> IPrimaryProtocolServer<'T>
 
 type MailboxPrimaryProtocolFactory() =
-    interface IPrimaryProtocolFactory with override __.Create(actorName: string) = new Mailbox.MailboxProtocolServer<'T>(actorName) :> IPrimaryProtocolServer<'T>
+    interface IPrimaryProtocolFactory with override __.Create(actorName: string) = new MailboxProtocol.MailboxProtocolServer<'T>(actorName) :> IPrimaryProtocolServer<'T>
 
 [<AbstractClass>]
 type Actor() =
@@ -76,7 +76,7 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
     member __.PendingMessages with get() = primaryProtocol.PendingMessages
     
     member private __.Publish(newProtocolsF: ActorRef<'T> -> IProtocolServer<'T>[]) =
-        let mailboxProtocol = new Mailbox.MailboxProtocolServer<_>(name) :> IPrimaryProtocolServer<_>
+        let mailboxProtocol = new MailboxProtocol.MailboxProtocolServer<_>(name) :> IPrimaryProtocolServer<_>
         let actorRef = new ActorRef<'T>(name, [| mailboxProtocol.Client |])
         let newProtocols = newProtocolsF actorRef
                            |> Array.append (protocols |> Seq.map (fun protocol -> protocol.Client.Factory)
@@ -99,7 +99,7 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
         //first check new name
         if newName.Contains("/") then invalidArg "newName" "Actor names must not contain '/'."
     
-        let mailboxProtocol = new Mailbox.MailboxProtocolServer<_>(newName) :> IPrimaryProtocolServer<_>
+        let mailboxProtocol = new MailboxProtocol.MailboxProtocolServer<_>(newName) :> IPrimaryProtocolServer<_>
         let actorRef = new ActorRef<'T>(newName, [| mailboxProtocol.Client |])
     
         let newProtocols = protocols |> Array.map (fun protocol -> protocol.Client.Factory)

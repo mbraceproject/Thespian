@@ -11,7 +11,7 @@ open Nessos.Thespian.Utils.Async
 module ObservableTestUtils = 
     let receiver = 
         new Receiver<obj>("testReceiver", 
-                          [| new Mailbox.MailboxProtocolServer<_>("testReceiver") :> IProtocolServer<_> |])
+                          [| new MailboxProtocol.MailboxProtocolServer<_>("testReceiver") :> IProtocolServer<_> |])
     
     type ProtocolFactory() = 
         interface IPrimaryProtocolFactory with
