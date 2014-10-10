@@ -54,9 +54,11 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
                 self.Stop()
         }
 
-    new (name: string, behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) = new Actor<'T>(name, [| Actor.DefaultPrimaryProtocolFactory.Create name :> IProtocolServer<'T> |], behavior, ?linkedActors = linkedActors)
-    new (behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) = new Actor<'T>(String.Empty, behavior, ?linkedActors = linkedActors)
-    new (otherActor: Actor<'T>) = new Actor<'T>(otherActor.Name, otherActor.Protocols, otherActor.Behavior, otherActor.LinkedActors)
+    new (name: string, behavior: Actor<'T> -> Async<unit>, ?primaryProtocolFactory: IPrimaryProtocolFactory, ?linkedActors: seq<Actor>) =
+      let primaryProtocolFactory = defaultArg primaryProtocolFactory Actor.DefaultPrimaryProtocolFactory
+      new Actor<'T>(name, [| primaryProtocolFactory.Create name :> IProtocolServer<'T> |], behavior, ?linkedActors = linkedActors)
+    new (behavior: Actor<'T> -> Async<unit>, ?primaryProtocolFactory: IPrimaryProtocolFactory, ?linkedActors: seq<Actor>) = new Actor<'T>(String.Empty, behavior, ?primaryProtocolFactory = primaryProtocolFactory, ?linkedActors = linkedActors)
+    new (otherActor: Actor<'T>) = new Actor<'T>(otherActor.Name, protocols = otherActor.Protocols, behavior = otherActor.Behavior, linkedActors = otherActor.LinkedActors)
     
     member private __.Protocols = protocols
     member private __.Behavior = behavior
@@ -191,7 +193,7 @@ module Actor =
             }
         bind body
 
-    let inline bindLinked (body: Actor<'T> -> Async<unit>) (linkedActors: #seq<Actor>) = new Actor<'T>(String.Empty, body, linkedActors)
+    let inline bindLinked (body: Actor<'T> -> Async<unit>) (linkedActors: #seq<Actor>) = new Actor<'T>(String.Empty, body, linkedActors = linkedActors)
 
     let inline spawnLinked (processFunc: 'T -> Async<unit>) (linkedActors: #seq<Actor>) =
         let rec body (actor: Actor<'T>) = async { 

@@ -16,7 +16,9 @@ type Receiver<'T>(name : string, protocols : IProtocolServer<'T> []) =
             return! receiveLoop actor
         }
 
-    new(name : string) = new Receiver<'T>(name, [| Actor.DefaultPrimaryProtocolFactory.Create(name) :> IProtocolServer<'T> |])
+    new(name : string, ?primaryProtocolFactory: IPrimaryProtocolFactory) =
+      let primaryProtocolFactory = defaultArg primaryProtocolFactory Actor.DefaultPrimaryProtocolFactory
+      new Receiver<'T>(name, [| primaryProtocolFactory.Create(name) :> IProtocolServer<'T> |])
 
     member private __.Publish(newProtocolsF : ActorRef<'T> -> IProtocolServer<'T> []) = 
         let primaryProtocol' = primaryProtocol.CreateInstance(name)
@@ -74,7 +76,7 @@ module Receiver =
 
     let fromObservable (observable : IObservable<'T>) : Receiver<'T> = 
         let name = Guid.NewGuid().ToString()
-        new Receiver<'T>(name, [| new Observable.ObservableProtocolServer<'T>(name, observable) |])
+        new Receiver<'T>(name, protocols = [| new Observable.ObservableProtocolServer<'T>(name, observable) |])
 
     let forward (actor : Actor<'T>) (receiver : Receiver<'T>) : Actor<'T> = 
         let rec forwardBehavior (self : Actor<'T>) = 
@@ -85,12 +87,12 @@ module Receiver =
             }
 
         let name = Guid.NewGuid().ToString()
-        new Actor<'T>(name, [| new Observable.ObservableProtocolServer<'T>(name, receiver.ReceiveEvent) |], 
-                      forwardBehavior, [ actor; receiver ])
+        new Actor<'T>(name, protocols = [| new Observable.ObservableProtocolServer<'T>(name, receiver.ReceiveEvent) |], 
+                      behavior = forwardBehavior, linkedActors = [ actor; receiver ])
 
     module Actor = 
         let bindOnObservable (name : string) (behavior : Actor<'T> -> Async<unit>) (observable : IObservable<'T>) : Actor<'T> = 
-            new Actor<'T>(name, [| new Observable.ObservableProtocolServer<'T>(name, observable) |], behavior, [])
+            new Actor<'T>(name, protocols = [| new Observable.ObservableProtocolServer<'T>(name, observable) |], behavior = behavior, linkedActors = [])
 
         let bindOnReceiver (name : string) (behavior : Actor<'T> -> Async<unit>) (receiver : Receiver<'T>) : Actor<'T> = 
             receiver
