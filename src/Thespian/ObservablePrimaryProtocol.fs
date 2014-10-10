@@ -58,8 +58,11 @@ and ObservableProtocolServer<'T>(actorName : string, observable : IObservable<'T
         override __.Log = observationActor.Log
         override __.Start() = invalidOp "Principal protocol; use the overload tha requires actor body."
         override self.Stop() = self.Stop()
+        override __.CreateInstance(actorName: string) = new ObservableProtocolServer<'T>(actorName, observable) :> IPrimaryProtocolServer<'T>
         override __.PendingMessages = observationActor.PendingMessages
         override __.Receive(timeout : int) = observationActor.Receive(timeout)
         override __.TryReceive(timeout : int) = observationActor.TryReceive(timeout)
         override self.Start(body : unit -> Async<unit>) = self.Start(body)
         override __.Dispose() = __.Stop()
+
+

@@ -5,6 +5,8 @@ open System.Threading
 
 type Receiver<'T>(name : string, protocols : IProtocolServer<'T> []) = 
     inherit Actor<'T>(name, protocols, fun _ -> async.Zero())
+
+    let primaryProtocol = protocols.[0] :?> IPrimaryProtocolServer<'T>
     let receiveEvent = new Event<'T>()
 
     let rec receiveLoop (actor : Actor<'T>) = 
@@ -14,11 +16,11 @@ type Receiver<'T>(name : string, protocols : IProtocolServer<'T> []) =
             return! receiveLoop actor
         }
 
-    new(name : string) = new Receiver<'T>(name, [| Actor.DefaultPrimaryProtocolFactory.Create<'T>(name) |])
+    new(name : string) = new Receiver<'T>(name, [| Actor.DefaultPrimaryProtocolFactory.Create(name) :> IProtocolServer<'T> |])
 
     member private __.Publish(newProtocolsF : ActorRef<'T> -> IProtocolServer<'T> []) = 
-        let mailboxProtocol = new MailboxProtocol.MailboxProtocolServer<_>(name) :> IPrimaryProtocolServer<_>
-        let actorRef = new ActorRef<'T>(name, [| mailboxProtocol.Client |])
+        let primaryProtocol' = primaryProtocol.CreateInstance(name)
+        let actorRef = new ActorRef<'T>(name, [| primaryProtocol'.Client |])
 
         let newProtocols = 
             newProtocolsF actorRef
@@ -27,7 +29,7 @@ type Receiver<'T>(name : string, protocols : IProtocolServer<'T> []) =
                              |> Seq.choose id
                              |> Seq.map (fun factory -> factory.CreateServerInstance<_>(name, actorRef))
                              |> Seq.toArray)
-            |> Array.append [| mailboxProtocol |]
+            |> Array.append [| primaryProtocol' |]
         new Receiver<'T>(name, newProtocols) :> Actor<'T>
 
     member __.ReceiveEvent = receiveEvent.Publish
@@ -35,15 +37,15 @@ type Receiver<'T>(name : string, protocols : IProtocolServer<'T> []) =
     override __.Rename(newName : string) = 
         //first check new name
         if newName.Contains("/") then invalidArg "newName" "Receiver names must not contain '/'."
-        let mailboxProtocol = new MailboxProtocol.MailboxProtocolServer<_>(newName) :> IPrimaryProtocolServer<_>
-        let actorRef = new ActorRef<'T>(newName, [| mailboxProtocol.Client |])
+        let primaryProtocol' = primaryProtocol.CreateInstance(newName)
+        let actorRef = new ActorRef<'T>(newName, [| primaryProtocol'.Client |])
 
         let newProtocols = 
             protocols
             |> Array.map (fun protocol -> protocol.Client.Factory)
             |> Array.choose id
-            |> Array.map (fun factory -> factory.CreateServerInstance(name, actorRef))
-            |> Array.append [| mailboxProtocol |]
+            |> Array.map (fun factory -> factory.CreateServerInstance(newName, actorRef))
+            |> Array.append [| primaryProtocol' |]
         new Receiver<'T>(newName, newProtocols) :> Actor<'T>
 
     override __.Start() = 

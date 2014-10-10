@@ -6,17 +6,10 @@ open System.Threading
 open Nessos.Thespian.Utils
 open Nessos.Thespian.Logging
 
-
-type IPrimaryProtocolFactory =
-    abstract Create: string -> IPrimaryProtocolServer<'T>
-
-type MailboxPrimaryProtocolFactory() =
-    interface IPrimaryProtocolFactory with override __.Create(actorName: string) = new MailboxProtocol.MailboxProtocolServer<'T>(actorName) :> IPrimaryProtocolServer<'T>
-
 [<AbstractClass>]
 type Actor() =
     [<VolatileField>]
-    static let mutable primaryProtocolFactory = new MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory
+    static let mutable primaryProtocolFactory = new MailboxProtocol.MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory
 
     static member DefaultPrimaryProtocolFactory with get() = primaryProtocolFactory
                                                  and set f = primaryProtocolFactory <- f
@@ -41,7 +34,8 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
         | _ -> invalidArg "protocols" "First protocol is not primary."
     
         if protocols |> Array.exists (fun protocol -> protocol.ActorId.Name <> name) then invalidArg "protocols" "Name mismatch in protocols."
-    
+
+
     let mutable currentBehavior = behavior
     let mutable isStarted = false        
     let mutable linkedErrorRemoves: IDisposable list = []
@@ -60,8 +54,8 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
                 logEvent.Trigger(Error, LogSource.Actor name, new ActorFailedException("Actor behavior unhandled exception.", e) :> obj)
                 self.Stop()
         }
-    
-    new (name: string, behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) = new Actor<'T>(name, [| Actor.DefaultPrimaryProtocolFactory.Create name |], behavior, ?linkedActors = linkedActors)
+
+    new (name: string, behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) = new Actor<'T>(name, [| Actor.DefaultPrimaryProtocolFactory.Create name :> IProtocolServer<'T> |], behavior, ?linkedActors = linkedActors)
     new (behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) = new Actor<'T>(String.Empty, behavior, ?linkedActors = linkedActors)
     new (otherActor: Actor<'T>) = new Actor<'T>(otherActor.Name, otherActor.Protocols, otherActor.Behavior, otherActor.LinkedActors)
     
@@ -76,14 +70,14 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
     member __.PendingMessages with get() = primaryProtocol.PendingMessages
     
     member private __.Publish(newProtocolsF: ActorRef<'T> -> IProtocolServer<'T>[]) =
-        let mailboxProtocol = new MailboxProtocol.MailboxProtocolServer<_>(name) :> IPrimaryProtocolServer<_>
-        let actorRef = new ActorRef<'T>(name, [| mailboxProtocol.Client |])
+        let primaryProtocol' = primaryProtocol.CreateInstance(name)
+        let actorRef = new ActorRef<'T>(name, [| primaryProtocol'.Client |])
         let newProtocols = newProtocolsF actorRef
                            |> Array.append (protocols |> Seq.map (fun protocol -> protocol.Client.Factory)
                                                       |> Seq.choose id
                                                       |> Seq.map (fun factory -> factory.CreateServerInstance<_>(name, actorRef))
                                                       |> Seq.toArray)
-                           |> Array.append [| mailboxProtocol |]
+                           |> Array.append [| primaryProtocol' |]
     
         new Actor<'T>(name, newProtocols, currentBehavior, linkedActors)
     
@@ -99,13 +93,13 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
         //first check new name
         if newName.Contains("/") then invalidArg "newName" "Actor names must not contain '/'."
     
-        let mailboxProtocol = new MailboxProtocol.MailboxProtocolServer<_>(newName) :> IPrimaryProtocolServer<_>
-        let actorRef = new ActorRef<'T>(newName, [| mailboxProtocol.Client |])
+        let primaryProtocol' = primaryProtocol.CreateInstance(newName)
+        let actorRef = new ActorRef<'T>(newName, [| primaryProtocol'.Client |])
     
         let newProtocols = protocols |> Array.map (fun protocol -> protocol.Client.Factory)
                                      |> Array.choose id
-                                     |> Array.map (fun factory -> factory.CreateServerInstance<_>(name, actorRef))
-                                     |> Array.append [| mailboxProtocol |]
+                                     |> Array.map (fun factory -> factory.CreateServerInstance<_>(newName, actorRef))
+                                     |> Array.append [| primaryProtocol' |]
     
         new Actor<'T>(newName, newProtocols, currentBehavior, linkedActors)
     

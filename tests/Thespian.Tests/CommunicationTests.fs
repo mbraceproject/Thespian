@@ -13,7 +13,7 @@ type ``Collocated Communication``() =
     let mutable defaultPrimaryProtocolFactory = Unchecked.defaultof<IPrimaryProtocolFactory>
 
     abstract PrimaryProtocolFactory : IPrimaryProtocolFactory
-    override __.PrimaryProtocolFactory = new MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory
+    override __.PrimaryProtocolFactory = new MailboxProtocol.MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory
 
     abstract PublishActorPrimary : Actor<'T> -> Actor<'T>
     abstract RefPrimary : Actor<'T> -> ActorRef<'T>

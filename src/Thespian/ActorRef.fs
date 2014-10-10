@@ -111,6 +111,9 @@ and IProtocolClient<'T> =
 and IPrimaryProtocolServer<'T> =
     inherit IProtocolServer<'T>
 
+    /// Create a new instance of the protocol
+    abstract CreateInstance: actorName: string -> IPrimaryProtocolServer<'T>
+
     /// Returns the number of messages pending processing by the actor.
     abstract PendingMessages: int
 
@@ -131,6 +134,10 @@ and IPrimaryProtocolServer<'T> =
     /// </summary>
     /// <param name="behaviour">Asynchronous actor implementation workflow.</param>
     abstract Start: behaviour:(unit -> Async<unit>) -> unit
+
+/// Factory interface for creating protocol server instances
+and IPrimaryProtocolFactory =
+  abstract Create: actorName: string -> IPrimaryProtocolServer<'T>
 
 /// ActorRef defaults
 and Default private () =

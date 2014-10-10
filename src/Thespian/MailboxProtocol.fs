@@ -80,6 +80,7 @@ type MailboxProtocolServer<'T>(actorName: string) =
         override __.ActorId = actorId
         override self.Client = new MailboxProtocolClient<'T>(self) :> IProtocolClient<'T>
         override __.Log = logEvent.Publish
+        override __.CreateInstance(actorName: string) = new MailboxProtocolServer<'T>(actorName) :> IPrimaryProtocolServer<'T>
         override __.PendingMessages
             with get () =
                 match mailboxProcessor with
@@ -170,3 +171,6 @@ and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
                     | Some(Exn e) -> raise <| new MessageHandlingException("Actor threw exception while handling message.", srv.ActorId, e)
                     | None -> None
                 })
+
+type MailboxPrimaryProtocolFactory() =
+  interface IPrimaryProtocolFactory with override __.Create(actorName: string) = new MailboxProtocolServer<'T>(actorName) :> IPrimaryProtocolServer<'T>
