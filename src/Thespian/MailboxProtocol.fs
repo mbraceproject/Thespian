@@ -170,3 +170,9 @@ and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
                     | Some(Exn e) -> raise <| new MessageHandlingException("Actor threw exception while handling message.", srv.ActorId, e)
                     | None -> None
                 })
+
+/// MailboxProcessor primary protocol factory
+and MailboxPrimaryProtocolFactory() =
+    interface IPrimaryProtocolFactory with 
+        override __.Create(actorName: string) = 
+            new MailboxProtocolServer<'T>(actorName) :> IPrimaryProtocolServer<'T>

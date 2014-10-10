@@ -5,4 +5,4 @@ open Nessos.Thespian
 
 [<TestFixture>]
 type ``Mailbox Primary Protocol Tests``() = 
-    inherit PrimaryProtocolTests(new MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory)
+    inherit PrimaryProtocolTests(new MailboxProtocol.MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory)

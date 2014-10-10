@@ -3,20 +3,12 @@ namespace Nessos.Thespian
 open System
 open System.Threading
 
-open Nessos.Thespian.Utils
 open Nessos.Thespian.Logging
-
-
-type IPrimaryProtocolFactory =
-    abstract Create: string -> IPrimaryProtocolServer<'T>
-
-type MailboxPrimaryProtocolFactory() =
-    interface IPrimaryProtocolFactory with override __.Create(actorName: string) = new MailboxProtocol.MailboxProtocolServer<'T>(actorName) :> IPrimaryProtocolServer<'T>
 
 [<AbstractClass>]
 type Actor() =
     [<VolatileField>]
-    static let mutable primaryProtocolFactory = new MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory
+    static let mutable primaryProtocolFactory = new MailboxProtocol.MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory
 
     static member DefaultPrimaryProtocolFactory with get() = primaryProtocolFactory
                                                  and set f = primaryProtocolFactory <- f
