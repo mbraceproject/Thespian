@@ -28,16 +28,6 @@ type IProtocolFactory =
     /// <param name="actorName">Name of actor to connect to.</param>
     abstract CreateClientInstance: actorName:string -> IProtocolClient<'T>
 
-/// <summary>
-///     Abstract primary protocol server factory.
-/// </summary>
-and IPrimaryProtocolFactory =
-    /// <summary>
-    ///     Create a primary actor protocol server instance.
-    /// </summary>
-    /// <param name="actorName">Name of actor bound to server instance.</param>
-    abstract Create: actorName:string -> IPrimaryProtocolServer<'T>
-
 /// Abstract actor protocol server.
 and IProtocolServer<'T> =
     inherit IDisposable
@@ -145,9 +135,15 @@ and IPrimaryProtocolServer<'T> =
     /// <param name="behaviour">Asynchronous actor implementation workflow.</param>
     abstract Start: behaviour:(unit -> Async<unit>) -> unit
 
-/// Factory interface for creating protocol server instances
+/// <summary>
+///     Abstract primary protocol server factory.
+/// </summary>
 and IPrimaryProtocolFactory =
-  abstract Create: actorName: string -> IPrimaryProtocolServer<'T>
+    /// <summary>
+    ///     Create a primary actor protocol server instance.
+    /// </summary>
+    /// <param name="actorName">Name of actor bound to server instance.</param>
+    abstract Create: actorName:string -> IPrimaryProtocolServer<'T>
 
 /// ActorRef defaults
 and Default private () =
