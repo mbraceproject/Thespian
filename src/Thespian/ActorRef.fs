@@ -28,6 +28,16 @@ type IProtocolFactory =
     /// <param name="actorName">Name of actor to connect to.</param>
     abstract CreateClientInstance: actorName:string -> IProtocolClient<'T>
 
+/// <summary>
+///     Abstract primary protocol server factory.
+/// </summary>
+and IPrimaryProtocolFactory =
+    /// <summary>
+    ///     Create a primary actor protocol server instance.
+    /// </summary>
+    /// <param name="actorName">Name of actor bound to server instance.</param>
+    abstract Create: actorName:string -> IPrimaryProtocolServer<'T>
+
 /// Abstract actor protocol server.
 and IProtocolServer<'T> =
     inherit IDisposable
@@ -392,7 +402,6 @@ and [<Serializable>] ActorRef<'T> =
             match other with
             | :? ActorRef<'T> -> (self :> IComparable<ActorRef<'T>>).CompareTo(other :?> ActorRef<'T>)
             | _ -> invalidArg "Argument not an ActorRef<>" "other"
-
 
 /// Actor protocol factory methods
 type Protocols private () = class end

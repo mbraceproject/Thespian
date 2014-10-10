@@ -174,3 +174,4 @@ and MailboxProtocolClient<'T>(server: MailboxProtocolServer<'T>) =
 
 type MailboxPrimaryProtocolFactory() =
   interface IPrimaryProtocolFactory with override __.Create(actorName: string) = new MailboxProtocolServer<'T>(actorName) :> IPrimaryProtocolServer<'T>
+

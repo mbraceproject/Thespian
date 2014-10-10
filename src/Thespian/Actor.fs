@@ -3,7 +3,6 @@ namespace Nessos.Thespian
 open System
 open System.Threading
 
-open Nessos.Thespian.Utils
 open Nessos.Thespian.Logging
 
 [<AbstractClass>]
