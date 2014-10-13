@@ -31,6 +31,7 @@ type Actor() =
     /// Stops given actor instance.
     abstract Stop: unit -> unit
 
+/// Represents a typed locally executing actor instance.
 type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) as self =
     inherit Actor()
     
@@ -64,10 +65,29 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
                 self.Stop()
         }
 
+    /// <summary>
+    ///     Creates a new typed actor instance.
+    /// </summary>
+    /// <param name="name">Actor name.</param>
+    /// <param name="behavior">Asynchronous, tail-recursive actor behaviour workflow.</param>
+    /// <param name="primaryProtocolFactory">Protocol factory used primarily by the actor.</param>
+    /// <param name="linkedActors">Actors linked to the given instance.</param>
     new (name: string, behavior: Actor<'T> -> Async<unit>, ?primaryProtocolFactory: IPrimaryProtocolFactory, ?linkedActors: seq<Actor>) =
       let primaryProtocolFactory = defaultArg primaryProtocolFactory Actor.DefaultPrimaryProtocolFactory
       new Actor<'T>(name, [| primaryProtocolFactory.Create name :> IProtocolServer<'T> |], behavior, ?linkedActors = linkedActors)
+
+    /// <summary>
+    ///     Creates a new typed actor instance.
+    /// </summary>
+    /// <param name="behavior">Asynchronous, tail-recursive actor behaviour workflow.</param>
+    /// <param name="primaryProtocolFactory">Protocol factory used primarily by the actor.</param>
+    /// <param name="linkedActors">Actors linked to the given instance.</param>
     new (behavior: Actor<'T> -> Async<unit>, ?primaryProtocolFactory: IPrimaryProtocolFactory, ?linkedActors: seq<Actor>) = new Actor<'T>(String.Empty, behavior, ?primaryProtocolFactory = primaryProtocolFactory, ?linkedActors = linkedActors)
+
+    /// <summary>
+    ///     Clones an actor behaviour from a given instance.
+    /// </summary>
+    /// <param name="otherActor">actor to be cloned from.</param>
     new (otherActor: Actor<'T>) = new Actor<'T>(otherActor.Name, protocols = otherActor.Protocols, behavior = otherActor.Behavior, linkedActors = otherActor.LinkedActors)
     
     /// Protocol server instances used by the actor
