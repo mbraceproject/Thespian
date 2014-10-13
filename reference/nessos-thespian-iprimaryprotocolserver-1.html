@@ -50,16 +50,36 @@ must be forwarded to its unique primary protocol.</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '277', 277)" onmouseover="showTip(event, '277', 277)">
-            PendingMessages
+          <code onmouseout="hideTip(event, '291', 291)" onmouseover="showTip(event, '291', 291)">
+            CreateInstance(actorName)
           </code>
-          <div class="tip" id="277">
-            <strong>Signature:</strong> int<br />
+          <div class="tip" id="291">
+            <strong>Signature:</strong> actorName:string -&gt; IPrimaryProtocolServer&lt;&#39;T&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L115-115" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Create a new instance of the protocol</p>
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '292', 292)" onmouseover="showTip(event, '292', 292)">
+            PendingMessages
+          </code>
+          <div class="tip" id="292">
+            <strong>Signature:</strong> int<br />
+              <strong>Modifiers:</strong> abstract<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L118-118" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -70,16 +90,16 @@ must be forwarded to its unique primary protocol.</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '278', 278)" onmouseover="showTip(event, '278', 278)">
+          <code onmouseout="hideTip(event, '293', 293)" onmouseover="showTip(event, '293', 293)">
             Receive(timeoutMilliseconds)
           </code>
-          <div class="tip" id="278">
+          <div class="tip" id="293">
             <strong>Signature:</strong> timeoutMilliseconds:int -&gt; Async&lt;&#39;T&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L121-121" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L124-124" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -90,16 +110,16 @@ must be forwarded to its unique primary protocol.</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '279', 279)" onmouseover="showTip(event, '279', 279)">
+          <code onmouseout="hideTip(event, '294', 294)" onmouseover="showTip(event, '294', 294)">
             Start(behaviour)
           </code>
-          <div class="tip" id="279">
+          <div class="tip" id="294">
             <strong>Signature:</strong> (behaviour:(unit -&gt; Async&lt;unit&gt;)) -&gt; unit<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L133-133" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L136-136" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -110,16 +130,16 @@ must be forwarded to its unique primary protocol.</p>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '280', 280)" onmouseover="showTip(event, '280', 280)">
+          <code onmouseout="hideTip(event, '295', 295)" onmouseover="showTip(event, '295', 295)">
             TryReceive(timeoutMilliseconds)
           </code>
-          <div class="tip" id="280">
+          <div class="tip" id="295">
             <strong>Signature:</strong> timeoutMilliseconds:int -&gt; Async&lt;&#39;T option&gt;<br />
               <strong>Modifiers:</strong> abstract<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L127-127" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/ActorRef.fs#L130-130" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>MailboxProtocolServer<'T> - Thespian</title>
+    <title>ActorRef - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,94 +35,55 @@
 
 
 
-<h1>MailboxProtocolServer<'T></h1>
+<h1>ActorRef</h1>
 <div class="xmldoc">
+<p>Collection of ActorRef combinators</p>
 </div>
-  <h3>Constructors</h3>
+
+<!-- Render nested types and modules, if there are any -->
+
+  <h3>Functions and values</h3>
   <table class="table table-bordered member-list">
     <thead>
-      <tr><td>Constructor</td><td>Description</td></tr>
+      <tr><td>Function or value</td><td>Description</td></tr>
     </thead>
     <tbody>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '194', 194)" onmouseover="showTip(event, '194', 194)">
-            new(actorName)
+          <code onmouseout="hideTip(event, '1', 1)" onmouseover="showTip(event, '1', 1)">
+            configurationFilter(filterF actorRef)
           </code>
-          <div class="tip" id="194">
-            <strong>Signature:</strong> actorName:string -&gt; MailboxProtocolServer&lt;&#39;T&gt;<br />
-                      </div>
+          <div class="tip" id="1">
+            <strong>Signature:</strong> filterF:(IProtocolFactory -&gt; bool) -&gt; actorRef:ActorRef&lt;&#39;T&gt; -&gt; ActorRef&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/MailboxPrimaryProtocol.fs#L39-39" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L512-512" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <h3>Instance members</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
+          <p>Filters actor ref protocols by predicate.</p>
 
-          <code onmouseout="hideTip(event, '207', 207)" onmouseover="showTip(event, '207', 207)">
-            Mailbox
-          </code>
-          <div class="tip" id="207">
-            <strong>Signature:</strong> MailboxProcessor&lt;&#39;T&gt; option<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/MailboxPrimaryProtocol.fs#L48-48" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '208', 208)" onmouseover="showTip(event, '208', 208)">
-            Start(arg1)
+          <code onmouseout="hideTip(event, '2', 2)" onmouseover="showTip(event, '2', 2)">
+            empty()
           </code>
-          <div class="tip" id="208">
-            <strong>Signature:</strong> ((unit -&gt; Async&lt;unit&gt;)) -&gt; unit<br />
-              <strong>Modifiers:</strong> abstract<br />
-                      </div>
+          <div class="tip" id="2">
+            <strong>Signature:</strong> unit -&gt; ActorRef&lt;&#39;?27786&gt;<br />
+                          <strong>Type parameters:</strong> '?27786          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/MailboxPrimaryProtocol.fs#L50-50" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L517-517" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
+          <p>Return reference to a new actor that accepts one message and then exits.</p>
 
-          <code onmouseout="hideTip(event, '209', 209)" onmouseover="showTip(event, '209', 209)">
-            Stop()
-          </code>
-          <div class="tip" id="209">
-            <strong>Signature:</strong> unit -&gt; unit<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/MailboxPrimaryProtocol.fs#L62-62" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
         </td>
       </tr>
     </tbody>

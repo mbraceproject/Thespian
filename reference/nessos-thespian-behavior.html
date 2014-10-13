@@ -37,26 +37,10 @@
 
 <h1>Behavior</h1>
 <div class="xmldoc">
+<p>Collection of behaviour-based combinators</p>
 </div>
 
 <!-- Render nested types and modules, if there are any -->
-  <h2>Nested types and modules</h2>
-  <div>
-      <table class="table table-bordered module-list">
-    <thead>
-      <tr><td>Module</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td class="module-name">
-            <a href="nessos-thespian-behavior-withself.html">WithSelf</a>
-          </td>
-          <td class="xmldoc"></td>
-        </tr>
-    </tbody>
-  </table>
-
-  </div>
 
   <h3>Functions and values</h3>
   <table class="table table-bordered member-list">
@@ -67,55 +51,39 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '28', 28)" onmouseover="showTip(event, '28', 28)">
-            stateful state behavior
+          <code onmouseout="hideTip(event, '10', 10)" onmouseover="showTip(event, '10', 10)">
+            stateful(init behavior self)
           </code>
-          <div class="tip" id="28">
-            <strong>Signature:</strong> state:&#39;U -&gt; behavior:(&#39;U -&gt; &#39;T -&gt; Async&lt;&#39;U&gt;) -&gt; Actor&lt;&#39;T&gt; -&gt; Async&lt;&#39;?27717&gt;<br />
-                          <strong>Type parameters:</strong> 'U, 'T, '?27717          </div>
+          <div class="tip" id="10">
+            <strong>Signature:</strong> init:&#39;State -&gt; behavior:(&#39;State -&gt; &#39;T -&gt; Async&lt;&#39;State&gt;) -&gt; self:Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;<br />
+                          <strong>Type parameters:</strong> 'State, 'T          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L338-338" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L530-530" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
+          <p>Creates a stateful behaviour workflow out of provided components.</p>
+
         </td>
       </tr>
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '29', 29)" onmouseover="showTip(event, '29', 29)">
-            stateful2 state behavior self
+          <code onmouseout="hideTip(event, '31', 31)" onmouseover="showTip(event, '31', 31)">
+            stateless(behavior self)
           </code>
-          <div class="tip" id="29">
-            <strong>Signature:</strong> state:&#39;U -&gt; behavior:(&#39;U -&gt; Actor&lt;&#39;T&gt; -&gt; Async&lt;&#39;U&gt;) -&gt; self:Actor&lt;&#39;T&gt; -&gt; Async&lt;&#39;?27721&gt;<br />
-                          <strong>Type parameters:</strong> 'U, 'T, '?27721          </div>
+          <div class="tip" id="31">
+            <strong>Signature:</strong> behavior:(&#39;T -&gt; Async&lt;unit&gt;) -&gt; self:Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;<br />
+                          <strong>Type parameters:</strong> 'T          </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L340-340" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L543-543" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
+          <p>Creates a stateless behaviour workflow out of a message-reactive function.</p>
 
-          <code onmouseout="hideTip(event, '30', 30)" onmouseover="showTip(event, '30', 30)">
-            stateless behavior self
-          </code>
-          <div class="tip" id="30">
-            <strong>Signature:</strong> behavior:(&#39;T -&gt; Async&lt;unit&gt;) -&gt; self:Actor&lt;&#39;T&gt; -&gt; Async&lt;&#39;?27724&gt;<br />
-                          <strong>Type parameters:</strong> 'T, '?27724          </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L347-347" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
         </td>
       </tr>
     </tbody>

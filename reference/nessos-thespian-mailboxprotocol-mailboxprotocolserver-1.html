@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>MailboxProtocolClient<'T> - Thespian</title>
+    <title>MailboxProtocolServer<'T> - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,8 +35,9 @@
 
 
 
-<h1>MailboxProtocolClient<'T></h1>
+<h1>MailboxProtocolServer<'T></h1>
 <div class="xmldoc">
+<p>MailboxProcessor protocol server implementation</p>
 </div>
   <h3>Constructors</h3>
   <table class="table table-bordered member-list">
@@ -47,15 +48,78 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '191', 191)" onmouseover="showTip(event, '191', 191)">
-            new(server)
+          <code onmouseout="hideTip(event, '184', 184)" onmouseover="showTip(event, '184', 184)">
+            new(actorName)
           </code>
-          <div class="tip" id="191">
-            <strong>Signature:</strong> server:MailboxProtocolServer&lt;&#39;T&gt; -&gt; MailboxProtocolClient&lt;&#39;T&gt;<br />
+          <div class="tip" id="184">
+            <strong>Signature:</strong> actorName:string -&gt; MailboxProtocolServer&lt;&#39;T&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/MailboxPrimaryProtocol.fs#L106-106" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/MailboxProtocol.fs#L38-38" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>Instance members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Instance member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '187', 187)" onmouseover="showTip(event, '187', 187)">
+            Mailbox
+          </code>
+          <div class="tip" id="187">
+            <strong>Signature:</strong> MailboxProcessor&lt;&#39;T&gt; option<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/MailboxProtocol.fs#L47-47" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '188', 188)" onmouseover="showTip(event, '188', 188)">
+            Start(arg1)
+          </code>
+          <div class="tip" id="188">
+            <strong>Signature:</strong> ((unit -&gt; Async&lt;unit&gt;)) -&gt; unit<br />
+              <strong>Modifiers:</strong> abstract<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/MailboxProtocol.fs#L49-49" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '189', 189)" onmouseover="showTip(event, '189', 189)">
+            Stop()
+          </code>
+          <div class="tip" id="189">
+            <strong>Signature:</strong> unit -&gt; unit<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/MailboxProtocol.fs#L61-61" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
