@@ -5,20 +5,30 @@ open System.Threading
 
 open Nessos.Thespian.Logging
 
+/// Represents an untyped locally executing actor instance.
 [<AbstractClass>]
 type Actor() =
     [<VolatileField>]
     static let mutable primaryProtocolFactory = new MailboxProtocol.MailboxPrimaryProtocolFactory() :> IPrimaryProtocolFactory
 
-    static member DefaultPrimaryProtocolFactory with get() = primaryProtocolFactory
-                                                 and set f = primaryProtocolFactory <- f
+    /// Gets or sets the default primary protocol used by actors.
+    static member DefaultPrimaryProtocolFactory 
+        with get() = primaryProtocolFactory
+        and set f = primaryProtocolFactory <- f
     
+    /// Actor event observable
     abstract Log: IEvent<Log>
-    abstract LogEvent: LogLevel * 'E -> unit
-    abstract LogInfo: 'I -> unit
-    abstract LogWarning: 'W -> unit
-    abstract LogError: exn -> unit
+
+    /// <summary>
+    ///     Trigger a new event for given actor.
+    /// </summary>
+    /// <param name="logLevel">Log level.</param>
+    /// <param name="event">event value.</param>
+    abstract LogEvent: logLevel:LogLevel * event:'E -> unit
+
+    /// Starts given actor instance.
     abstract Start: unit -> unit
+    /// Stops given actor instance.
     abstract Stop: unit -> unit
 
 type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'T> -> Async<unit>, ?linkedActors: seq<Actor>) as self =
@@ -40,7 +50,7 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
     let mutable linkedErrorRemoves: IDisposable list = []
     let mutable protocolLogSubscriptions: IDisposable list = []
     let logSource = LogSource.Actor name
-    let linkedActors = defaultArg linkedActors Seq.empty
+    let linkedActors = match linkedActors with None -> [||] | Some la -> Seq.toArray la
     let logEvent = new Event<Log>()
     let primaryProtocol = protocols.[0] :?> IPrimaryProtocolServer<'T>
     let clientProtocols = protocols |> Array.map (fun protocol -> protocol.Client)
@@ -60,15 +70,20 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
     new (behavior: Actor<'T> -> Async<unit>, ?primaryProtocolFactory: IPrimaryProtocolFactory, ?linkedActors: seq<Actor>) = new Actor<'T>(String.Empty, behavior, ?primaryProtocolFactory = primaryProtocolFactory, ?linkedActors = linkedActors)
     new (otherActor: Actor<'T>) = new Actor<'T>(otherActor.Name, protocols = otherActor.Protocols, behavior = otherActor.Behavior, linkedActors = otherActor.LinkedActors)
     
+    /// Protocol server instances used by the actor
     member private __.Protocols = protocols
+    /// Asynchronous, tail-recursive loop behaviour used by actor.
     member private __.Behavior = behavior
+    /// Actors linked to the given actor instance.
     member private __.LinkedActors = linkedActors
     
+    /// Actor name
     member __.Name = name
     
     override __.Log = logEvent.Publish
     
-    member __.PendingMessages with get() = primaryProtocol.PendingMessages
+    /// Return the number of messages pending processing by actor instance.
+    member __.PendingMessages = primaryProtocol.PendingMessages
     
     member private __.Publish(newProtocolsF: ActorRef<'T> -> IProtocolServer<'T>[]) =
         let primaryProtocol' = primaryProtocol.CreateInstance(name)
@@ -82,14 +97,26 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
     
         new Actor<'T>(name, newProtocols, currentBehavior, linkedActors)
     
-    abstract Publish: IProtocolServer<'T>[] -> Actor<'T>
+    /// <summary>
+    ///     Publishes given actor to collection of protocol server instances.
+    /// </summary>
+    /// <param name="protocolServers">Protocol servers to be published to.</param>
+    abstract Publish: protocolServers:IProtocolServer<'T>[] -> Actor<'T>
     default self.Publish(protocols': IProtocolServer<'T>[]) = self.Publish(fun _ -> protocols')
     
-    abstract Publish: #seq<'U>  -> Actor<'T> when 'U :> IProtocolFactory
+    /// <summary>
+    ///     Publishes given actor to collection of protocol factories.
+    /// </summary>
+    /// <param name="protocolFactories">Protocol factories to be published to.</param>
+    abstract Publish: protocolFactories:#seq<'U>  -> Actor<'T> when 'U :> IProtocolFactory
     default self.Publish(protocolFactories: #seq<'U> when 'U :> IProtocolFactory) =
         self.Publish(fun actorRef -> protocolFactories |> Seq.map (fun factory -> factory.CreateServerInstance<'T>(name, actorRef)) |> Seq.toArray)
     
-    abstract Rename: string -> Actor<'T>
+    /// <summary>
+    ///     Creates a renamed copy of given actor.
+    /// </summary>
+    /// <param name="newName">new name for given actor.</param>
+    abstract Rename: newName:string -> Actor<'T>
     default actor.Rename(newName: string): Actor<'T> =
         //first check new name
         if newName.Contains("/") then invalidArg "newName" "Actor names must not contain '/'."
@@ -104,22 +131,25 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
     
         new Actor<'T>(newName, newProtocols, currentBehavior, linkedActors)
     
+    /// Gets a reference to given actor instance.
     abstract Ref: ActorRef<'T>
     default actor.Ref = actorRef
     
+    /// <summary>
+    ///     Asynchronously dequeue a message from actor inbox.
+    /// </summary>
+    /// <param name="timeout">Timeout in milliseconds. Defaults to infinite.</param>
     abstract Receive: ?timeout: int -> Async<'T>
     default __.Receive(?timeout: int) = let timeout = defaultArg timeout Timeout.Infinite in primaryProtocol.Receive(timeout)
     
+    /// <summary>
+    ///     Asynchronously dequeue a message from actor inbox. Return 'None' on timeout.
+    /// </summary>
+    /// <param name="timeout">Timeout in milliseconds. Defaults to infinite.</param>
     abstract TryReceive: ?timeout: int -> Async<'T option>
     default __.TryReceive(?timeout: int) = let timeout = defaultArg timeout Timeout.Infinite in primaryProtocol.TryReceive(timeout)
     
     override __.LogEvent<'L>(logLevel: LogLevel, datum: 'L) = logEvent.Trigger(logLevel, logSource, datum :> obj)
-    
-    override self.LogInfo<'L>(info: 'L) = self.LogEvent(Info, info)
-    
-    override self.LogWarning<'L>(warning: 'L) = self.LogEvent(Warning, warning)
-    
-    override self.LogError(e: exn) = self.LogEvent(Error, e)
     
     member private __.Start(behavior: Actor<'T> -> Async<unit>) =
         if not isStarted then
@@ -160,131 +190,275 @@ type Actor<'T>(name: string, protocols: IProtocolServer<'T>[], behavior: Actor<'
     interface IDisposable with override self.Dispose() = self.Stop()
 
 
+/// Extension methods for Actor types.
+[<AutoOpen>]
+module ActorExtensions =
     
+    type Actor with
+        /// <summary>
+        ///     Log information event.
+        /// </summary>
+        /// <param name="info">info value.</param>
+        member self.LogInfo<'L>(info: 'L) = self.LogEvent(Info, info)
+
+        /// <summary>
+        ///     Log warning event.
+        /// </summary>
+        /// <param name="warning">warning value.</param>
+        member self.LogWarning<'L>(warning: 'L) = self.LogEvent(Warning, warning)
+
+        /// <summary>
+        ///     Log exception event.
+        /// </summary>
+        /// <param name="exn">exception value.</param>
+        member self.LogError(exn : exn) = self.LogEvent(Error, exn)
+ 
+ /// Collection of operators acting on actor types.
 [<AutoOpen>]
 module Operators =
 
+    /// <summary>
+    ///     Synchronously post message to actor reference.
+    /// </summary>
+    /// <param name="actorRef">Recipient actor.</param>
+    /// <param name="msg">Message.</param>
     let inline (<--) (actorRef: ActorRef<'T>) (msg: 'T) = actorRef.Post(msg)
 
+    /// <summary>
+    ///     Asynchronously post message to actor reference.
+    /// </summary>
+    /// <param name="actorRef">Recipient actor.</param>
+    /// <param name="msg">Message.</param>
     let inline (<-!-) (actorRef: ActorRef<'T>) (msg: 'T) = actorRef.AsyncPost msg
 
+    /// <summary>
+    ///     Synchronously post message to actor reference.
+    /// </summary>
+    /// <param name="actorRef">Recipient actor.</param>
+    /// <param name="msg">Message.</param>
     let inline (-->) (msg: 'T) (actorRef: ActorRef<'T>) = actorRef <-- msg
 
+    /// <summary>
+    ///     Post message to actor reference and asynchronously await for reply.
+    /// </summary>
+    /// <param name="actorRef">Recipient actor.</param>
+    /// <param name="msg">Message builder.</param>
     let inline (<!-) (actorRef: ActorRef<'T>) (msgF: IReplyChannel<'R> -> 'T) = actorRef.PostWithReply(msgF)
 
+    /// <summary>
+    ///     Post message to actor reference and asynchronously await for reply.
+    /// </summary>
+    /// <param name="actorRef">Recipient actor.</param>
+    /// <param name="msg">Message builder.</param>
     let inline (<!=) (actorRef: ActorRef<'T>) (msgF: IReplyChannel<'R> -> 'T) = actorRef <!- msgF |> Async.RunSynchronously
 
+    /// <summary>
+    ///     Gets actor reference for given actor.
+    /// </summary>
+    /// <param name="actor">Actor to get reference from.</param>
     let inline (!) (actor: Actor<'T>): ActorRef<'T> = actor.Ref
-                
+              
+/// Collection of actor combinators
+[<RequireQualifiedAccess>]
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Actor =
-    open Nessos.Thespian.Utils
 
+    /// <summary>
+    ///     Instantiates an asynchronous, tail recursive actor behaviour workflow into an inactive actor instance.
+    /// </summary>
+    /// <param name="body">Actor behaviour workflow.</param>
     let inline bind (body: Actor<'T> -> Async<unit>) = let name = Guid.NewGuid().ToString() in new Actor<'T>(name, body)
 
-    let inline empty(): Actor<'T> = bind (fun _ -> async.Zero())
-    let inline sink(): Actor<'T> = bind (fun actor -> actor.Receive() |> Async.Ignore)
+    /// Creates a trivial actor that exits.
+    let inline empty() : Actor<'T> = bind (fun _ -> async.Zero())
 
-    let inline spawn (processFunc: 'T -> Async<unit>) =
+    // this appears to be wrong: will receive one message and then exit, should probably discard everything it receives.
+
+    /// Creates a trivial actor that receives a single message and exits.
+    let inline sink() : Actor<'T> = bind (fun actor -> actor.Receive() |> Async.Ignore)
+
+    /// <summary>
+    ///     Wraps an asynchronous reactive workflow into a tail-recursive actor definition.
+    /// </summary>
+    /// <param name="reactF">Worfklow that reacts on input messages.</param>
+    let inline spawn (reactF: 'T -> Async<unit>) =
         let rec body (actor: Actor<'T>) = async { 
                 let! msg = actor.Receive()
-                do! processFunc msg
+                do! reactF msg
                 return! body actor
             }
         bind body
 
-    let inline bindLinked (body: Actor<'T> -> Async<unit>) (linkedActors: #seq<Actor>) = new Actor<'T>(String.Empty, body, linkedActors = linkedActors)
+    /// <summary>
+    ///     Instantiates an asynchronous, tail recursive actor behaviour workflow into an inactive actor instance.
+    /// </summary>
+    /// <param name="body">Actor behaviour workflow.</param>
+    /// <param name="linkedActors">Actors linked to current instance.</param>
+    let inline bindLinked (body: Actor<'T> -> Async<unit>) (linkedActors: #seq<Actor>) = 
+        new Actor<'T>(String.Empty, body, linkedActors = linkedActors)
 
-    let inline spawnLinked (processFunc: 'T -> Async<unit>) (linkedActors: #seq<Actor>) =
+    /// <summary>
+    ///     Wraps an asynchronous reactive workflow into a tail-recursive actor definition.
+    /// </summary>
+    /// <param name="reactF">Worfklow that reacts on input messages.</param>
+    /// <param name="linkedActors">Actors linked to current instance.</param>
+    let inline spawnLinked (reactF : 'T -> Async<unit>) (linkedActors: #seq<Actor>) =
         let rec body (actor: Actor<'T>) = async { 
                 let! msg = actor.Receive()
-                do! processFunc msg
+                do! reactF msg
                 return! body actor
             }
         bindLinked body linkedActors
 
-    let inline publish (protocolFactories: #seq<'U> when 'U :> IProtocolFactory) (actor: Actor<'T>): Actor<'T> = actor.Publish(protocolFactories)
+    /// <summary>
+    ///     Publish given actor implementation to provided protocol implementation factories.
+    /// </summary>
+    /// <param name="protocolFactories">Protocol factories.</param>
+    /// <param name="actor">Target actor.</param>
+    let inline publish (protocolFactories: #seq<'U> when 'U :> IProtocolFactory) (actor: Actor<'T>): Actor<'T> = 
+        actor.Publish(protocolFactories)
 
+    /// <summary>
+    ///     Creates a copy of the actor instance with a new name.
+    /// </summary>
+    /// <param name="newName">New actor name.</param>
+    /// <param name="actor">Target actor.</param>
     let inline rename (newName: string) (actor: Actor<'T>): Actor<'T> = actor.Rename(newName)
 
+    /// <summary>
+    ///     Starts the given actor instance.
+    /// </summary>
+    /// <param name="actor">Actor to be started.</param>
     let inline start (actor: Actor<'T>): Actor<'T> = actor.Start(); actor
 
+    /// <summary>
+    ///     Creates a new actor that intercepts messages
+    ///     before forwarding them to the target actor.
+    /// </summary>
+    /// <param name="interceptF">Interception behavior.</param>
+    /// <param name="actor">Target actor.</param>
     let intercept (interceptF: 'T -> Async<unit>) (actor: Actor<'T>): Actor<'T> =
         spawnLinked (fun msg -> async {                
             do! interceptF msg
 
-            !actor <-- msg
+            return! !actor <-!- msg
         }) [actor]
 
+    /// <summary>
+    ///     Creates a new actor that only forwards messages
+    ///     which satisfy given predicate.
+    /// </summary>
+    /// <param name="predicate">Predicate function.</param>
+    /// <param name="actor">Target actor.</param>
     let filter (predicate: 'T -> bool) (actor: Actor<'T>): Actor<'T> =
-        spawnLinked (fun msg -> async { if predicate msg then !actor <-- msg }) [actor]
+        spawnLinked (fun msg -> async { if predicate msg then return! !actor <-!- msg }) [actor]
 
+    /// <summary>
+    ///     Creates a new actor that broadcasts message received to
+    ///     all target actors.
+    /// </summary>
+    /// <param name="actors">Target actors.</param>
     let broadcast (actors: #seq<Actor<'T>>): Actor<'T> =
         let rec broadcastBehavior (self: Actor<'T>) =
             async {
                 let! msg = self.Receive()
 
-                for actor in actors do
+                let send actor = async {
                     try
-                        !actor <-- msg
-                    with e -> self.LogWarning(e)
+                        return! !actor <-!- msg
+                    with e -> self.LogWarning e
+                }
+
+                do! actors |> Seq.map send |> Async.Parallel |> Async.Ignore
 
                 return! broadcastBehavior self
             }
         actors |> Seq.map (fun a -> a :> Actor) |> bindLinked broadcastBehavior
 
-
+    /// <summary>
+    ///     Creates a new actor that passes incoming messages through a choice predicate;
+    ///     successful inputs are passed to the first actor, whereas failed will be passed to
+    ///     the failed actor.
+    /// </summary>
+    /// <param name="choiceF">Choice predicate.</param>
+    /// <param name="actorOnSuccess">Actor to forward message on true.</param>
+    /// <param name="actorOnFail">Actor to forward message on false.</param>
     let split (choiceF: 'T -> bool) (actorOnSuccess: Actor<'T>, actorOnFail: Actor<'T>): Actor<'T> =
         spawnLinked (fun msg -> async {
-            if choiceF msg then !actorOnSuccess <-- msg
-            else !actorOnFail <-- msg
+            if choiceF msg then return! !actorOnSuccess <-!- msg
+            else return! !actorOnFail <-!- msg
         }) [actorOnSuccess; actorOnFail]
 
+    /// <summary>
+    ///     Balance message passing across a collection of actors using a selection function.
+    /// </summary>
+    /// <param name="select">Selection function.</param>
+    /// <param name="actors">Target actors.</param>
     let balance (select: seq<ActorRef<'T>> -> ActorRef<'T>) (actors: #seq<Actor<'T>>): Actor<'T> =
+        let actors = Seq.toArray actors
         let balancer msg = async {
             let selectedRef = actors |> Seq.map (!) |> select
-            selectedRef <-- msg
+            return! selectedRef <-!- msg
         }
-        spawnLinked balancer (actors |> Seq.map (fun a -> a :> Actor))
+        spawnLinked balancer (actors |> Array.map (fun a -> a :> Actor))
 
+    /// <summary>
+    ///     Creates an actor that maps messages to target actor.
+    /// </summary>
+    /// <param name="mapF">Mapping function.</param>
+    /// <param name="actor">Target actor.</param>
     let map (mapF: 'U -> 'T) (actor: Actor<'T>) : Actor<'U> =
         spawnLinked (fun msg -> async {
-            !actor <-- (mapF msg) 
+            return! !actor <-!- (mapF msg) 
         }) [actor]
 
+    /// <summary>
+    ///     Creates an actor that forwards to target actors according to an indexing function.
+    /// </summary>
+    /// <param name="partitionF">Indexing function.</param>
+    /// <param name="actors">Target actors.</param>
     let partition (partitionF: 'T -> int) (actors: #seq<Actor<'T>>): Actor<'T> =
+        let actors = Seq.toArray actors
         spawnLinked (fun msg -> async {
             let selected = partitionF msg
-            !(actors |> Seq.nth selected) <-- msg
-        }) (actors |> Seq.map (fun a -> a :> Actor))
+            return! !actors.[selected] <-!- msg
+        }) (actors |> Array.map (fun a -> a :> Actor))
 
-    let scatter (choiceF: 'T -> (IReplyChannel<'R> * (IReplyChannel<'R> -> 'T)) option) 
-        (gatherF: seq<Reply<'R>> -> Reply<'R>) 
-        (actors: #seq<Actor<'T>>): Actor<'T> =
 
-        spawnLinked (fun msg -> async {
-            match choiceF msg with
-            | Some(replyChannel, msgBuilder) -> 
-                let! results =
-                    [ for actor in actors -> async {
-                            try
-                                let! result = !actor <!- msgBuilder
-                                return Value result
-                            with e ->
-                                return Exn e
-                        }
-                    ] |> Async.Parallel
-                return! results |> Array.toSeq |> gatherF |> replyChannel.AsyncReply
-            | None -> ()
-        }) (actors |> Seq.map (fun a -> a :> Actor))
+//    let scatter (choiceF: 'T -> (IReplyChannel<'R> * (IReplyChannel<'R> -> 'T)) option) 
+//        (gatherF: seq<Reply<'R>> -> Reply<'R>) 
+//        (actors: #seq<Actor<'T>>): Actor<'T> =
+//
+//        spawnLinked (fun msg -> async {
+//            match choiceF msg with
+//            | Some(replyChannel, msgBuilder) -> 
+//                let! results =
+//                    [ for actor in actors -> async {
+//                            try
+//                                let! result = !actor <!- msgBuilder
+//                                return Value result
+//                            with e ->
+//                                return Exn e
+//                        }
+//                    ] |> Async.Parallel
+//                return! results |> Array.toSeq |> gatherF |> replyChannel.AsyncReply
+//            | None -> ()
+//        }) (actors |> Seq.map (fun a -> a :> Actor))
 
-    let ref (actor: Actor<'T>): ActorRef<'T> =
-        !actor
+    /// <summary>
+    ///     Gets reference to given actor.
+    /// </summary>
+    /// <param name="actor">Input actor.</param>
+    let inline ref (actor: Actor<'T>): ActorRef<'T> = actor.Ref
 
+    /// <summary>
+    ///     Creates a local actor instance that forwards messages to target ActorRef.
+    /// </summary>
+    /// <param name="actorRef">Target ActorRef.</param>
     let wrapRef (actorRef: ActorRef<'T>): Actor<'T> =
         let rec body (self: Actor<'T>) = async {
             let! msg = self.Receive()
-            actorRef <-- msg
+            do! actorRef <-!- msg
 
             return! body self
         }
@@ -294,50 +468,77 @@ module Actor =
                 override actor.Ref = actorRef
         }
 
-    let spawnMany (processFunc: 'T -> Async<unit>) (howMany: int) (balancer: seq<ActorRef<'T>> -> ActorRef<'T>): Actor<'T> =
-        [ for i in 1..howMany -> spawn processFunc ] |> balance balancer
 
+//    let spawnMany (processFunc: 'T -> Async<unit>) (howMany: int) (balancer: seq<ActorRef<'T>> -> ActorRef<'T>): Actor<'T> =
+//        [ for i in 1..howMany -> spawn processFunc ] |> balance balancer
+
+    /// <summary>
+    ///     Creates a new actor that forwards boxed messages to target.
+    /// </summary>
+    /// <param name="actor">Target actor.</param>
     let box (actor: Actor<'T>): Actor<obj> =
         actor |> map (fun msg -> msg :?> 'T)
 
+    /// <summary>
+    ///     Creates a new actor that forwards unboxed messages to target.
+    /// </summary>
+    /// <param name="actor">Target actor.</param>
     let unbox (actor: Actor<obj>): Actor<'T> =
         actor |> map (fun msg -> msg :> obj)
 
+    /// <summary>
+    ///     Fuse constituent actors into one that accepts union types.
+    /// </summary>
+    /// <param name="actor"></param>
+    /// <param name="actor'"></param>
     let union (actor: Actor<'T>) (actor': Actor<'U>): Actor<Choice<'T, 'U>> =
         spawnLinked (fun msg -> async {
             match msg with
-            | Choice1Of2 m -> !actor <-- m
-            | Choice2Of2 m -> !actor' <-- m
+            | Choice1Of2 m -> return! !actor <-!- m
+            | Choice2Of2 m -> return! !actor' <-!- m
         }) [actor |> box; actor' |> box]
 
-[<AutoOpen>]
-module ActorRefExtensions =
-    module ActorRef =
-        let inline configurationFilter (filterF: IProtocolFactory -> bool) (actorRef: ActorRef<'T>): ActorRef<'T> = actorRef.ProtocolFilter filterF
-        let inline empty() = Actor.sink() |> Actor.ref
+/// Collection of ActorRef combinators
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ActorRef =
+        
+    /// <summary>
+    ///     Filters actor ref protocols by predicate.
+    /// </summary>
+    /// <param name="filterF">Protocol filtering function.</param>
+    /// <param name="actorRef">Input ActorRef.</param>
+    /// <returns>ActorRef with filtered protocol configurations.</returns>
+    let inline configurationFilter (filterF: IProtocolFactory -> bool) (actorRef: ActorRef<'T>): ActorRef<'T> = actorRef.ProtocolFilter filterF
 
+    /// <summary>
+    ///     Return reference to a new actor that accepts one message and then exits.
+    /// </summary>
+    let inline empty() = Actor.sink() |> Actor.ref
+
+
+/// Collection of behaviour-based combinators
+[<RequireQualifiedAccess>]
 module Behavior =
-    module WithSelf =
-        let rec stateful (state: 'U) (behavior: 'U -> ActorRef<'T> -> 'T -> Async<'U>) (self: Actor<'T>) =
-            async {
-                let! msg = self.Receive()
 
-                let! state' = behavior state !self msg
-
-                return! stateful state' behavior self
-            }
-
-        let stateless (behavior: ActorRef<'T> -> 'T -> Async<unit>) =
-            stateful () (fun _ self msg -> behavior self msg)
-      
-    let rec stateful (state: 'U) (behavior: 'U -> 'T -> Async<'U>) = WithSelf.stateful state (fun state _ msg -> behavior state msg)
-
-    let rec stateful2 (state: 'U) (behavior: 'U -> Actor<'T> -> Async<'U>) (self : Actor<'T>) =
+    /// <summary>
+    ///     Creates a stateful behaviour workflow out of provided components.
+    /// </summary>
+    /// <param name="init">Initial state.</param>
+    /// <param name="behavior">State-updating reactive asynchronous workflow.</param>
+    /// <param name="self">'This' actor.</param>
+    let rec stateful (init: 'State) (behavior: 'State -> 'T -> Async<'State>) (self: Actor<'T>) : Async<unit> =
         async {
-            let! state' = behavior state self
+            let! msg = self.Receive()
 
-            return! stateful2 state' behavior self
+            let! state' = behavior init msg
+
+            return! stateful state' behavior self
         }
 
+    /// <summary>
+    ///     Creates a stateless behaviour workflow out of a message-reactive function.
+    /// </summary>
+    /// <param name="reactF">workflow that reacts asynchronously to input message.</param>
     let stateless (behavior: 'T -> Async<unit>) (self: Actor<'T>) =
         stateful () (fun _ msg -> behavior msg) self
