@@ -145,7 +145,7 @@ Target "NuGet" (fun _ ->
     NuGet (fun p -> 
         { p with   
             Authors = authors
-            Project = project
+            Project = "Thespian.Core"
             Summary = summary
             Description = description
             Version = release.NugetVersion
@@ -154,11 +154,11 @@ Target "NuGet" (fun _ ->
             OutputPath = "bin"
             AccessKey = getBuildParamOrDefault "nugetkey" ""
             Publish = hasBuildParam "nugetkey"
-            Dependencies = [("FsPickler", "0.9.11")]
+            Dependencies = [("FsPickler", "1.0.2")]
             Files =
                 [
                     yield! addAssembly @"lib\net45" @"..\bin\Thespian.dll"
-                    yield! addAssembly @"lib\net45" @"..\bin\Thespian.Cluster.dll"
+//                    yield! addAssembly @"lib\net45" @"..\bin\Thespian.Cluster.dll"
                 ]
             })
         ("nuget/" + project + ".nuspec")

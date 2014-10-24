@@ -1,5 +1,5 @@
-### 0.1.0-alpha - Sep 10, 2014
-* Protocol refactoring
+### 0.1.0-alpha - Oct 24, 2014
+* Refactoring pre-release
 
 ### 0.0.11-alpha - Aug 17, 2014
 * Update FsPickler version

@@ -74,6 +74,10 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="FsPickler">
+      <HintPath>..\..\packages\FsPickler.1.0.2\lib\net45\FsPickler.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>False</Private>
@@ -86,9 +90,6 @@
     <Reference Include="System.Numerics" />
     <Reference Include="Mono.Posix">
       <HintPath>..\..\packages\Mono.Posix.4.0.0.0\lib\net40\Mono.Posix.dll</HintPath>
-    </Reference>
-    <Reference Include="FsPickler">
-      <HintPath>..\..\packages\FsPickler.0.9.11\lib\net45\FsPickler.dll</HintPath>
     </Reference>
     <Reference Include="FsUnit.NUnit">
       <HintPath>..\..\packages\FsUnit.1.3.0.1\Lib\Net40\FsUnit.NUnit.dll</HintPath>
