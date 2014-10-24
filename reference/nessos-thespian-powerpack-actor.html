@@ -50,10 +50,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '75', 75)" onmouseover="showTip(event, '75', 75)">
+          <code onmouseout="hideTip(event, '70', 70)" onmouseover="showTip(event, '70', 70)">
             asyncReplicated replicated
           </code>
-          <div class="tip" id="75">
+          <div class="tip" id="70">
             <strong>Signature:</strong> replicated:Actor&lt;Replicated&lt;&#39;T&gt;&gt; -&gt; Actor&lt;AsyncReplicated&lt;&#39;T&gt;&gt;<br />
                           <strong>Type parameters:</strong> 'T          </div>
         </td>
@@ -68,10 +68,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '76', 76)" onmouseover="showTip(event, '76', 76)">
+          <code onmouseout="hideTip(event, '71', 71)" onmouseover="showTip(event, '71', 71)">
             failover first second
           </code>
-          <div class="tip" id="76">
+          <div class="tip" id="71">
             <strong>Signature:</strong> first:Actor&lt;&#39;T&gt; -&gt; second:Actor&lt;&#39;T&gt; -&gt; Actor&lt;&#39;T&gt;<br />
                           <strong>Type parameters:</strong> 'T          </div>
         </td>
@@ -86,12 +86,12 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '77', 77)" onmouseover="showTip(event, '77', 77)">
+          <code onmouseout="hideTip(event, '72', 72)" onmouseover="showTip(event, '72', 72)">
             failoverOnResult msgBuilderF actors
           </code>
-          <div class="tip" id="77">
-            <strong>Signature:</strong> msgBuilderF:(&#39;T -&gt; (IReplyChannel&lt;&#39;R&gt; * (IReplyChannel&lt;&#39;R&gt; -&gt; &#39;T)) option) -&gt; actors:&#39;?27172 -&gt; Actor&lt;&#39;T&gt;<br />
-                          <strong>Type parameters:</strong> 'T, 'R, '?27172          </div>
+          <div class="tip" id="72">
+            <strong>Signature:</strong> msgBuilderF:(&#39;T -&gt; (IReplyChannel&lt;&#39;R&gt; * (IReplyChannel&lt;&#39;R&gt; -&gt; &#39;T)) option) -&gt; actors:&#39;?27170 -&gt; Actor&lt;&#39;T&gt;<br />
+                          <strong>Type parameters:</strong> 'T, 'R, '?27170          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L206-206" class="github-link">
@@ -104,10 +104,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '78', 78)" onmouseover="showTip(event, '78', 78)">
+          <code onmouseout="hideTip(event, '73', 73)" onmouseover="showTip(event, '73', 73)">
             mapMany mapManyF actor
           </code>
-          <div class="tip" id="78">
+          <div class="tip" id="73">
             <strong>Signature:</strong> mapManyF:(&#39;U -&gt; seq&lt;&#39;T&gt;) -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;&#39;U&gt;<br />
                           <strong>Type parameters:</strong> 'U, 'T          </div>
         </td>
@@ -122,10 +122,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '79', 79)" onmouseover="showTip(event, '79', 79)">
+          <code onmouseout="hideTip(event, '74', 74)" onmouseover="showTip(event, '74', 74)">
             parallelPostWithReply (...)
           </code>
-          <div class="tip" id="79">
+          <div class="tip" id="74">
             <strong>Signature:</strong> msgBuilder:(IReplyChannel&lt;&#39;R&gt; -&gt; &#39;T) -&gt; actorRefs:ActorRef&lt;&#39;T&gt; list -&gt; Async&lt;Reply&lt;&#39;R&gt; []&gt;<br />
                           <strong>Type parameters:</strong> 'R, 'T          </div>
         </td>
@@ -140,12 +140,12 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '80', 80)" onmouseover="showTip(event, '80', 80)">
+          <code onmouseout="hideTip(event, '75', 75)" onmouseover="showTip(event, '75', 75)">
             reliableBroadcast actors
           </code>
-          <div class="tip" id="80">
-            <strong>Signature:</strong> actors:&#39;?27161 -&gt; Actor&lt;Rely&lt;&#39;T&gt;&gt;<br />
-                          <strong>Type parameters:</strong> '?27161, 'T          </div>
+          <div class="tip" id="75">
+            <strong>Signature:</strong> actors:&#39;?27159 -&gt; Actor&lt;Rely&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> '?27159, 'T          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L154-154" class="github-link">
@@ -158,10 +158,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '81', 81)" onmouseover="showTip(event, '81', 81)">
+          <code onmouseout="hideTip(event, '76', 76)" onmouseover="showTip(event, '76', 76)">
             reliablePostAction postActionF actor
           </code>
-          <div class="tip" id="81">
+          <div class="tip" id="76">
             <strong>Signature:</strong> postActionF:(Rely&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) -&gt; actor:Actor&lt;Rely&lt;&#39;T&gt;&gt; -&gt; Actor&lt;Rely&lt;&#39;T&gt;&gt;<br />
                           <strong>Type parameters:</strong> 'T          </div>
         </td>
@@ -176,10 +176,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '82', 82)" onmouseover="showTip(event, '82', 82)">
+          <code onmouseout="hideTip(event, '77', 77)" onmouseover="showTip(event, '77', 77)">
             reliablyBroadcastMsg (...)
           </code>
-          <div class="tip" id="82">
+          <div class="tip" id="77">
             <strong>Signature:</strong> msgBuilder:(IReplyChannel&lt;&#39;R&gt; -&gt; &#39;T) -&gt; actorRefs:ActorRef&lt;&#39;T&gt; list -&gt; Async&lt;&#39;R&gt;<br />
                           <strong>Type parameters:</strong> 'R, 'T          </div>
         </td>
@@ -194,12 +194,12 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '83', 83)" onmouseover="showTip(event, '83', 83)">
+          <code onmouseout="hideTip(event, '78', 78)" onmouseover="showTip(event, '78', 78)">
             replicate replicas actor
           </code>
-          <div class="tip" id="83">
-            <strong>Signature:</strong> replicas:&#39;?27193 -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;Rely&lt;&#39;T&gt;&gt;<br />
-                          <strong>Type parameters:</strong> '?27193, 'T          </div>
+          <div class="tip" id="78">
+            <strong>Signature:</strong> replicas:&#39;?27191 -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;Rely&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> '?27191, 'T          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L278-278" class="github-link">
@@ -212,12 +212,12 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '84', 84)" onmouseover="showTip(event, '84', 84)">
+          <code onmouseout="hideTip(event, '79', 79)" onmouseover="showTip(event, '79', 79)">
             replicated replicas actor
           </code>
-          <div class="tip" id="84">
-            <strong>Signature:</strong> replicas:&#39;?27199 -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;Replicated&lt;&#39;T&gt;&gt;<br />
-                          <strong>Type parameters:</strong> '?27199, 'T          </div>
+          <div class="tip" id="79">
+            <strong>Signature:</strong> replicas:&#39;?27197 -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;Replicated&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> '?27197, 'T          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L290-290" class="github-link">
@@ -230,12 +230,12 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '85', 85)" onmouseover="showTip(event, '85', 85)">
+          <code onmouseout="hideTip(event, '80', 80)" onmouseover="showTip(event, '80', 80)">
             replicateSome predicate replicas actor
           </code>
-          <div class="tip" id="85">
-            <strong>Signature:</strong> predicate:(&#39;T -&gt; bool) -&gt; replicas:&#39;?27197 -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;Rely&lt;&#39;T&gt;&gt;<br />
-                          <strong>Type parameters:</strong> 'T, '?27197          </div>
+          <div class="tip" id="80">
+            <strong>Signature:</strong> predicate:(&#39;T -&gt; bool) -&gt; replicas:&#39;?27195 -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;Rely&lt;&#39;T&gt;&gt;<br />
+                          <strong>Type parameters:</strong> 'T, '?27195          </div>
         </td>
         <td class="xmldoc">
             <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Powerpack.fs#L285-285" class="github-link">
@@ -248,10 +248,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '86', 86)" onmouseover="showTip(event, '86', 86)">
+          <code onmouseout="hideTip(event, '81', 81)" onmouseover="showTip(event, '81', 81)">
             subscribeLog observerF actor
           </code>
-          <div class="tip" id="86">
+          <div class="tip" id="81">
             <strong>Signature:</strong> observerF:(Log -&gt; unit) -&gt; actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;&#39;T&gt;<br />
                           <strong>Type parameters:</strong> 'T          </div>
         </td>
@@ -266,10 +266,10 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '87', 87)" onmouseover="showTip(event, '87', 87)">
+          <code onmouseout="hideTip(event, '82', 82)" onmouseover="showTip(event, '82', 82)">
             suicidal actor
           </code>
-          <div class="tip" id="87">
+          <div class="tip" id="82">
             <strong>Signature:</strong> actor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;Suicidal&lt;&#39;T&gt;&gt;<br />
                           <strong>Type parameters:</strong> 'T          </div>
         </td>
