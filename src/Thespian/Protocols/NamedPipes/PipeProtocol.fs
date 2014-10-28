@@ -142,6 +142,7 @@ and PipeProtocolClient<'T>(actorName : string, pipeName : string, processId : in
                 do! sender.PostAsync msg
             with
             | :? CommunicationException as e -> return! Async.Raise e
+            | :? ThespianSerializationException as e -> return! Async.Raise e
             | e -> 
                 return! Async.Raise 
                         <| CommunicationException(sprintf "PipeProtocol: error communicating with %O." actorId, e)
@@ -309,14 +310,19 @@ and PipeReceiverUnix<'T>(pipeName : string, processMessage : 'T -> unit, ?single
                     use writing = getWriting()
                     do! writing.AsyncWriteBytes data
                 with e -> 
-                    printfn "DSLR-ERROR %A" e
-                    let data = serializer.Serialize <| Error e
+                    //printfn "DSLR-ERROR %A" e
+                    let data =
+                        try serializer.Serialize <| Error e
+                        with :? ThespianSerializationException as e' ->
+                            let e'' = new ThespianSerializationException(e.Message, SerializationOperation.Deserialization, new ThespianSerializationException(e'.Message, SerializationOperation.Serialization))
+                            serializer.Serialize <| Error e''
+                    
                     use writing = getWriting()
                     do! writing.AsyncWriteBytes data
                 if singleAccept then return ()
                 else return! connectionLoop reading
             with e -> 
-                printfn "CONN-ERROR %A" e
+                //printfn "CONN-ERROR %A" e
                 errorEvent.Trigger e
                 return ()
         }
@@ -332,7 +338,7 @@ and PipeReceiverUnix<'T>(pipeName : string, processMessage : 'T -> unit, ?single
                     destroyPipes()
                 | None -> ()
             with e -> 
-                printfn "SRV-ERROR %A" e
+                //printfn "SRV-ERROR %A" e
                 errorEvent.Trigger e
                 if reading.Value.IsSome then reading.Value.Value.Dispose()
                 destroyPipes()
@@ -391,7 +397,12 @@ and PipeReceiverWindows<'T>(pipeName : string, processMessage : 'T -> unit, ?sin
                         return! connectionLoop server
                     | Disconnect -> return true
                 with e -> 
-                    let data = serializer.Serialize <| Error e
+                    let data =
+                        try serializer.Serialize <| Error e
+                        with :? ThespianSerializationException as e' ->
+                            let e'' = new ThespianSerializationException(e.Message, SerializationOperation.Deserialization, new ThespianSerializationException(e'.Message, SerializationOperation.Serialization))
+                            serializer.Serialize <| Error e''
+                    
                     do! server.AsyncWriteBytes data
                     return true
             with e -> 
@@ -597,14 +608,15 @@ and internal PipeSenderUnix<'T> internal (pipeName : string, actorId : PipeActor
                 do! writing.AsyncWriteBytes data
                 use reading = getReading()
                 let! replyData = reading.AsyncReadBytes()
-                match serializer.Deserialize<Response> replyData with
-                | Acknowledge -> do! rc.Reply ()
-                | Unknownrecipient -> 
-                    do! rc.ReplyWithException <|
-                        new UnknownRecipientException("npp: message recipient not found on remote target.", actorId)
-                | Error e -> do! rc.ReplyWithException(new DeliveryException("npp: message delivery failure.", actorId, e))
+                try
+                    match serializer.Deserialize<Response> replyData with
+                    | Acknowledge -> do! rc.Reply ()
+                    | Unknownrecipient -> 
+                        do! rc.ReplyWithException <|
+                            new UnknownRecipientException("npp: message recipient not found on remote target.", actorId)
+                    | Error e -> do! rc.ReplyWithException(new DeliveryException("npp: message delivery failure.", actorId, e))
+                with :? ThespianSerializationException as e -> do! rc.ReplyWithException(new CommunicationException("Unable to verify message delivery.", actorId, e))
             with e -> 
-                printfn "WR-ERROR %A" e
                 do! rc.ReplyWithException e
         }
     
@@ -641,13 +653,15 @@ and internal PipeSenderWindows<'T> internal (pipeName : string, actorId : PipeAc
                     let data = self.SerializeDataAndHandleForeignRcs(Message msg)
                     do! client.AsyncWriteBytes data
                     let! replyData = client.AsyncReadBytes()
-                    match serializer.Deserialize<Response> replyData with
-                    | Acknowledge -> do! rc.Reply ()
-                    | Unknownrecipient -> 
-                        do! rc.ReplyWithException <|
-                            (new UnknownRecipientException("npp: message recipient not found on remote target.", 
-                                                              actorId))
-                    | Error e -> do! rc.ReplyWithException(new DeliveryException("npp: message delivery failure.", actorId, e))
+                    try
+                        match serializer.Deserialize<Response> replyData with
+                        | Acknowledge -> do! rc.Reply ()
+                        | Unknownrecipient -> 
+                            do! rc.ReplyWithException <|
+                                (new UnknownRecipientException("npp: message recipient not found on remote target.", 
+                                                                  actorId))
+                        | Error e -> do! rc.ReplyWithException(new DeliveryException("npp: message delivery failure.", actorId, e))
+                    with :? ThespianSerializationException as e -> do! rc.ReplyWithException(new CommunicationException("Unable to verify message delivery.", actorId, e))
             with e -> do! rc.ReplyWithException e
         }
     

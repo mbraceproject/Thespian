@@ -1,7 +1,53 @@
 ﻿module Nessos.Thespian.Tests.TestDefinitions
 
 open System
+open System.Runtime.Serialization
 open Nessos.Thespian
+
+type SerializeFailureControl =
+    | NeverFail
+    | FailOnSerialize
+    | FailOnDeserialize of SerializeFailureControl
+
+[<Serializable>]
+type ControlledSerialializableException =
+    inherit Exception
+    val private control: ControlledSerializable
+
+    new (msg: string, control: ControlledSerializable) =
+        {
+            inherit Exception(msg)
+            control = control
+        }
+
+    new (info: SerializationInfo, context: StreamingContext) =
+        {
+            inherit Exception(info, context)
+            control = info.GetValue("control", typeof<ControlledSerializable>) :?> ControlledSerializable
+        }
+    
+    member self.Control = self.control
+
+    interface ISerializable with
+        override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
+            info.AddValue("control", self.control)
+            base.GetObjectData(info, context)
+
+and [<Serializable>] ControlledSerializable(control: SerializeFailureControl) =
+    new(info: SerializationInfo, context: StreamingContext) = new ControlledSerializable(ControlledSerializable.Deserialize info)
+
+    static member Deserialize(info: SerializationInfo) =
+        let control = info.GetValue("control", typeof<SerializeFailureControl>) :?> SerializeFailureControl
+        match control with
+        | FailOnDeserialize control -> raise <| new ControlledSerialializableException("Deserialization failure", new ControlledSerializable(control))
+        | _ -> control    
+    
+    interface ISerializable with
+        override __.GetObjectData(info: SerializationInfo, context: StreamingContext) =
+            match control with
+            | FailOnSerialize -> raise <| new ControlledSerialializableException("Serialization failure", new ControlledSerializable(NeverFail))
+            | _ -> info.AddValue("control", control) 
+        
 
 type TestMessage<'T, 'R> = 
     | TestAsync of 'T
@@ -56,6 +102,16 @@ module PrimitiveBehaviors =
             | TestSync(rc, s') -> 
                 do! rc.Reply s
                 return! stateful s' self
+        }
+
+    let rec stateless (self: Actor<TestMessage<'T>>) =
+        async {
+            let! m = self.Receive()
+            match m with
+            | TestAsync _ -> return! stateless self
+            | TestSync(rc, _) ->
+                do! rc.Reply ()
+                return! stateless self
         }
     
     let rec failing (self : Actor<TestMessage<'T>>) = 

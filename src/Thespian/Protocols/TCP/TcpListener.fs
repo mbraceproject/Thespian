@@ -46,11 +46,18 @@ type TcpProtocolListener(ipEndPoint : IPEndPoint, ?backLog : int, ?concurrentAcc
                         if isValid then 
                             try 
                                 return! recipientF (msgId, actorId, payload, protocolStream)
-                            with e -> 
-                                let! r' = protocolStream.TryAsyncWriteResponse(Failure(msgId, e))
-                                match r' with
-                                | Some() -> return true
-                                | None -> return false
+                            with e ->
+                                try
+                                    let! r' = protocolStream.TryAsyncWriteResponse(Failure(msgId, e))
+                                    match r' with
+                                    | Some() -> return true
+                                    | None -> return false
+                                with :? ThespianSerializationException as e' ->
+                                    let e'' = new ThespianSerializationException(e.Message, SerializationOperation.Deserialization, new ThespianSerializationException(e'.Message, SerializationOperation.Serialization))
+                                    let! r' = protocolStream.TryAsyncWriteResponse(Failure(msgId, e''))
+                                    match r' with
+                                    | Some() -> return true
+                                    | None -> return false
                         else 
                             let! r' = protocolStream.TryAsyncWriteResponse(UnknownRecipient(msgId, actorId))
                             match r' with

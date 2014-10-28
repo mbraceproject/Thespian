@@ -491,7 +491,7 @@ type ``Collocated Communication``() =
         let result = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
         result |> should equal expected
     
-    [<Test>]
+    [<Test; Repeat 100>]
     member self.``Parallel posts with reply``() = 
         use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
                     |> self.PublishActorPrimary
@@ -571,7 +571,7 @@ type ``Collocated Remote Communication``() =
         actor.Stop()
         self.RefPrimary(actor) <-- TestAsync 0
     
-    [<Test>]
+    [<Test; Repeat 100>]
     member self.``Parallel posts with reply with multiple deserialised refs``() = 
         use actor : Actor<TestMessage<int, int>> = Actor.bind <| Behavior.stateful 0 Behaviors.state
                                                    |> self.PublishActorPrimary
@@ -690,6 +690,67 @@ type ``Collocated Remote Communication``() =
 
         actor.Ref.Name |> should equal actorRef.Name
 
+    [<Test>]
+    member self.``Post non-serializable``() =
+        use actor = Actor.bind PrimitiveBehaviors.stateless
+                    |> self.PublishActorPrimary
+                    |> Actor.start
+
+        let actorRef = self.RefPrimary(actor)
+
+        let nonSerializable = new ControlledSerializable(FailOnSerialize)
+
+        try actorRef <-- TestAsync nonSerializable
+        with :? ThespianSerializationException as e ->
+            e.SerializationOperation |> should equal SerializationOperation.Serialization
+
+
+    [<Test>]
+    member self.``Post non-deserializable``() =
+        use actor = Actor.bind PrimitiveBehaviors.stateless
+                    |> self.PublishActorPrimary
+                    |> Actor.start
+
+        let actorRef = self.RefPrimary(actor)
+
+        let nonSerializable = new ControlledSerializable(FailOnDeserialize NeverFail)
+
+        try actorRef <-- TestAsync nonSerializable
+        with DeliveryException(_, (:? ThespianSerializationException as e)) ->
+            e.SerializationOperation |> should equal SerializationOperation.Deserialization
+            e.InnerException.GetType() |> should not' (equal typeof<ThespianSerializationException>)
+
+    [<Test>]
+    member self.``Post non-deserializable with non-serializable failure``() =
+        use actor = Actor.bind PrimitiveBehaviors.stateless
+                    |> self.PublishActorPrimary
+                    |> Actor.start
+
+        let actorRef = self.RefPrimary(actor)
+
+        let nonSerializable = new ControlledSerializable(FailOnDeserialize FailOnSerialize)
+
+        try actorRef <-- TestAsync nonSerializable
+        with DeliveryException(_, (:? ThespianSerializationException as e)) ->
+            e.SerializationOperation |> should equal SerializationOperation.Deserialization
+            let inner = e.InnerException :?> ThespianSerializationException
+            inner.SerializationOperation |> should equal SerializationOperation.Serialization
+            inner.InnerException |> should equal Unchecked.defaultof<Exception>
+
+    [<Test>]
+    member self.``Post non-deserializable with non-deserializable failure``() =
+        use actor = Actor.bind PrimitiveBehaviors.stateless
+                    |> self.PublishActorPrimary
+                    |> Actor.start
+
+        let actorRef = self.RefPrimary(actor)
+
+        let nonSerializable = new ControlledSerializable(FailOnDeserialize (FailOnDeserialize NeverFail))
+
+        try actorRef <-- TestAsync nonSerializable
+        with CommunicationException(_, (:? ThespianSerializationException as e)) ->
+            e.SerializationOperation |> should equal SerializationOperation.Deserialization
+
 open Nessos.Thespian.Remote
 
 [<AbstractClass>]
@@ -736,7 +797,7 @@ type ``Tcp communication``() =
         let result = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
         result |> should equal expected
     
-    [<Test>]
+    [<Test; Repeat 20>]
     member self.``Parallel posts with reply with server connection timeout``() = 
         use actor = 
             Actor.bind <| Behavior.stateful 0 Behaviors.state

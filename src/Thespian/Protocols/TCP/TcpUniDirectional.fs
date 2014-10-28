@@ -421,7 +421,8 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
                 match r with
                 | Some() ->
                     Async.Start foreignRcHandle
-                    return! protocolStream.TryAsyncReadResponse()
+                    try return! protocolStream.TryAsyncReadResponse()
+                    with :? ThespianSerializationException as e -> return! Async.Raise (new CommunicationException("Unable to verify message delivery.", actorId, e))
                 | None -> return! Async.Raise (new CommunicationTimeoutException("Timeout occurred while trying to send message.", actorId, TimeoutType.MessageWrite))
             with e ->
                 cancelForeignReplyChannels context
@@ -442,6 +443,7 @@ type ProtocolClient<'T>(actorId: TcpActorId) =
             with 
             | :? SocketException as e when e.SocketErrorCode = SocketError.TimedOut -> return Choice2Of2(new CommunicationTimeoutException("Timeout occurred while trying to establish connection.", actorId, TimeoutType.Connection, e) :> exn)
             | CommunicationException _ as e -> return Choice2Of2 e
+            | :? ThespianSerializationException as e -> return Choice2Of2 (e :> exn)
             | e -> return Choice2Of2(new CommunicationException("Communication failure occurred while trying to send message.", actorId, e) :> exn)
         }
 

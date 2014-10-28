@@ -145,6 +145,8 @@ type ThespianSerializationException =
             inherit ThespianException(info, context)
             serializationOperation = info.GetValue("serializationOperation", typeof<SerializationOperation>) :?> SerializationOperation
         }
+
+    member self.SerializationOperation =  self.serializationOperation
     
     interface ISerializable with
         override self.GetObjectData(info: SerializationInfo, context: StreamingContext) =
