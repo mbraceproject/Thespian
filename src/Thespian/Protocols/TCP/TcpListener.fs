@@ -78,13 +78,18 @@ type TcpProtocolListener(ipEndPoint : IPEndPoint, ?backLog : int, ?concurrentAcc
         }
     
     let rec connectionLoop (keepOpen : bool) (tcpClient : TcpClient) = 
-        async { 
-            let! request = ProtocolStream.AsyncCreateRead(tcpClient, connectionTimeout, connectionTimeout, keepOpen)
-            let! keep = processRequest request
-            if keepOpen && keep then return! connectionLoop keepOpen tcpClient
-            else 
-                Interlocked.Decrement(openConnections) |> ignore
-                return ()
+        async {
+            try
+                let! request = ProtocolStream.AsyncCreateRead(tcpClient, connectionTimeout, connectionTimeout, keepOpen)
+                let! keep = processRequest request
+                if keepOpen && keep then return! connectionLoop keepOpen tcpClient
+                else 
+                    Interlocked.Decrement(openConnections) |> ignore
+                    return ()
+            with e ->
+                logEvent.Trigger
+                    (Warning, Protocol "tcp-listener", 
+                     new SocketListenerException("Exception in connection loop.", self.LocalEndPoint, e) :> obj)
         }
     
     let rec acceptLoop() = 
