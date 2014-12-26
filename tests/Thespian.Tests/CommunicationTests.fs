@@ -491,7 +491,7 @@ type ``Collocated Communication``() =
         let result = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
         result |> should equal expected
     
-    [<Test; Repeat 100>]
+    [<Test>]
     member self.``Parallel posts with reply``() = 
         use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
                     |> self.PublishActorPrimary
@@ -571,7 +571,7 @@ type ``Collocated Remote Communication``() =
         actor.Stop()
         self.RefPrimary(actor) <-- TestAsync 0
     
-    [<Test; Repeat 100>]
+    [<Test>]
     member self.``Parallel posts with reply with multiple deserialised refs``() = 
         use actor : Actor<TestMessage<int, int>> = Actor.bind <| Behavior.stateful 0 Behaviors.state
                                                    |> self.PublishActorPrimary
@@ -797,7 +797,7 @@ type ``Tcp communication``() =
         let result = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 0)
         result |> should equal expected
     
-    [<Test; Repeat 20>]
+    [<Test>]
     member self.``Parallel posts with reply with server connection timeout``() = 
         use actor = 
             Actor.bind <| Behavior.stateful 0 Behaviors.state

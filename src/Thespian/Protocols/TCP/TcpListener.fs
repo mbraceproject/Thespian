@@ -85,6 +85,9 @@ type TcpProtocolListener(ipEndPoint : IPEndPoint, ?backLog : int, ?concurrentAcc
                 if keepOpen && keep then return! connectionLoop keepOpen tcpClient
                 else 
                     Interlocked.Decrement(openConnections) |> ignore
+                    match request with
+                    | Some(_, protocolStream) -> protocolStream.Acquire().Dispose()
+                    | _ -> ()
                     return ()
             with e ->
                 logEvent.Trigger

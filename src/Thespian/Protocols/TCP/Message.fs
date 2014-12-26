@@ -98,19 +98,17 @@ type ProtocolNetworkStream(tcpClient : TcpClient, ?keepOpen : bool) =
     let socket = tcpClient.Client
     abstract FaultDispose : unit -> unit
     
-    override self.FaultDispose() = 
-        self.Dispose()
-        if keepOpen then 
-            if tcpClient.Client <> null then tcpClient.Client.LingerState = new LingerOption(true, 0)
-                                             |> ignore
+    override self.FaultDispose() =
+        if keepOpen && tcpClient.Client <> null then tcpClient.Client.LingerState = new LingerOption(true, 0) |> ignore
         tcpClient.Close()
+        self.Dispose()
     
     //returns disposable that releases the socket even if keepOpen = true
     member self.Acquire() = 
         { new IDisposable with
-              member __.Dispose() = 
-                  self.Dispose()
-                  tcpClient.Close() }
+              member __.Dispose() =
+                  tcpClient.Close()
+                  self.Dispose() }
     
     member self.TryAsyncRead(buffer : byte [], offset : int, size : int, timeout : int) : Async<int option> = 
         if timeout = 0 then async.Return None
