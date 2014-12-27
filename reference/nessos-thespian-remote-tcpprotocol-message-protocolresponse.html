@@ -50,15 +50,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '132', 132)" onmouseover="showTip(event, '132', 132)">
+          <code onmouseout="hideTip(event, '115', 115)" onmouseover="showTip(event, '115', 115)">
             deserialize reader
           </code>
-          <div class="tip" id="132">
+          <div class="tip" id="115">
             <strong>Signature:</strong> reader:BinaryReader -&gt; ProtocolResponse<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L242-242" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L240-240" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -68,47 +68,11 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '133', 133)" onmouseover="showTip(event, '133', 133)">
+          <code onmouseout="hideTip(event, '116', 116)" onmouseover="showTip(event, '116', 116)">
             read stream
           </code>
-          <div class="tip" id="133">
+          <div class="tip" id="116">
             <strong>Signature:</strong> stream:ProtocolNetworkStream -&gt; Async&lt;ProtocolResponse&gt;<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L245-245" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '134', 134)" onmouseover="showTip(event, '134', 134)">
-            serialize protocolResponse
-          </code>
-          <div class="tip" id="134">
-            <strong>Signature:</strong> protocolResponse:ProtocolResponse -&gt; byte []<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L236-236" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '135', 135)" onmouseover="showTip(event, '135', 135)">
-            tryRead stream timeout
-          </code>
-          <div class="tip" id="135">
-            <strong>Signature:</strong> stream:ProtocolNetworkStream -&gt; timeout:int -&gt; Async&lt;ProtocolResponse option&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
@@ -122,15 +86,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '136', 136)" onmouseover="showTip(event, '136', 136)">
-            tryWrite stream protocolResponse timeout
+          <code onmouseout="hideTip(event, '117', 117)" onmouseover="showTip(event, '117', 117)">
+            serialize protocolResponse
           </code>
-          <div class="tip" id="136">
-            <strong>Signature:</strong> stream:ProtocolNetworkStream -&gt; protocolResponse:ProtocolResponse -&gt; timeout:int -&gt; Async&lt;unit option&gt;<br />
+          <div class="tip" id="117">
+            <strong>Signature:</strong> protocolResponse:ProtocolResponse -&gt; byte []<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L246-246" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L234-234" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
@@ -140,15 +104,51 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '137', 137)" onmouseover="showTip(event, '137', 137)">
+          <code onmouseout="hideTip(event, '118', 118)" onmouseover="showTip(event, '118', 118)">
+            tryRead stream timeout
+          </code>
+          <div class="tip" id="118">
+            <strong>Signature:</strong> stream:ProtocolNetworkStream -&gt; timeout:int -&gt; Async&lt;ProtocolResponse option&gt;<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L241-241" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '119', 119)" onmouseover="showTip(event, '119', 119)">
+            tryWrite stream protocolResponse timeout
+          </code>
+          <div class="tip" id="119">
+            <strong>Signature:</strong> stream:ProtocolNetworkStream -&gt; protocolResponse:ProtocolResponse -&gt; timeout:int -&gt; Async&lt;unit option&gt;<br />
+                      </div>
+        </td>
+        <td class="xmldoc">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L244-244" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '120', 120)" onmouseover="showTip(event, '120', 120)">
             write stream protocolResponse
           </code>
-          <div class="tip" id="137">
+          <div class="tip" id="120">
             <strong>Signature:</strong> stream:ProtocolNetworkStream -&gt; protocolResponse:ProtocolResponse -&gt; Async&lt;unit&gt;<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L248-248" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L246-246" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
