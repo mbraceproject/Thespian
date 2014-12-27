@@ -680,6 +680,20 @@ type ``Collocated Remote Communication``() =
         actorRef = actor.Ref |> should equal true
 
     [<Test>]
+    member self.``ActorRef uri case insensitive``() =
+        use actor = Actor.bind PrimitiveBehaviors.nill
+                    |> self.PublishActorPrimary
+                    |> Actor.start
+        
+        let uri = new Uri(ActorRef.toUri actor.Ref)
+        let newUri =
+            let ub = new UriBuilder(uri.Scheme, uri.Host.ToUpper(), uri.Port, uri.PathAndQuery)
+            ub.Uri.ToString()
+        let actorRef = ActorRef.fromUri newUri
+
+        actorRef = actor.Ref |> should equal true
+
+    [<Test>]
     member self.``ActorRef.fromUri name``() =
         use actor = Actor.bind PrimitiveBehaviors.nill
                     |> self.PublishActorPrimary

@@ -22,7 +22,7 @@ type HostOrAddress(hostnameOrAddress: string) =
     member __.Value = hostnameOrAddress
 
     member self.Compare(other: HostOrAddress) =
-        match self.Value.CompareTo(other.Value) with
+        match self.Value.ToLower().CompareTo(other.Value.ToLower()) with
         | 0 -> 0
         | stringCmp ->
             let ips = getIps self.Value
