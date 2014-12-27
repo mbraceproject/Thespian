@@ -1,3 +1,6 @@
+### 0.1.1-alpha - Oct 30, 2014
+* Bug fix.
+
 ### 0.1.0-alpha - Oct 24, 2014
 * Refactoring pre-release
 
