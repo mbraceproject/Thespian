@@ -1,3 +1,6 @@
+### 0.1.2-alpha - Dec 27, 2014
+* Bug fix.
+
 ### 0.1.1-alpha - Oct 30, 2014
 * Bug fix.
 
