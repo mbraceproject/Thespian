@@ -68,19 +68,35 @@ module ActorRef =
     open System
     open Nessos.Thespian
 
+    /// <summary>
+    ///     Exports URIs for ActorRef
+    /// </summary>
+    /// <param name="actorRef">ActorRef to be read.</param>
     let toUris (actorRef: ActorRef<'T>): string list = actorRef.GetUris()
 
+    /// <summary>
+    ///     Exports default URI for provided ActorRef.
+    /// </summary>
+    /// <param name="actorRef">ActorRef to be read.</param>
     let toUri (actorRef: ActorRef<'T>): string =
         try actorRef.GetUris() |> List.head
         with :? ArgumentException as e -> raise <| new ArgumentException("ActorRef not supporting URIs, perhaps due to an unpublished actor.", "actorRef", e)
 
-    let tryFromUri (uri: string): ActorRef<'T> option =
+    /// <summary>
+    ///     Try creating an ActorRef instance from provided uri
+    /// </summary>
+    /// <param name="uri">Uri to actor.</param>
+    let tryFromUri<'T> (uri: string): ActorRef<'T> option =
         let u = new System.Uri(uri, UriKind.Absolute)
         match Uri.Config.TryGetParser u.Scheme with
-        | Some parser -> Some (parser.Parse u)
+        | Some parser -> parser.Parse u |> Some
         | None -> None
 
-    let fromUri (uri: string): ActorRef<'T> =
+    /// <summary>
+    ///     Creates an ActorRef instance from provided uri
+    /// </summary>
+    /// <param name="uri">Uri to actor.</param>
+    let fromUri<'T> (uri: string): ActorRef<'T> =
         match tryFromUri uri with
         | Some actorRef -> actorRef
         | None -> invalidArg "uri" "Unknown protocol uri."

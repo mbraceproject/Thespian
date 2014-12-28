@@ -10,8 +10,11 @@ open Nessos.Thespian.Utils.Async
 open Nessos.Thespian.Remote
 open Nessos.Thespian.Remote.SocketExtensions
 
+// eirik : made unused HostOrAddress private, 
+//         moved normalization logic (.ToLower()) to Address constructor
+
 [<Struct; CustomComparison; CustomEquality>]
-type HostOrAddress(hostnameOrAddress: string) =
+type private HostOrAddress (hostnameOrAddress: string) =
     static let getIps =
         memoize (fun addr ->
             Dns.GetHostAddresses(addr) 
@@ -22,7 +25,7 @@ type HostOrAddress(hostnameOrAddress: string) =
     member __.Value = hostnameOrAddress
 
     member self.Compare(other: HostOrAddress) =
-        match self.Value.ToLower().CompareTo(other.Value.ToLower()) with
+        match self.Value.CompareTo(other.Value) with
         | 0 -> 0
         | stringCmp ->
             let ips = getIps self.Value
@@ -48,6 +51,7 @@ type HostOrAddress(hostnameOrAddress: string) =
         override self.CompareTo(other: HostOrAddress) = self.Compare(other)
 
 type Address(hostnameOrAddress : string, ?port : int) =
+    let hostnameOrAddress = hostnameOrAddress.ToLower()
     let port = defaultArg port 0
     let toString = hostnameOrAddress + ":" + port.ToString()
 
