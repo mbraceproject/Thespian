@@ -28,34 +28,34 @@
     /// <summary>
     ///     FsPickler Implementation for IMessageSerializer.
     /// </summary>
-    type FsPicklerMessageSerializer(?pickler : FsPicklerSerializer) =
+    type FsPicklerMessageSerializer(?serializer : FsPicklerSerializer) =
 
-        let pickler =
-            match pickler with 
+        let serializer =
+            match serializer with 
             | None -> new BinarySerializer() :> FsPicklerSerializer
             | Some p -> p
 
         /// <summary>
         ///     Direct access to the FsPickler instance.
         /// </summary>
-        member __.Pickler = pickler
+        member __.Pickler = serializer
 
         /// <summary>
         ///     Serialize a value to byte array.
         /// </summary>
         /// <param name="T">serialized value.</param>
         /// <param name="context">Streaming context.</param>
-        member __.Serialize<'T>(value: 'T, ?context) = pickler.Pickle<'T>(value, ?streamingContext = context)
+        member __.Serialize<'T>(value: 'T, ?context) = serializer.Pickle<'T>(value, ?streamingContext = context)
 
         /// <summary>
         ///     Deserialize a value of byte array.
         /// </summary>
         /// <param name="data">pickled value.</param>
         /// <param name="context">Streaming context.</param>
-        member __.Deserialize<'T>(data: byte[], ?context) = pickler.UnPickle<'T>(data, ?streamingContext = context)
+        member __.Deserialize<'T>(data: byte[], ?context) = serializer.UnPickle<'T>(data, ?streamingContext = context)
 
         interface IMessageSerializer with
-            override __.Name = sprintf "FsPickler.%s" pickler.PickleFormat
+            override __.Name = sprintf "FsPickler.%s" serializer.PickleFormat
 
             override self.Serialize<'T> (value: 'T, ?context) =
                 try self.Serialize<'T>(value, ?context = context)

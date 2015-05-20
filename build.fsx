@@ -154,7 +154,7 @@ Target "NuGet" (fun _ ->
             OutputPath = "bin"
             AccessKey = getBuildParamOrDefault "nugetkey" ""
             Publish = hasBuildParam "nugetkey"
-            Dependencies = [("FsPickler", "1.0.2")]
+            Dependencies = [("FsPickler", "1.2.1")]
             Files =
                 [
                     yield! addAssembly @"lib\net45" @"..\bin\Thespian.dll"
