@@ -90,6 +90,7 @@
     <Compile Include="Protocols\NamedPipes\PipeProtocol.fs" />
     <Compile Include="Protocols\Protocols.fs" />
     <Compile Include="ActorRefExtensions.fs" />
+    <Compile Include="DebugExtensions.fs" />
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>

@@ -1,3 +1,6 @@
+### 0.1.5-alpha - Aug 10, 2015
+* Add debugging facility for message serialization.
+
 ### 0.1.4-alpha - Dec 28, 2014
 * Update FsPickler version
 
