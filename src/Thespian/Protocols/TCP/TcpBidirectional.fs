@@ -508,14 +508,14 @@ and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRe
                 |> Observable.subscribe logEvent.Trigger
                 |> Some
             listenerLogSubcription <- observer
-            listener.Registerrecipient(actorId, processMessage)
+            listener.RegisterRecipient(actorId, processMessage)
 
         | _ -> ()
 
     let stop() =
         match listenerLogSubcription with
         | Some observer ->
-            listener.Unregisterrecipient(actorId)
+            listener.UnregisterRecipient(actorId)
             observer.Dispose()
             listenerLogSubcription <- None
         | _ -> ()

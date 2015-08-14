@@ -122,14 +122,14 @@ type TcpProtocolListener(ipEndPoint : IPEndPoint, ?backLog : int, ?concurrentAcc
     member __.LocalEndPoint = tcpListener.LocalEndpoint :?> IPEndPoint
     member __.IPEndPoint = ipEndPoint
     
-    member __.Registerrecipient(actorId : TcpActorId, processorF : RequestData -> Async<bool>) = 
-        if not <| recipientRegistry.TryAdd(actorId, processorF) then invalidOp "recipient is already registered."
+    member __.RegisterRecipient(actorId : TcpActorId, processorF : RequestData -> Async<bool>) = 
+        if not <| recipientRegistry.TryAdd(actorId, processorF) then invalidOp "Recipient is already registered."
     
-    member __.Unregisterrecipient(actorId : TcpActorId) = 
+    member __.UnregisterRecipient(actorId : TcpActorId) = 
         let isRemoved, _ = recipientRegistry.TryRemove(actorId)
-        if not isRemoved then invalidOp "recipient was not registered."
+        if not isRemoved then invalidOp "Recipient was not registered."
     
-    member __.IsrecipientRegistered(actorId : TcpActorId) = recipientRegistry.ContainsKey(actorId)
+    member __.IsRecipientRegistered(actorId : TcpActorId) = recipientRegistry.ContainsKey(actorId)
     
     member __.Dispose() = 
         for cts in acceptLoopCancellationTokenSources do

@@ -294,7 +294,7 @@ type MessageProcessor<'T> private (actorId : TcpActorId, listener : TcpProtocolL
             spinLock.Exit()
             false
         else 
-            if refCount = 0 then listener.Registerrecipient(actorId, processMessage)
+            if refCount = 0 then listener.RegisterRecipient(actorId, processMessage)
             refCount <- refCount + 1
             spinLock.Exit()
             true
@@ -310,7 +310,7 @@ type MessageProcessor<'T> private (actorId : TcpActorId, listener : TcpProtocolL
         spinLock.Enter(taken)
         if refCount = 1 then 
             isReleased <- true
-            listener.Unregisterrecipient(actorId)
+            listener.UnregisterRecipient(actorId)
             processors.TryRemove(actorId) |> ignore
         refCount <- refCount - 1
         spinLock.Exit()
