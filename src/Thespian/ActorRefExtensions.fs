@@ -15,7 +15,6 @@ module Uri =
 
     let private (|UTCP|_|) (protocolName: string) = if protocolName = Protocols.UTCP then Some() else None
     let private (|BTCP|_|) (protocolName: string) = if protocolName = Protocols.BTCP then Some() else None
-    let private (|NPP|_|) (protocolName: string) = if protocolName = Protocols.NPP then Some() else None
     let private (|TCP|_|) (protocolName: string) =
         match protocolName with
         | UTCP | BTCP  -> Some()
@@ -40,25 +39,12 @@ module Uri =
                 let protocol = factory.CreateClientInstance<'T>(actorName)
 
                 new ActorRef<'T>(actorName, [| protocol |])
-
-    type NppParser internal () =
-        interface IUriParser with
-            override __.Parse (uri: Uri): ActorRef<'T> =
-                let processId = uri.Port
-                let actorName = uri.PathAndQuery.Substring(1)
-                let factory = new Remote.PipeProtocol.PipeProtocolFactory(processId) :> IProtocolFactory
-
-                let protocol = factory.CreateClientInstance<'T>(actorName)
-
-                new ActorRef<'T>(actorName, [| protocol |])
           
 
     let private initParsers() =
         let tcpParser = new TcpParser() :> IUriParser
-        let nppParser = new NppParser() :> IUriParser
         Map.empty |> Map.add UTCP tcpParser
                   |> Map.add BTCP tcpParser
-                  |> Map.add NPP nppParser
     
     type Config private() =
         static let parsers = Atom.create <| initParsers()

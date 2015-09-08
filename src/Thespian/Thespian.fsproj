@@ -87,7 +87,6 @@
     <Compile Include="Protocols\TCP\TcpListener.fs" />
     <Compile Include="Protocols\TCP\TcpUniDirectional.fs" />
     <Compile Include="Protocols\TCP\TcpBidirectional.fs" />
-    <Compile Include="Protocols\NamedPipes\PipeProtocol.fs" />
     <Compile Include="Protocols\Protocols.fs" />
     <Compile Include="ActorRefExtensions.fs" />
     <Compile Include="DebugExtensions.fs" />
@@ -106,9 +105,6 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="Mono.Posix">
-      <HintPath>..\..\packages\Mono.Posix.4.0.0.0\lib\net40\Mono.Posix.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

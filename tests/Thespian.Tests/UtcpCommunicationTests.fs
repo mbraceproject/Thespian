@@ -5,7 +5,6 @@ open NUnit.Framework
 
 open Nessos.Thespian
 open Nessos.Thespian.Remote
-open Nessos.Thespian.Remote.PipeProtocol
 open Nessos.Thespian.Tests.TestDefinitions
 open Nessos.Thespian.Tests.TestDefinitions.Remote
 
@@ -31,12 +30,7 @@ type ``Collocated UTcp``() =
              new ForeignProtocolProxy() with
                  member __.Publish(a) = a |> Actor.publish [ Protocols.btcp() ]
                  member __.Ref(a) = a.Ref.[BTCP]
-                 member __.ToString() = "btcp foreign protocol" }
-           { //npp for foreign protocol
-             new ForeignProtocolProxy() with
-                 member __.Publish(a) = a |> Actor.publish [ Protocols.npp() ]
-                 member __.Ref(a) = a.Ref.[NPP]
-                 member __.ToString() = "npp foreign protocol" } |]
+                 member __.ToString() = "btcp foreign protocol" } |]
 
 [<TestFixture>]
 type ``AppDomain UTcp``() = 
