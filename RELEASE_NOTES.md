@@ -1,3 +1,6 @@
+### 0.1.6-alpha - Sep 8, 2015
+* Remove implicit Mono.Posix dependency.
+
 ### 0.1.5-alpha - Aug 10, 2015
 * Add debugging facility for message serialization.
 
