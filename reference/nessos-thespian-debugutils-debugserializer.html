@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8"/>
-    <title>PipedReplyChannelReceiver - Thespian</title>
+    <title>DebugSerializer - Thespian</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="description" content=""/>
     <meta name="author" content="Jan Dzik (Nessos IT)"/>
@@ -35,8 +35,9 @@
 
 
 
-<h1>PipedReplyChannelReceiver</h1>
+<h1>DebugSerializer</h1>
 <div class="xmldoc">
+<p>An IMessageSerializer wrapper that collects data on serialized messages over a given interval.</p>
 </div>
   <h3>Constructors</h3>
   <table class="table table-bordered member-list">
@@ -47,42 +48,15 @@
       <tr>
         <td class="member-name">
 
-          <code onmouseout="hideTip(event, '406', 406)" onmouseover="showTip(event, '406', 406)">
-            new()
+          <code onmouseout="hideTip(event, '365', 365)" onmouseover="showTip(event, '365', 365)">
+            new(...)
           </code>
-          <div class="tip" id="406">
-            <strong>Signature:</strong> unit -&gt; PipedReplyChannelReceiver<br />
+          <div class="tip" id="365">
+            <strong>Signature:</strong> (source:IMessageSerializer * dumpInterval:TimeSpan option * reportThreshold:int option * logger:(string -&gt; unit) option) -&gt; DebugSerializer<br />
                       </div>
         </td>
         <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/NamedPipes/PipeProtocol.fs#L35-35" class="github-link">
-              <img src="../content/img/github.png" class="normal" />
-              <img src="../content/img/github-blue.png" class="hover" />
-            </a>
-          
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <h3>Instance members</h3>
-  <table class="table table-bordered member-list">
-    <thead>
-      <tr><td>Instance member</td><td>Description</td></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="member-name">
-
-          <code onmouseout="hideTip(event, '409', 409)" onmouseover="showTip(event, '409', 409)">
-            AwaitReplyUntyped(arg1)
-          </code>
-          <div class="tip" id="409">
-            <strong>Signature:</strong> int -&gt; Async&lt;Reply&lt;obj&gt; option&gt;<br />
-              <strong>Modifiers:</strong> abstract<br />
-                      </div>
-        </td>
-        <td class="xmldoc">
-            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/NamedPipes/PipeProtocol.fs#L36-36" class="github-link">
+            <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/DebugExtensions.fs#L17-17" class="github-link">
               <img src="../content/img/github.png" class="normal" />
               <img src="../content/img/github-blue.png" class="hover" />
             </a>
