@@ -31,16 +31,6 @@ let project = "Thespian"
 // (used as description in AssemblyInfo and as a short summary for NuGet package)
 let summary = "An F# Actor Framework"
 
-// Longer description of the project
-// (used as a description for NuGet package; line breaks are automatically cleaned up)
-let description = """An F# Actor Framework"""
-
-// List of author names (for NuGet package)
-let authors = [ "Jan Dzik"; "Eirik Tsarpalis" ]
-
-// Tags for your project (for NuGet package)
-let tags = "actors, agents, message-passing, distributed"
-
 // File system information 
 // (<solutionFile>.sln is built during the building process)
 let solutionFile  = "Thespian"
@@ -49,9 +39,10 @@ let solutionFile  = "Thespian"
 // NOTE : No need to specify different directories.
 let testAssemblies = [ "bin/Thespian.Tests.dll"; "bin/Thespian.Cluster.Tests.dll" ]
 
+let gitOwner = "nessos"
 // Git configuration (used for publishing documentation in gh-pages branch)
 // The profile where the project is posted 
-let gitHome = "https://github.com/nessos"
+let gitHome = "https://github.com/" + gitOwner
 // The name of the project on GitHub
 let gitName = "Thespian"
 
@@ -120,49 +111,20 @@ Target "RunTests" (fun _ ->
             OutputFile = "TestResults.xml" })
 )
 
-// --------------------------------------------------------------------------------------
-// Build a NuGet package
+//
+//// --------------------------------------------------------------------------------------
+//// Build a NuGet package
 
-let addFile (target : string) (file : string) =
-    if File.Exists (Path.Combine("nuget", file)) then (file, Some target, None)
-    else raise <| new FileNotFoundException(file)
-
-let addAssembly (target : string) assembly =
-    let includeFile force file =
-        let file = file
-        if File.Exists (Path.Combine("nuget", file)) then [(file, Some target, None)]
-        elif force then raise <| new FileNotFoundException(file)
-        else []
-
-    seq {
-        yield! includeFile true assembly
-        yield! includeFile false <| Path.ChangeExtension(assembly, "pdb")
-        yield! includeFile false <| Path.ChangeExtension(assembly, "xml")
-        yield! includeFile false <| assembly + ".config"
-    }
-
-Target "NuGet" (fun _ ->
-    NuGet (fun p -> 
-        { p with   
-            Authors = authors
-            Project = "Thespian.Core"
-            Summary = summary
-            Description = description
+Target "NuGet" (fun _ ->    
+    Paket.Pack (fun p -> 
+        { p with 
+            ToolPath = ".paket/paket.exe" 
+            OutputPath = "bin/"
             Version = release.NugetVersion
-            ReleaseNotes = String.Join(Environment.NewLine, release.Notes)
-            Tags = tags
-            OutputPath = "bin"
-            AccessKey = getBuildParamOrDefault "nugetkey" ""
-            Publish = hasBuildParam "nugetkey"
-            Dependencies = [("FsPickler", "1.2.1")]
-            Files =
-                [
-                    yield! addAssembly @"lib\net45" @"..\bin\Thespian.dll"
-//                    yield! addAssembly @"lib\net45" @"..\bin\Thespian.Cluster.dll"
-                ]
-            })
-        ("nuget/" + project + ".nuspec")
+            ReleaseNotes = toLines release.Notes })
 )
+
+Target "NuGetPush" (fun _ -> Paket.Push (fun p -> { p with WorkingDir = "bin/" }))
 
 // --------------------------------------------------------------------------------------
 // Generate the documentation
@@ -186,6 +148,47 @@ Target "ReleaseDocs" (fun _ ->
     Branches.push tempDocsDir
 )
 
+// Github Releases
+
+#load "paket-files/fsharp/FAKE/modules/Octokit/Octokit.fsx"
+open Octokit
+
+Target "ReleaseGitHub" (fun _ ->
+    let remote =
+        Git.CommandHelper.getGitResult "" "remote -v"
+        |> Seq.filter (fun (s: string) -> s.EndsWith("(push)"))
+        |> Seq.tryFind (fun (s: string) -> s.Contains(gitOwner + "/" + gitName))
+        |> function None -> gitHome + "/" + gitName | Some (s: string) -> s.Split().[0]
+
+    //StageAll ""
+    Git.Commit.Commit "" (sprintf "Bump version to %s" release.NugetVersion)
+    Branches.pushBranch "" remote (Information.getBranchName "")
+
+    Branches.tag "" release.NugetVersion
+    Branches.pushTag "" remote release.NugetVersion
+
+    let client =
+        match Environment.GetEnvironmentVariable "OctokitToken" with
+        | null -> 
+            let user =
+                match getBuildParam "github-user" with
+                | s when not (String.IsNullOrWhiteSpace s) -> s
+                | _ -> getUserInput "Username: "
+            let pw =
+                match getBuildParam "github-pw" with
+                | s when not (String.IsNullOrWhiteSpace s) -> s
+                | _ -> getUserPassword "Password: "
+
+            createClient user pw
+        | token -> createClientWithToken token
+
+    // release on github
+    client
+    |> createDraft gitOwner gitName release.NugetVersion (release.SemVer.PreRelease <> None) release.Notes
+    |> releaseDraft
+    |> Async.RunSynchronously
+)
+
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
 
@@ -201,10 +204,12 @@ Target "Debug" DoNothing
   ==> "Default"
 
 "Build"
-  ==> "NuGet"
   ==> "CleanDocs"
   ==> "GenerateDocs"
   ==> "ReleaseDocs"
+  ==> "NuGet"
+  ==> "NuGetPush"
+  ==> "ReleaseGitHub"
   ==> "Release"
 
 RunTargetOrDefault "Default"

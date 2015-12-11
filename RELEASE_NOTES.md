@@ -1,3 +1,6 @@
+### 0.1.7-alpha - Dec 11, 2015
+* Update FsPickler dependency.
+
 ### 0.1.6-alpha - Sep 8, 2015
 * Remove implicit Mono.Posix dependency.
 
