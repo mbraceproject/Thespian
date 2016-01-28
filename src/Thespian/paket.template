@@ -1,4 +1,4 @@
-﻿type project
+type project
 id Thespian
 description
     An F# Actor Framework
@@ -11,6 +11,7 @@ summary
 licenseurl https://github.com/nessos/Thespian/blob/master/License.md
 projecturl https://github.com/nessos/Thespian
 iconurl https://avatars1.githubusercontent.com/u/5538081
+include-pdbs true
 tags
     actors, agents, message-passing, distributed
 references
