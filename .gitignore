@@ -176,3 +176,8 @@ TestResults.xml
 
 # Nuget outputs
 nuget/*.nupkg
+
+.paket/paket.exe
+paket-files/
+.fake/
+temp/

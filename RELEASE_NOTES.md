@@ -1,3 +1,6 @@
+### 0.1.11-alpha - Apr 14, 2016
+* Update FsPickler dependency.
+
 ### 0.1.10-alpha - Jan 28, 2016
 * Fix packaging issue.
 
