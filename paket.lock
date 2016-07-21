@@ -1,9 +1,8 @@
 REDIRECTS: ON
 NUGET
   remote: https://www.nuget.org/api/v2
-  specs:
-    FAKE (4.25.4)
-    FsPickler (2.1)
+    FAKE (4.33.3)
+    FsPickler (3.0)
     FsUnit (1.3.0.1)
       NUnit (>= 2.6.3)
     Microsoft.Bcl (1.1.10) - framework: net10, net11, net20, net30, net35, net40, net40-full
@@ -12,14 +11,13 @@ NUGET
     Microsoft.Net.Http (2.2.29) - framework: net10, net11, net20, net30, net35, net40, net40-full
       Microsoft.Bcl (>= 1.1.10)
       Microsoft.Bcl.Build (>= 1.0.14)
-    NuGet.CommandLine (3.3)
+    NuGet.CommandLine (3.4.3)
     NUnit (2.6.4)
     NUnit.Runners (2.6.4)
-    Octokit (0.19)
+    Octokit (0.20)
       Microsoft.Net.Http  - framework: net10, net11, net20, net30, net35, net40, net40-full
     Unquote (2.2.2)
 GITHUB
   remote: fsharp/FAKE
-  specs:
-    modules/Octokit/Octokit.fsx (3bf706bd6058733a1a034755741076b3953aaf09)
-      Octokit
+    modules/Octokit/Octokit.fsx (20c1e4059f537c3eb4ccc81b28e494dd22d6d2f5)
+      Octokit (>= 0.20)

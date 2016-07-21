@@ -3,7 +3,7 @@
     open System
     open System.Runtime.Serialization
 
-    open Nessos.FsPickler
+    open MBrace.FsPickler
     open Nessos.Thespian
 
     /// Abstract message serialization interface used by Thespian

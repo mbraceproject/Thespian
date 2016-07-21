@@ -1,3 +1,6 @@
+### 0.1.12-alpha - Jul 21, 2016
+* Update FsPickler dependency.
+
 ### 0.1.11-alpha - Apr 14, 2016
 * Update FsPickler dependency.
 
