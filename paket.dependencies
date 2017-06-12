@@ -1,11 +1,25 @@
+framework: >=net45
 redirects: on
 source https://www.nuget.org/api/v2/
 
-nuget Nuget.CommandLine
-nuget FAKE
-nuget FsPickler 3.0.0
-nuget FsUnit 1.3.0.1
-nuget NUnit ~> 2.6.3
-nuget NUnit.Runners ~> 2.6.3
+nuget FSharp.Core ~> 4.1.17
+nuget FsPickler 3.1.0
 nuget Unquote 2.2.2
-github fsharp/FAKE modules/Octokit/Octokit.fsx
+
+group Build
+  framework: >=net45
+  redirects: on
+  source https://www.nuget.org/api/v2/
+  nuget Nuget.CommandLine
+  nuget FAKE
+  github fsharp/FAKE modules/Octokit/Octokit.fsx
+
+group Test
+  framework: >=net45
+  redirects: on
+  source https://www.nuget.org/api/v2/
+  nuget FSharp.Core ~> 4.1.17
+  nuget FsUnit 1.3.0.1
+  nuget NUnit ~> 2.6.3
+  nuget NUnit.Runners ~> 2.6.3
+

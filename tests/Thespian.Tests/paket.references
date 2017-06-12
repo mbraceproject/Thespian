@@ -1,3 +1,5 @@
+FSharp.Core
 FsPickler
-FsUnit
-NUnit
+group Test
+  FsUnit
+  NUnit

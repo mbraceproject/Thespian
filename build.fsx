@@ -2,8 +2,8 @@
 // FAKE build script 
 // --------------------------------------------------------------------------------------
 
-#I "packages/FAKE/tools/"
-#r @"packages/FAKE/tools/FakeLib.dll"
+#I "packages/build/FAKE/tools/"
+#r "packages/build/FAKE/tools/FakeLib.dll"
 
 open Fake 
 open Fake.Git
@@ -39,7 +39,7 @@ let solutionFile  = "Thespian"
 // NOTE : No need to specify different directories.
 let testAssemblies = [ "bin/Thespian.Tests.dll"; "bin/Thespian.Cluster.Tests.dll" ]
 
-let gitOwner = "nessos"
+let gitOwner = "mbraceproject"
 // Git configuration (used for publishing documentation in gh-pages branch)
 // The profile where the project is posted 
 let gitHome = "https://github.com/" + gitOwner
@@ -125,7 +125,11 @@ Target "NuGet" (fun _ ->
             ReleaseNotes = toLines release.Notes })
 )
 
-Target "NuGetPush" (fun _ -> Paket.Push (fun p -> { p with WorkingDir = "bin/" }))
+Target "NuGetPush" (fun _ -> 
+    Paket.Push (fun p -> 
+        { p with 
+            PublishUrl = "https://www.nuget.org"
+            WorkingDir = "bin/" }))
 
 // --------------------------------------------------------------------------------------
 // Generate the documentation
@@ -151,7 +155,7 @@ Target "ReleaseDocs" (fun _ ->
 
 // Github Releases
 
-#load "paket-files/fsharp/FAKE/modules/Octokit/Octokit.fsx"
+#load "paket-files/build/fsharp/FAKE/modules/Octokit/Octokit.fsx"
 open Octokit
 
 Target "ReleaseGitHub" (fun _ ->
