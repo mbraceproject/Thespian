@@ -1,3 +1,6 @@
+### 0.1.15 Oct 10, 2017
+* Update FsPickler dependency.
+
 ### 0.1.14 Jun 06, 2017
 * Update FsPickler dependency.
 
