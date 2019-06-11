@@ -32,8 +32,7 @@ let project = "Thespian"
 let summary = "An F# Actor Framework"
 
 // File system information 
-// (<solutionFile>.sln is built during the building process)
-let solutionFile  = "Thespian"
+let solutionFile  = "Thespian.sln"
 
 // Pattern specifying assemblies to be tested using NUnit
 // NOTE : No need to specify different directories.
@@ -47,6 +46,7 @@ let gitHome = "https://github.com/" + gitOwner
 let gitName = "Thespian"
 
 let configuration = "Release"
+let netcoreappTarget = "netcoreapp2.2"
 
 let artifactsDir = __SOURCE_DIRECTORY__ @@ "artifacts"
 
@@ -81,7 +81,7 @@ Target "Clean" (fun _ ->
 Target "Build" (fun _ ->
     DotNetCli.Build (fun c ->
         { c with
-            Project = "Thespian.sln"
+            Project = solutionFile
             Configuration = configuration })
 )
 
@@ -93,6 +93,9 @@ Target "RunTests" (fun _ ->
         DotNetCli.Test (fun p ->
             { p with
                 Project = proj
+#if MONO
+                Framework = "netcoreappTarget"
+#endif
                 Configuration = configuration
                 AdditionalArgs = ["--no-build"] })
 )
