@@ -94,7 +94,7 @@ Target "RunTests" (fun _ ->
             { p with
                 Project = proj
 #if MONO
-                Framework = "netcoreappTarget"
+                Framework = netcoreappTarget
 #endif
                 Configuration = configuration
                 AdditionalArgs = ["--no-build"] })
