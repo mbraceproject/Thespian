@@ -6,7 +6,7 @@ else
 	ARGS="$@"
 fi
 
-IMAGE_LABEL="typeshape-build:$RANDOM"
+IMAGE_LABEL="thespian-build:$RANDOM"
 
 # docker build
 docker build -t $IMAGE_LABEL .

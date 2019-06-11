@@ -6,5 +6,5 @@ An F# actor framework.
 
 Head (branch `dev`), Build & Unit tests
 
-* Windows/.NET [![Build status](https://ci.appveyor.com/api/projects/status/ivnpcsiogbr2bmtk/branch/dev)](https://ci.appveyor.com/project/nessos/thespian)
-* Mac OS X/Mono 3.4 [![Build Status](https://travis-ci.org/nessos/Thespian.png?branch=dev)](https://travis-ci.org/nessos/Thespian/branches)
+* Windows [![Build status](https://ci.appveyor.com/api/projects/status/m5j2e2lbf1fe3a4k/branch/master?svg=true)](https://ci.appveyor.com/project/nessos/thespian-g27vi)
+* Docker [![Build Status](https://travis-ci.org/nessos/Thespian.png?branch=dev)](https://travis-ci.org/nessos/Thespian/branches)

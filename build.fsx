@@ -198,6 +198,7 @@ Target "ReleaseGitHub" (fun _ ->
 Target "Default" DoNothing
 Target "Release" DoNothing
 Target "Debug" DoNothing
+Target "Bundle" DoNothing
 
 "Clean"
   ==> "AssemblyInfo"
@@ -208,8 +209,11 @@ Target "Debug" DoNothing
 "Build"
   ==> "CleanDocs"
   ==> "GenerateDocs"
-  ==> "ReleaseDocs"
   ==> "NuGet"
+  ==> "Bundle"
+
+"Bundle"
+  ==> "ReleaseDocs"
   ==> "NuGetPush"
   ==> "ReleaseGitHub"
   ==> "Release"
