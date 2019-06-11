@@ -63,14 +63,7 @@ Target "AssemblyInfo" (fun _ ->
         Attribute.Product project
         Attribute.Description summary
         Attribute.Version release.AssemblyVersion
-        Attribute.FileVersion release.AssemblyVersion ] 
-
-  CreateFSharpAssemblyInfo "src/Thespian.Cluster/AssemblyInfo.fs"
-      [ Attribute.Title "Thespian.Cluster"
-        Attribute.Product "Thespian.Cluster"
-        Attribute.Description summary
-        Attribute.Version release.AssemblyVersion
-        Attribute.FileVersion release.AssemblyVersion ] 
+        Attribute.FileVersion release.AssemblyVersion ]
 )
 
 // --------------------------------------------------------------------------------------

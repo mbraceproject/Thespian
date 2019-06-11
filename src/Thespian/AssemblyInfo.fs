@@ -5,13 +5,13 @@ open System.Reflection
 [<assembly: AssemblyTitleAttribute("Thespian")>]
 [<assembly: AssemblyProductAttribute("Thespian")>]
 [<assembly: AssemblyDescriptionAttribute("An F# Actor Framework")>]
-[<assembly: AssemblyVersionAttribute("0.1.16")>]
-[<assembly: AssemblyFileVersionAttribute("0.1.16")>]
+[<assembly: AssemblyVersionAttribute("0.2.0")>]
+[<assembly: AssemblyFileVersionAttribute("0.2.0")>]
 do ()
 
 module internal AssemblyVersionInformation =
     let [<Literal>] AssemblyTitle = "Thespian"
     let [<Literal>] AssemblyProduct = "Thespian"
     let [<Literal>] AssemblyDescription = "An F# Actor Framework"
-    let [<Literal>] AssemblyVersion = "0.1.16"
-    let [<Literal>] AssemblyFileVersion = "0.1.16"
+    let [<Literal>] AssemblyVersion = "0.2.0"
+    let [<Literal>] AssemblyFileVersion = "0.2.0"

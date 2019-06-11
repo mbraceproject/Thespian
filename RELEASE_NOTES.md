@@ -1,3 +1,6 @@
+### 0.2.0 Jun 11, 2019
+* Target netstandard2.0.
+
 ### 0.1.16 Oct 10, 2017
 * Update FsPickler dependency.
 
