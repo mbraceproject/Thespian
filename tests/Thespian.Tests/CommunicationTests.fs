@@ -598,46 +598,48 @@ type ``Collocated Remote Communication``() =
         result |> should equal 42
     
     [<Test>]
-    member self.``Post with foreign reply channel`` ([<ValueSource("ForeignProtocols")>] foreignProxy : ForeignProtocolProxy) = 
-        use nativeActor = Actor.bind <| Behavior.stateful 0 Behaviors.state
-                          |> self.PublishActorPrimary
-                          |> Actor.start
+    member self.``Post with foreign reply channel`` () =
+        for foreignProxy in self.ForeignProtocols do
+            use nativeActor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                              |> self.PublishActorPrimary
+                              |> Actor.start
         
-        let nativeRef = self.RefPrimary(nativeActor)
+            let nativeRef = self.RefPrimary(nativeActor)
         
-        use foreignActor = Actor.bind <| Behavior.stateless (Behaviors.forward nativeRef)
-                           |> foreignProxy.Publish
-                           |> Actor.start
+            use foreignActor = Actor.bind <| Behavior.stateless (Behaviors.forward nativeRef)
+                               |> foreignProxy.Publish
+                               |> Actor.start
         
-        let foreignRef = foreignProxy.Ref foreignActor
-        foreignRef <-- TestAsync 42
-        let r = foreignRef <!= fun ch -> TestSync(ch, 0)
-        r |> should equal 42
+            let foreignRef = foreignProxy.Ref foreignActor
+            foreignRef <-- TestAsync 42
+            let r = foreignRef <!= fun ch -> TestSync(ch, 0)
+            r |> should equal 42
     
     [<Test>]
-    member self.``Post with 2 foreign reply channels`` ([<ValueSource("ForeignProtocols")>] foreignProxy : ForeignProtocolProxy) = 
-        use nativeActor = Actor.bind <| Behavior.stateful 0 Behaviors.multiRepliesState
-                          |> self.PublishActorPrimary
-                          |> Actor.start
+    member self.``Post with 2 foreign reply channels`` () = 
+        for foreignProxy in self.ForeignProtocols do
+            use nativeActor = Actor.bind <| Behavior.stateful 0 Behaviors.multiRepliesState
+                              |> self.PublishActorPrimary
+                              |> Actor.start
         
-        let nativeRef = self.RefPrimary(nativeActor)
+            let nativeRef = self.RefPrimary(nativeActor)
         
-        use forwarder = 
-            Actor.bind <| Behavior.stateless (Behaviors.forward nativeRef)
-            |> foreignProxy.Publish
-            |> Actor.start
+            use forwarder = 
+                Actor.bind <| Behavior.stateless (Behaviors.forward nativeRef)
+                |> foreignProxy.Publish
+                |> Actor.start
         
-        let forwarderRef = foreignProxy.Ref forwarder
+            let forwarderRef = foreignProxy.Ref forwarder
         
-        use proxy = 
-            Actor.bind <| Behavior.stateless (Behaviors.multiRepliesForward forwarderRef)
-            |> foreignProxy.Publish
-            |> Actor.start
+            use proxy = 
+                Actor.bind <| Behavior.stateless (Behaviors.multiRepliesForward forwarderRef)
+                |> foreignProxy.Publish
+                |> Actor.start
         
-        let proxyRef = foreignProxy.Ref proxy
-        proxyRef <-- TestAsync 42
-        let r = proxyRef <!= fun ch -> TestSync(ch, 0)
-        r |> should equal 42
+            let proxyRef = foreignProxy.Ref proxy
+            proxyRef <-- TestAsync 42
+            let r = proxyRef <!= fun ch -> TestSync(ch, 0)
+            r |> should equal 42
     
     [<Test>]
     member self.``ActorRef serialization/deserialization``() = 
