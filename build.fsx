@@ -80,10 +80,6 @@ Target "Clean" (fun _ ->
     CleanDirs ["bin"; "temp"]
 )
 
-Target "CleanDocs" (fun _ ->
-    CleanDirs ["docs/output"]
-)
-
 // --------------------------------------------------------------------------------------
 // Build library & test project
 
@@ -127,13 +123,6 @@ Target "NuGetPush" (fun _ ->
         { p with 
             PublishUrl = "https://www.nuget.org"
             WorkingDir = "bin/" }))
-
-// --------------------------------------------------------------------------------------
-// Generate the documentation
-
-Target "GenerateDocs" (fun _ ->
-    executeFSIWithArgs "docs/tools" "generate.fsx" ["--define:RELEASE"] [] |> ignore
-)
 
 // --------------------------------------------------------------------------------------
 // Release Scripts
@@ -206,14 +195,11 @@ Target "Bundle" DoNothing
   ==> "RunTests"
   ==> "Default"
 
-"Build"
-  ==> "CleanDocs"
-  ==> "GenerateDocs"
+"Default"
   ==> "NuGet"
   ==> "Bundle"
 
 "Bundle"
-  ==> "ReleaseDocs"
   ==> "NuGetPush"
   ==> "ReleaseGitHub"
   ==> "Release"
