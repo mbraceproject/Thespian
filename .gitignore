@@ -181,3 +181,4 @@ paket-files/
 .fake/
 temp/
 .vs/
+artifacts/

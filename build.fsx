@@ -48,6 +48,8 @@ let gitName = "Thespian"
 
 let configuration = "Release"
 
+let artifactsDir = __SOURCE_DIRECTORY__ @@ "artifacts"
+
 // --------------------------------------------------------------------------------------
 // END TODO: The rest of the file includes standard build steps 
 // --------------------------------------------------------------------------------------
@@ -70,7 +72,7 @@ Target "AssemblyInfo" (fun _ ->
 // Clean build results & restore NuGet packages
 
 Target "Clean" (fun _ ->
-    CleanDirs ["bin"; "temp"]
+    CleanDirs [artifactsDir]
 )
 
 // --------------------------------------------------------------------------------------
@@ -102,7 +104,7 @@ Target "RunTests" (fun _ ->
 Target "NuGet" (fun _ ->    
     DotNetCli.Pack (fun p ->
         { p with
-            OutputPath = "bin/"
+            OutputPath = artifactsDir
             Configuration = configuration
             Project = "src/Thespian"
             AdditionalArgs =
@@ -115,7 +117,7 @@ Target "NuGetPush" (fun _ ->
     Paket.Push (fun p -> 
         { p with 
             PublishUrl = "https://www.nuget.org"
-            WorkingDir = "bin/" }))
+            WorkingDir = artifactsDir }))
 
 // --------------------------------------------------------------------------------------
 // Release Scripts
