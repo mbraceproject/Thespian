@@ -10,8 +10,8 @@ let BTCP = Nessos.Thespian.Remote.TcpProtocol.Bidirectional.ProtocolName
 type Protocols with
     static member utcp(?endPoint: IPEndPoint) =
         let endPoint = defaultArg endPoint (new IPEndPoint(IPAddress.Any, 0))
-        new TcpProtocol.Unidirectional.UTcpFactory(TcpProtocol.Unidirectional.ProtocolMode.Server endPoint) :> IProtocolFactory
+        new TcpProtocol.Unidirectional.UTcpFactory(TcpProtocol.Unidirectional.ProtocolMode.FromIpEndpoint endPoint) :> IProtocolFactory
 
     static member btcp(?endPoint: IPEndPoint) =
         let endPoint = defaultArg endPoint (new IPEndPoint(IPAddress.Any, 0))
-        new TcpProtocol.Bidirectional.BTcpFactory(TcpProtocol.Bidirectional.ProtocolMode.Server endPoint) :> IProtocolFactory
+        new TcpProtocol.Bidirectional.BTcpFactory(TcpProtocol.Bidirectional.ProtocolMode.FromIpEndpoint endPoint) :> IProtocolFactory

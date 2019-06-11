@@ -546,7 +546,9 @@ and [<Serializable>] BTcpFactory =
 
     member self.CreateServerInstance(actorName: string, primary: ActorRef<'T>) =
         match self.protocolMode with
-        | ProtocolMode.Server endPoint -> new ProtocolServer<'T>(actorName, endPoint, primary) :> IProtocolServer<'T>
+        | ProtocolMode.Server (ip, port) -> 
+            let endPoint = IPEndPoint(IPAddress.Parse ip, port)
+            new ProtocolServer<'T>(actorName, endPoint, primary) :> IProtocolServer<'T>
         | _ -> invalidOp "Tried to creade utcp protocol server instance using client information."
   
     interface IProtocolFactory with

@@ -558,13 +558,16 @@ and ProtocolServer<'T>(actorName: string, endPoint: IPEndPoint, primary: ActorRe
 
 and ProtocolMode =
     | Client of Address
-    | Server of IPEndPoint
+    | Server of ip:string * port:int
 with
     //results are valid only when collocated with the actor
     member self.GetAddress() =
         match self with
         | Client address -> address
-        | Server endPoint -> new Address(TcpListenerPool.DefaultHostname, endPoint.Port)
+        | Server (_,port) -> new Address(TcpListenerPool.DefaultHostname, port)
+
+    static member FromIpEndpoint(ip : IPEndPoint) =
+        Server(ip.Address.ToString(), ip.Port)
 
 
 and [<Serializable>] UTcpFactory =
@@ -581,7 +584,9 @@ and [<Serializable>] UTcpFactory =
 
     member self.CreateServerInstance(actorName: string, primary: ActorRef<'T>) =
         match self.protocolMode with
-        | Server endPoint -> new ProtocolServer<'T>(actorName, endPoint, primary) :> IProtocolServer<'T>
+        | Server (ip, port) -> 
+            let ipAddr = IPEndPoint(IPAddress.Parse ip, port)
+            new ProtocolServer<'T>(actorName, ipAddr, primary) :> IProtocolServer<'T>
         | _ -> invalidOp "Tried to creade utcp protocol server instance using client information."
   
     interface IProtocolFactory with
