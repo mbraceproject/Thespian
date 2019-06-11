@@ -313,6 +313,7 @@ module Remote =
     
     open System.Collections.Generic
     
+#if !NETCOREAPP2_2
     type AppDomainPool() = 
         static let appDomains = new Dictionary<string, AppDomain>()
         
@@ -339,4 +340,10 @@ module Remote =
         member __.Factory = factory
         interface IDisposable with
             member __.Dispose() = factory.Fini()
+#endif
 
+
+module Assert =
+    open NUnit.Framework
+
+    let throws<'e when 'e :> exn> (f : unit -> unit) = Assert.Throws<'e>(fun () -> f ()) |> ignore

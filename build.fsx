@@ -37,7 +37,7 @@ let solutionFile  = "Thespian"
 
 // Pattern specifying assemblies to be tested using NUnit
 // NOTE : No need to specify different directories.
-let testAssemblies = [ "bin/Thespian.Tests.dll"; "bin/Thespian.Cluster.Tests.dll" ]
+let testProjects = [ "tests/Thespian.Tests" ]
 
 let gitOwner = "mbraceproject"
 // Git configuration (used for publishing documentation in gh-pages branch)
@@ -45,6 +45,8 @@ let gitOwner = "mbraceproject"
 let gitHome = "https://github.com/" + gitOwner
 // The name of the project on GitHub
 let gitName = "Thespian"
+
+let configuration = "Release"
 
 // --------------------------------------------------------------------------------------
 // END TODO: The rest of the file includes standard build steps 
@@ -74,8 +76,6 @@ Target "AssemblyInfo" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Clean build results & restore NuGet packages
 
-Target "RestorePackages" RestorePackages
-
 Target "Clean" (fun _ ->
     CleanDirs ["bin"; "temp"]
 )
@@ -88,28 +88,22 @@ Target "CleanDocs" (fun _ ->
 // Build library & test project
 
 Target "Build" (fun _ ->
-    !! (solutionFile + "*.sln")
-    |> MSBuildRelease "" "Rebuild"
-    |> ignore
-)
-
-Target "DebugBuild" (fun _ ->
-    !! (solutionFile + "*.sln")
-    |> MSBuildDebug "" "Build"
-    |> ignore
+    DotNetCli.Build (fun c ->
+        { c with
+            Project = "Thespian.sln"
+            Configuration = configuration })
 )
 
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner
 
 Target "RunTests" (fun _ ->
-    testAssemblies 
-    |> NUnit (fun p ->
-        { p with
-            Framework = "v4.0.30319"
-            DisableShadowCopy = true
-            TimeOut = TimeSpan.FromMinutes 60.
-            OutputFile = "TestResults.xml" })
+    for proj in testProjects do
+        DotNetCli.Test (fun p ->
+            { p with
+                Project = proj
+                Configuration = configuration
+                AdditionalArgs = ["--no-build"] })
 )
 
 //
@@ -117,12 +111,15 @@ Target "RunTests" (fun _ ->
 //// Build a NuGet package
 
 Target "NuGet" (fun _ ->    
-    Paket.Pack (fun p -> 
-        { p with 
-            ToolPath = ".paket/paket.exe" 
+    DotNetCli.Pack (fun p ->
+        { p with
             OutputPath = "bin/"
-            Version = release.NugetVersion
-            ReleaseNotes = toLines release.Notes })
+            Configuration = configuration
+            Project = "src/Thespian"
+            AdditionalArgs =
+                [ sprintf "-p:PackageVersion=%s" release.NugetVersion
+                  sprintf "-p:PackageReleaseNotes=\"%s\"" (String.concat Environment.NewLine release.Notes) ]
+        })
 )
 
 Target "NuGetPush" (fun _ -> 
@@ -155,6 +152,7 @@ Target "ReleaseDocs" (fun _ ->
 
 // Github Releases
 
+#nowarn "85"
 #load "paket-files/build/fsharp/FAKE/modules/Octokit/Octokit.fsx"
 open Octokit
 
@@ -202,7 +200,6 @@ Target "Release" DoNothing
 Target "Debug" DoNothing
 
 "Clean"
-  ==> "RestorePackages"
   ==> "AssemblyInfo"
   ==> "Build"
   ==> "RunTests"

@@ -1,64 +1,65 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29001.49
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{CA1ACB66-154C-4E4B-BDD2-040DAF302A96}"
-	ProjectSection(SolutionItems) = preProject
-		.paket\paket.bootstrapper.exe = .paket\paket.bootstrapper.exe
-		paket.dependencies = paket.dependencies
-		paket.lock = paket.lock
-		.paket\paket.targets = .paket\paket.targets
-	EndProjectSection
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Thespian", "src\Thespian\Thespian.fsproj", "{D6A241D8-F043-40FA-9C63-EF745EB39B4E}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{A6A6AF7D-D6E3-442D-9B1E-58CC91879BE1}"
-	ProjectSection(SolutionItems) = preProject
-		LICENSE.txt = LICENSE.txt
-	EndProjectSection
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Thespian.Tests", "tests\Thespian.Tests\Thespian.Tests.fsproj", "{06BE1375-5698-4320-AC08-A3B7EAFA523E}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Thespian", "src\Thespian\Thespian.fsproj", "{7E90D6CE-A10B-4858-A5BC-41DF7250CBCA}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3560F4CC-E3D3-474B-B222-8D54802DB159}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{BF60BC93-E09B-4E5F-9D85-95A519479D54}"
-	ProjectSection(SolutionItems) = preProject
-		.travis.yml = .travis.yml
-		appveyor.yml = appveyor.yml
-		build.cmd = build.cmd
-		build.fsx = build.fsx
-		build.sh = build.sh
-		README.md = README.md
-		RELEASE_NOTES.md = RELEASE_NOTES.md
-	EndProjectSection
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{16174008-9F4F-409D-A1BB-C4B2DD594F53}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{83F16175-43B1-4C90-A1EE-8E351C33435D}"
-	ProjectSection(SolutionItems) = preProject
-		docs\tools\generate.fsx = docs\tools\generate.fsx
-		docs\tools\packages.config = docs\tools\packages.config
-		docs\tools\templates\template.cshtml = docs\tools\templates\template.cshtml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "content", "content", "{8E6D5255-776D-4B61-85F9-73C37AA1FB9A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "content", "content", "{A6E222B7-5DC6-492F-863C-DD924EBCB459}"
 	ProjectSection(SolutionItems) = preProject
 		docs\content\index.fsx = docs\content\index.fsx
 		docs\content\tutorial.fsx = docs\content\tutorial.fsx
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{ED8079DD-2B06-4030-9F0F-DC548F98E1C4}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{63856E36-D32F-4881-A87C-DBA84D396A2B}"
+	ProjectSection(SolutionItems) = preProject
+		docs\tools\generate.fsx = docs\tools\generate.fsx
+		docs\tools\packages.config = docs\tools\packages.config
+	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Thespian.Tests", "tests\Thespian.Tests\Thespian.Tests.fsproj", "{E789C72A-5CFD-436B-8EF1-61AA2852A89F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{2B818A2B-4EAD-41C7-85B2-B024AEE3518C}"
+	ProjectSection(SolutionItems) = preProject
+		docs\tools\templates\template.cshtml = docs\tools\templates\template.cshtml
+	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Thespian.Cluster", "src\Thespian.Cluster\Thespian.Cluster.fsproj", "{59D16381-C1D4-4555-8029-7BA06F86FA12}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "files", "files", "{1289FB24-2EC7-40C9-B350-6AB417BD2815}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7AEA014B-42FE-4133-9AB4-89C77AF0FF8A}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "files", "files", "{A8A24E18-DCBC-49B5-B9E0-1738EB76329B}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "img", "img", "{3B441F06-1352-471D-8435-0F1B1D405FF6}"
 	ProjectSection(SolutionItems) = preProject
 		docs\files\img\logo.png = docs\files\img\logo.png
 		docs\files\img\nessos.png = docs\files\img\nessos.png
 	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Thespian.TestCluster", "tests\Thespian.TestCluster\Thespian.TestCluster.fsproj", "{34A5BF7D-CDF4-416A-B28A-3BF56B34DCEC}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9A8434F6-F6A4-403A-AEFB-0C39EBC32E98}"
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		.travis.yml = .travis.yml
+		appveyor.yml = appveyor.yml
+		build.cmd = build.cmd
+		build.fsx = build.fsx
+		build.sh = build.sh
+		License.md = License.md
+		LICENSE.txt = LICENSE.txt
+		paket.dependencies = paket.dependencies
+		paket.lock = paket.lock
+		README.md = README.md
+		RELEASE_NOTES.md = RELEASE_NOTES.md
+		Thespian.sln = Thespian.sln
+	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Thespian.Cluster.Tests", "tests\Thespian.Cluster.Tests\Thespian.Cluster.Tests.fsproj", "{8E3BF87D-A23E-4B6F-9E96-F84A8524E256}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{81416EA4-C559-4244-8364-180D8D6138B2}"
+	ProjectSection(SolutionItems) = preProject
+		.paket\paket.exe = .paket\paket.exe
+		.paket\Paket.Restore.targets = .paket\Paket.Restore.targets
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9B179640-7D85-4646-8B2A-BA7EFD1CADEF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,38 +67,28 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7E90D6CE-A10B-4858-A5BC-41DF7250CBCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7E90D6CE-A10B-4858-A5BC-41DF7250CBCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7E90D6CE-A10B-4858-A5BC-41DF7250CBCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7E90D6CE-A10B-4858-A5BC-41DF7250CBCA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E789C72A-5CFD-436B-8EF1-61AA2852A89F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E789C72A-5CFD-436B-8EF1-61AA2852A89F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E789C72A-5CFD-436B-8EF1-61AA2852A89F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E789C72A-5CFD-436B-8EF1-61AA2852A89F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{59D16381-C1D4-4555-8029-7BA06F86FA12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{59D16381-C1D4-4555-8029-7BA06F86FA12}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{59D16381-C1D4-4555-8029-7BA06F86FA12}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{59D16381-C1D4-4555-8029-7BA06F86FA12}.Release|Any CPU.Build.0 = Release|Any CPU
-		{34A5BF7D-CDF4-416A-B28A-3BF56B34DCEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{34A5BF7D-CDF4-416A-B28A-3BF56B34DCEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{34A5BF7D-CDF4-416A-B28A-3BF56B34DCEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{34A5BF7D-CDF4-416A-B28A-3BF56B34DCEC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8E3BF87D-A23E-4B6F-9E96-F84A8524E256}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8E3BF87D-A23E-4B6F-9E96-F84A8524E256}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8E3BF87D-A23E-4B6F-9E96-F84A8524E256}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8E3BF87D-A23E-4B6F-9E96-F84A8524E256}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6A241D8-F043-40FA-9C63-EF745EB39B4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6A241D8-F043-40FA-9C63-EF745EB39B4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6A241D8-F043-40FA-9C63-EF745EB39B4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6A241D8-F043-40FA-9C63-EF745EB39B4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06BE1375-5698-4320-AC08-A3B7EAFA523E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06BE1375-5698-4320-AC08-A3B7EAFA523E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06BE1375-5698-4320-AC08-A3B7EAFA523E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06BE1375-5698-4320-AC08-A3B7EAFA523E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{7E90D6CE-A10B-4858-A5BC-41DF7250CBCA} = {7AEA014B-42FE-4133-9AB4-89C77AF0FF8A}
-		{83F16175-43B1-4C90-A1EE-8E351C33435D} = {A6A6AF7D-D6E3-442D-9B1E-58CC91879BE1}
-		{8E6D5255-776D-4B61-85F9-73C37AA1FB9A} = {A6A6AF7D-D6E3-442D-9B1E-58CC91879BE1}
-		{E789C72A-5CFD-436B-8EF1-61AA2852A89F} = {ED8079DD-2B06-4030-9F0F-DC548F98E1C4}
-		{59D16381-C1D4-4555-8029-7BA06F86FA12} = {7AEA014B-42FE-4133-9AB4-89C77AF0FF8A}
-		{A8A24E18-DCBC-49B5-B9E0-1738EB76329B} = {A6A6AF7D-D6E3-442D-9B1E-58CC91879BE1}
-		{34A5BF7D-CDF4-416A-B28A-3BF56B34DCEC} = {ED8079DD-2B06-4030-9F0F-DC548F98E1C4}
-		{8E3BF87D-A23E-4B6F-9E96-F84A8524E256} = {ED8079DD-2B06-4030-9F0F-DC548F98E1C4}
+		{D6A241D8-F043-40FA-9C63-EF745EB39B4E} = {9B179640-7D85-4646-8B2A-BA7EFD1CADEF}
+		{06BE1375-5698-4320-AC08-A3B7EAFA523E} = {3560F4CC-E3D3-474B-B222-8D54802DB159}
+		{A6E222B7-5DC6-492F-863C-DD924EBCB459} = {16174008-9F4F-409D-A1BB-C4B2DD594F53}
+		{63856E36-D32F-4881-A87C-DBA84D396A2B} = {16174008-9F4F-409D-A1BB-C4B2DD594F53}
+		{2B818A2B-4EAD-41C7-85B2-B024AEE3518C} = {63856E36-D32F-4881-A87C-DBA84D396A2B}
+		{1289FB24-2EC7-40C9-B350-6AB417BD2815} = {16174008-9F4F-409D-A1BB-C4B2DD594F53}
+		{3B441F06-1352-471D-8435-0F1B1D405FF6} = {1289FB24-2EC7-40C9-B350-6AB417BD2815}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1E4A76E6-3CD0-42D6-9B3A-81E85B10916B}
 	EndGlobalSection
 EndGlobal

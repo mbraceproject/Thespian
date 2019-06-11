@@ -22,12 +22,12 @@ type ``Collocated Communication``() =
     abstract ParallelAsyncPostsNum : int
     abstract ParallelPostsWithReplyNum : int
     
-    [<TestFixtureSetUp>]
+    [<OneTimeSetUp>]
     member self.SetUp() = 
         defaultPrimaryProtocolFactory <- Actor.DefaultPrimaryProtocolFactory
         Actor.DefaultPrimaryProtocolFactory <- self.PrimaryProtocolFactory
     
-    [<TestFixtureTearDown>]
+    [<OneTimeTearDown>]
     member self.TearDown() = Actor.DefaultPrimaryProtocolFactory <- defaultPrimaryProtocolFactory
     
     // [<TearDown>]
@@ -127,24 +127,24 @@ type ``Collocated Communication``() =
         r |> should equal 42
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member self.``Post with reply method with no timeout (default timeout)``() = 
-        use actor = Actor.bind PrimitiveBehaviors.nill
-                    |> self.PublishActorPrimary
-                    |> Actor.start
+        Assert.throws<TimeoutException>(fun () ->
+            use actor = Actor.bind PrimitiveBehaviors.nill
+                        |> self.PublishActorPrimary
+                        |> Actor.start
                     
-        self.RefPrimary(actor).PostWithReply(fun ch -> TestSync(ch, ()))
-        |> Async.Ignore
-        |> Async.RunSynchronously
+            self.RefPrimary(actor).PostWithReply(fun ch -> TestSync(ch, ()))
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member self.``Post with reply operator with no timeout (default timeout)``() = 
-        use actor = Actor.bind PrimitiveBehaviors.nill
-                    |> self.PublishActorPrimary
-                    |> Actor.start
+        Assert.throws<TimeoutException>(fun () ->
+            use actor = Actor.bind PrimitiveBehaviors.nill
+                        |> self.PublishActorPrimary
+                        |> Actor.start
                     
-        self.RefPrimary(actor) <!= fun ch -> TestSync(ch, ())
+            self.RefPrimary(actor) <!= fun ch -> TestSync(ch, ()))
     
     [<Test>]
     member self.``Post with reply method with timeout (in-time)``() = 
@@ -161,70 +161,70 @@ type ``Collocated Communication``() =
         r |> should equal 42
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
-    member self.``Post with reply method with timeout``() = 
-        use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
-                    |> self.PublishActorPrimary
-                    |> Actor.start
+    member self.``Post with reply method with timeout``() =
+        Assert.throws<TimeoutException>(fun () ->
+            use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                        |> self.PublishActorPrimary
+                        |> Actor.start
 
-        self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout * 4)), Default.ReplyReceiveTimeout / 4)
-        |> Async.Ignore
-        |> Async.RunSynchronously
+            self.RefPrimary(actor).PostWithReply((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout * 4)), Default.ReplyReceiveTimeout / 4)
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member self.``Post with reply operator with timeout on reply channel (fluid)``() = 
-        use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
-                    |> self.PublishActorPrimary
-                    |> Actor.start
+        Assert.throws<TimeoutException>(fun () ->
+            use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                        |> self.PublishActorPrimary
+                        |> Actor.start
 
-        self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout / 4), Default.ReplyReceiveTimeout * 4)
-        |> Async.Ignore
-        |> Async.RunSynchronously
+            self.RefPrimary(actor) <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout / 4), Default.ReplyReceiveTimeout * 4)
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
-    member self.``Post with reply operator with timeout on reply channel (property set)``() = 
-        use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
-                    |> self.PublishActorPrimary
-                    |> Actor.start
+    member self.``Post with reply operator with timeout on reply channel (property set)``() =
+        Assert.throws<TimeoutException>(fun () ->
+            use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                        |> self.PublishActorPrimary
+                        |> Actor.start
 
-        self.RefPrimary(actor) <!- fun ch -> ch.Timeout <- Default.ReplyReceiveTimeout / 4; TestSync(ch, Default.ReplyReceiveTimeout * 4)
-        |> Async.Ignore
-        |> Async.RunSynchronously
+            self.RefPrimary(actor) <!- fun ch -> ch.Timeout <- Default.ReplyReceiveTimeout / 4; TestSync(ch, Default.ReplyReceiveTimeout * 4)
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member self.``Post with reply method timeout (fluid) on reply channel overrides method timeout arg``() = 
-        use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
-                    |> self.PublishActorPrimary
-                    |> Actor.start
+        Assert.throws<TimeoutException>(fun () ->
+            use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                        |> self.PublishActorPrimary
+                        |> Actor.start
 
-        self.RefPrimary(actor) <-- TestAsync 42
-        //the actor will stall for Default.ReplyReceiveTimeout,
-        //the reply timeout specified by the method arg is Default.ReplyReceiveTimeout * 2
-        //enough to get back the reply
-        //the timeout is overriden by setting the reply channel timeout to Default.ReplyReceiveTimeout/2
-        //thus we expect this to timeout
-        self.RefPrimary(actor).PostWithReply((fun ch -> 
-            TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout / 4), Default.ReplyReceiveTimeout * 8)), 
-            Default.ReplyReceiveTimeout * 4)
-        |> Async.Ignore
-        |> Async.RunSynchronously
+            self.RefPrimary(actor) <-- TestAsync 42
+            //the actor will stall for Default.ReplyReceiveTimeout,
+            //the reply timeout specified by the method arg is Default.ReplyReceiveTimeout * 2
+            //enough to get back the reply
+            //the timeout is overriden by setting the reply channel timeout to Default.ReplyReceiveTimeout/2
+            //thus we expect this to timeout
+            self.RefPrimary(actor).PostWithReply((fun ch -> 
+                TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout / 4), Default.ReplyReceiveTimeout * 8)), 
+                Default.ReplyReceiveTimeout * 4)
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member self.``Post with reply method timeout (property set) on reply channel overrides method timeout arg``() = 
-        use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
-                    |> self.PublishActorPrimary
-                    |> Actor.start
+        Assert.throws<TimeoutException>(fun () ->
+            use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                        |> self.PublishActorPrimary
+                        |> Actor.start
                     
-        self.RefPrimary(actor) <-- TestAsync 42
-        self.RefPrimary(actor).PostWithReply((fun ch -> 
-            ch.Timeout <- Default.ReplyReceiveTimeout / 4
-            TestSync(ch, Default.ReplyReceiveTimeout * 8)), Default.ReplyReceiveTimeout * 4)
-        |> Async.Ignore
-        |> Async.RunSynchronously
+            self.RefPrimary(actor) <-- TestAsync 42
+            self.RefPrimary(actor).PostWithReply((fun ch -> 
+                ch.Timeout <- Default.ReplyReceiveTimeout / 4
+                TestSync(ch, Default.ReplyReceiveTimeout * 8)), Default.ReplyReceiveTimeout * 4)
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
     member self.``Post with reply sequence``() = 
@@ -299,18 +299,18 @@ type ``Collocated Communication``() =
         r |> should equal 42
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
-    member self.``Untyped post with reply method with timeout``() = 
-        use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
-                    |> self.PublishActorPrimary
-                    |> Actor.start
+    member self.``Untyped post with reply method with timeout``() =
+        Assert.throws<TimeoutException>(fun () ->
+            use actor = Actor.bind <| Behavior.stateful 0 Behaviors.delayedState
+                        |> self.PublishActorPrimary
+                        |> Actor.start
         
-        let actorRef = self.RefPrimary(actor) :> ActorRef
-        actorRef.PostWithReplyUntyped((fun ch -> 
-             (TestSync(ch |> ReplyChannel.map box, Default.ReplyReceiveTimeout * 4) : TestMessage<int, int>) |> box), 
-             Default.ReplyReceiveTimeout / 4)
-        |> Async.Ignore
-        |> Async.RunSynchronously
+            let actorRef = self.RefPrimary(actor) :> ActorRef
+            actorRef.PostWithReplyUntyped((fun ch -> 
+                 (TestSync(ch |> ReplyChannel.map box, Default.ReplyReceiveTimeout * 4) : TestMessage<int, int>) |> box), 
+                 Default.ReplyReceiveTimeout / 4)
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
     member self.``Try post with reply``() = 
@@ -552,24 +552,24 @@ type ``Collocated Remote Communication``() =
         actor.Ref.ProtocolFactories.Length |> should equal 1
     
     [<Test>]
-    [<ExpectedException(typeof<UnknownRecipientException>)>]
     member self.``Post to published stopped actor``() = 
-        use actor = Actor.bind PrimitiveBehaviors.nill |> self.PublishActorPrimary
-        self.RefPrimary(actor) <-- TestAsync()
+        Assert.throws<UnknownRecipientException>(fun () ->
+            use actor = Actor.bind PrimitiveBehaviors.nill |> self.PublishActorPrimary
+            self.RefPrimary(actor) <-- TestAsync())
     
     [<Test>]
-    [<ExpectedException(typeof<UnknownRecipientException>)>]
-    member self.``Post when started, stop and post``() = 
-        use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
-                    |> self.PublishActorPrimary
-                    |> Actor.start
+    member self.``Post when started, stop and post``() =
+        Assert.throws<UnknownRecipientException>(fun () ->
+            use actor = Actor.bind <| Behavior.stateful 0 Behaviors.state
+                        |> self.PublishActorPrimary
+                        |> Actor.start
                     
-        self.RefPrimary(actor) <-- TestAsync 42
-        let r = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 43)
-        r |> should equal 42
+            self.RefPrimary(actor) <-- TestAsync 42
+            let r = self.RefPrimary(actor) <!= fun ch -> TestSync(ch, 43)
+            r |> should equal 42
         
-        actor.Stop()
-        self.RefPrimary(actor) <-- TestAsync 0
+            actor.Stop()
+            self.RefPrimary(actor) <-- TestAsync 0)
     
     [<Test>]
     member self.``Parallel posts with reply with multiple deserialised refs``() = 
@@ -773,10 +773,10 @@ type ``Tcp communication``() =
     abstract PublishActorNonExistingListener : Actor<'T> -> Actor<'T>
     
     [<Test>]
-    [<ExpectedException(typeof<TcpProtocolConfigurationException>)>]
     member self.``Publish protocol on non-existing listener``() = 
-        use actor = Actor.bind PrimitiveBehaviors.nill |> self.PublishActorNonExistingListener
-        ()
+        Assert.throws<TcpProtocolConfigurationException>(fun () ->
+            use actor = Actor.bind PrimitiveBehaviors.nill |> self.PublishActorNonExistingListener
+            ())
     
     [<Test>]
     member self.``Posts with server connection timeout``() = 

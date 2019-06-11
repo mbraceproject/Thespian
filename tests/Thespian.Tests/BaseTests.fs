@@ -22,12 +22,12 @@ type PrimaryProtocolTests(primaryProtocolFactory : IPrimaryProtocolFactory) =
     //   let memoryUsage = GC.GetTotalMemory(true)
     //   printfn "Total Memory = %d bytes" memoryUsage
 
-    [<TestFixtureSetUp>]
+    [<OneTimeSetUp>]
     member self.SetUp() = 
         defaultPrimaryProtocolFactory <- Actor.DefaultPrimaryProtocolFactory
         Actor.DefaultPrimaryProtocolFactory <- self.PrimaryProtocolFactory
     
-    [<TestFixtureTearDown>]
+    [<OneTimeTearDown>]
     member self.TearDown() = Actor.DefaultPrimaryProtocolFactory <- defaultPrimaryProtocolFactory
     
     [<Test>]
@@ -58,31 +58,29 @@ type PrimaryProtocolTests(primaryProtocolFactory : IPrimaryProtocolFactory) =
         actor.PendingMessages |> should equal 0
     
     [<Test>]
-    [<ExpectedException(typeof<ArgumentException>)>]
     member __.``Create actor with no protocol``() = 
-        let actor = new Actor<TestMessage<unit>>("unrealisableActor", Array.empty, PrimitiveBehaviors.nill)
-        ()
+        Assert.throws<ArgumentException>(fun () -> new Actor<TestMessage<unit>>("unrealisableActor", Array.empty, PrimitiveBehaviors.nill) |> ignore)
     
     [<Test>]
-    [<ExpectedException(typeof<ArgumentException>)>]
     member self.``Create actor with non-primitive actor protocol``() = 
-        let primary = self.PrimaryProtocolFactory.Create<TestMessage<unit>>("unrealisable")
-        let primaryRef = new ActorRef<TestMessage<unit>>("unrealisable", [| primary.Client |])
-        let tcpProtocol = 
-            new Remote.TcpProtocol.Bidirectional.ProtocolServer<TestMessage<unit>>("unrealisable", 
+        Assert.throws<ArgumentException>(fun () ->
+            let primary = self.PrimaryProtocolFactory.Create<TestMessage<unit>>("unrealisable")
+            let primaryRef = new ActorRef<TestMessage<unit>>("unrealisable", [| primary.Client |])
+            let tcpProtocol = 
+                new Remote.TcpProtocol.Bidirectional.ProtocolServer<TestMessage<unit>>("unrealisable", 
                                                                                    
-                                                                                   new System.Net.IPEndPoint(System.Net.IPAddress.Any, 
-                                                                                                             0), 
-                                                                                   primaryRef) :> IProtocolServer<_>
-        let actor = new Actor<TestMessage<unit>>("unrealisable", [| tcpProtocol |], PrimitiveBehaviors.nill)
-        ()
+                                                                                       new System.Net.IPEndPoint(System.Net.IPAddress.Any, 
+                                                                                                                 0), 
+                                                                                       primaryRef) :> IProtocolServer<_>
+            let actor = new Actor<TestMessage<unit>>("unrealisable", [| tcpProtocol |], PrimitiveBehaviors.nill)
+            ())
     
     [<Test>]
-    [<ExpectedException(typeof<ArgumentException>)>]
-    member self.``Create actor with name mismatch``() = 
-        let primary = self.PrimaryProtocolFactory.Create<TestMessage<unit>>("unrealisable") :> IProtocolServer<_>
-        let actor = new Actor<TestMessage<unit>>("unrealisable'", [| primary |], PrimitiveBehaviors.nill)
-        ()
+    member self.``Create actor with name mismatch``() =
+        Assert.throws<ArgumentException>(fun () ->
+            let primary = self.PrimaryProtocolFactory.Create<TestMessage<unit>>("unrealisable") :> IProtocolServer<_>
+            let actor = new Actor<TestMessage<unit>>("unrealisable'", [| primary |], PrimitiveBehaviors.nill)
+            ())
     
     [<Test>]
     member __.``Actor.Name = ActorRef.Name after bind``() = 
@@ -107,10 +105,10 @@ type PrimaryProtocolTests(primaryProtocolFactory : IPrimaryProtocolFactory) =
         ()
     
     [<Test>]
-    [<ExpectedException(typeof<ActorInactiveException>)>]
     member __.``Post to stopped Actor``() = 
-        let actor = Actor.bind PrimitiveBehaviors.nill
-        !actor <-- TestAsync()
+        Assert.throws<ActorInactiveException>(fun () ->
+            let actor = Actor.bind PrimitiveBehaviors.nill
+            !actor <-- TestAsync())
     
     [<Test>]
     member __.``Post to started Actor and then post to stopped``() = 
@@ -120,10 +118,10 @@ type PrimaryProtocolTests(primaryProtocolFactory : IPrimaryProtocolFactory) =
         TestDelegate(fun () -> !actor <-- TestAsync()) |> should throw typeof<ActorInactiveException>
     
     [<Test>]
-    [<ExpectedException(typeof<ActorInactiveException>)>]
     member __.``Post with reply to stopped actor``() = 
-        let actor = Actor.bind PrimitiveBehaviors.nill
-        !actor <!= fun ch -> TestSync(ch, ())
+        Assert.throws<ActorInactiveException>(fun () ->
+            let actor = Actor.bind PrimitiveBehaviors.nill
+            !actor <!= fun ch -> TestSync(ch, ()))
     
     [<Test>]
     member __.``Post with reply to started Actor then post with reply to stopped``() = 
@@ -337,13 +335,13 @@ type PrimaryProtocolTests(primaryProtocolFactory : IPrimaryProtocolFactory) =
         actor.Ref.GetUris() |> should equal List.empty
     
     [<Test>]
-    [<ExpectedException(typeof<ActorInactiveException>)>]
     member __.``Actor failure``() = 
-        use actor = Actor.bind PrimitiveBehaviors.failing |> Actor.start
-        !actor <!= fun ch -> TestSync(ch, ())
-        //do some work
-        System.Threading.Thread.Sleep(500)
-        !actor <-- TestAsync()
+        Assert.throws<ActorInactiveException>(fun () ->
+            use actor = Actor.bind PrimitiveBehaviors.failing |> Actor.start
+            !actor <!= fun ch -> TestSync(ch, ())
+            //do some work
+            System.Threading.Thread.Sleep(500)
+            !actor <-- TestAsync())
     
     [<Test>]
     member __.``Actor failure and restart``() = 
@@ -372,31 +370,30 @@ type PrimaryProtocolTests(primaryProtocolFactory : IPrimaryProtocolFactory) =
         caught.Value |> should equal true
     
     [<Test>]
-    [<ExpectedException(typeof<ArgumentException>)>]
     member __.``Actor.rename invalid name``() = 
-        Actor.bind PrimitiveBehaviors.nill
-        |> Actor.rename "foo/bar"
-        |> ignore
+        Assert.throws<ArgumentException>(fun () ->
+            Actor.bind PrimitiveBehaviors.nill
+            |> Actor.rename "foo/bar"
+            |> ignore)
     
     [<Test>]
-    [<ExpectedException(typeof<ArgumentException>)>]
-    member __.``Actor construct with invalid name``() = new Actor<_>("foo/bar", PrimitiveBehaviors.nill) |> ignore
+    member __.``Actor construct with invalid name``() = Assert.throws<ArgumentException>(fun () -> new Actor<_>("foo/bar", PrimitiveBehaviors.nill) |> ignore)
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member __.``Actor.Receive with timeout``() = 
-        use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
-        actor.Receive(100)
-        |> Async.RunSynchronously
-        |> ignore
+        Assert.throws<TimeoutException>(fun () ->
+            use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+            actor.Receive(100)
+            |> Async.RunSynchronously
+            |> ignore)
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member __.``Actor.Receive with 0 timeout``() = 
-        use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
-        actor.Receive(0)
-        |> Async.RunSynchronously
-        |> ignore
+        Assert.throws<TimeoutException>(fun () ->
+            use actor = Actor.bind PrimitiveBehaviors.nill |> Actor.start
+            actor.Receive(0)
+            |> Async.RunSynchronously
+            |> ignore)
     
     [<Test>]
     member __.``Actor.TryReceive with 0 timeout``() = 

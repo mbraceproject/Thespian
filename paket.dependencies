@@ -1,25 +1,26 @@
-framework: net45
-redirects: on
 source https://www.nuget.org/api/v2/
+framework: net45, netstandard2.0
+redirects: off
 
-nuget FSharp.Core >= 3.1 lowest_matching:true
-nuget FsPickler ~> 4.0
-nuget Unquote 2.2.2
+nuget FSharp.Core >= 4.1.0 lowest_matching:true
+nuget FsPickler ~> 5.2
+nuget Unquote 4.0
 
 group Build
   framework: net45
   redirects: on
   source https://www.nuget.org/api/v2/
-  nuget Nuget.CommandLine
-  nuget FAKE
+
+  nuget FAKE ~> 4.0
   github fsharp/FAKE modules/Octokit/Octokit.fsx
 
 group Test
-  framework: net45
-  redirects: on
+  framework: net461, netcoreapp2.2
+  redirects: off
   source https://www.nuget.org/api/v2/
-  nuget FSharp.Core ~> 4.1.17
-  nuget FsUnit 1.3.0.1
-  nuget NUnit ~> 2.6.3
-  nuget NUnit.Runners ~> 2.6.3
 
+  nuget FSharp.Core ~> 4.6
+  nuget FsUnit 3.4.0
+  nuget NUnit ~> 3.12.0
+  nuget NUnit3TestAdapter ~> 3.12.0
+  nuget Microsoft.NET.Test.SDK ~> 15.8.0

@@ -187,7 +187,7 @@ type TcpListenerPool() =
             raise <| new TcpProtocolConfigurationException(sprintf "No listener registered for endpoint %O" ipEndPoint)
         else 
             let index = random.Next(0, Seq.length available)
-            Seq.nth index available
+            Seq.item index available
     
     static member GetListener() = TcpListenerPool.GetListener(IPEndPoint.any)
     static member GetListener(port : int) = TcpListenerPool.GetListener(IPEndPoint.anyIp port)

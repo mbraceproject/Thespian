@@ -32,6 +32,7 @@ type ``Collocated BTcp``() =
                  member __.Ref(a) = a.Ref.[UTCP]
                  member __.ToString() = "utcp foreign protocol" } |]
 
+#if !NETCOREAPP2_2
 [<TestFixture>]
 type ``AppDomain BTcp``() = 
     inherit ``AppDomain Tcp Communication``<BtcpActorManagerFactory>()
@@ -43,3 +44,4 @@ type ``AppDomain BTcp``() =
         new AppDomainManager<BtcpActorManagerFactory>(?appDomainName = appDomainName)
     override __.PublishActorPrimary(actor : Actor<'T>) = actor |> Actor.publish [ Protocols.btcp() ]
     override __.RefPrimary(actor : Actor<'T>) = actor.Ref.[BTCP]
+#endif

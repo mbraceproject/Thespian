@@ -1,0 +1,13 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PackageId>Thespian</PackageId>
+    <Description>A declarative command line and XML configuration parser for F# applications.</Description>
+    <Authors>Jan Dzik, Eirik Tsarpalis</Authors>
+    <Copyright>2019</Copyright>
+    <PackageTags>actors, agents, message-passing, distributed</PackageTags>
+    <RepositoryUrl>https://github.com/mbraceproject/Thespian</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/mbraceproject/Thespian</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/mbraceproject/Thespian/blob/master/License.md</PackageLicenseUrl>
+    <PackageIconUrl>https://avatars1.githubusercontent.com/u/5538081</PackageIconUrl>
+  </PropertyGroup>
+</Project>

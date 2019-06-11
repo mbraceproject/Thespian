@@ -7,6 +7,8 @@ open Nessos.Thespian
 open Nessos.Thespian.Tests.TestDefinitions
 open Nessos.Thespian.Tests.TestDefinitions.Remote
 
+#if !NETCOREAPP2_2
+
 [<AbstractClass>]
 type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() = 
     abstract GetAppDomainManager : ?appDomainName:string -> AppDomainManager<'T>
@@ -56,15 +58,15 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
         r |> should equal 42
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     [<Timeout(60000)>]
      //make sure the default timeout is less than the test case timeout
      member self.``Post with reply with no timeout (default timeout)``() = 
-        use appDomainManager = self.GetAppDomainManager()
-        let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<unit, unit>>(PrimitiveBehaviors.nill)
-        let actorRef = actorManager.Publish()
-        actorManager.Start()
-        actorRef <!= fun ch -> TestSync(ch, ())
+        Assert.throws<TimeoutException>(fun () ->
+            use appDomainManager = self.GetAppDomainManager()
+            let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<unit, unit>>(PrimitiveBehaviors.nill)
+            let actorRef = actorManager.Publish()
+            actorManager.Start()
+            actorRef <!= fun ch -> TestSync(ch, ()))
     
     [<Test>]
     member self.``Post with reply method with timeout (in-time)``() = 
@@ -82,104 +84,104 @@ type ``AppDomain Communication``<'T when 'T :> ActorManagerFactory>() =
         r |> should equal 42
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member self.``Post with reply method with timeout``() = 
-        use appDomainManager = self.GetAppDomainManager()
-        let actorManager = 
-            appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>
-                (Behavior.stateful 0 Behaviors.delayedState)
-        let actorRef = actorManager.Publish()
-        actorManager.Start()
-        actorRef.PostWithReply
-            ((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout * 4)), Default.ReplyReceiveTimeout / 4)
-        |> Async.Ignore
-        |> Async.RunSynchronously
+        Assert.throws<TimeoutException>(fun () ->
+            use appDomainManager = self.GetAppDomainManager()
+            let actorManager = 
+                appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>
+                    (Behavior.stateful 0 Behaviors.delayedState)
+            let actorRef = actorManager.Publish()
+            actorManager.Start()
+            actorRef.PostWithReply
+                ((fun ch -> TestSync(ch, Default.ReplyReceiveTimeout * 4)), Default.ReplyReceiveTimeout / 4)
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member self.``Post with reply operator with timeout on reply channel (fluid)``() = 
-        use appDomainManager = self.GetAppDomainManager()
-        let actorManager = 
-            appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>
-                (Behavior.stateful 0 Behaviors.delayedState)
-        let actorRef = actorManager.Publish()
-        actorManager.Start()
-        actorRef 
-        <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout / 4), Default.ReplyReceiveTimeout * 4)
-        |> Async.Ignore
-        |> Async.RunSynchronously
+        Assert.throws<TimeoutException>(fun () ->
+            use appDomainManager = self.GetAppDomainManager()
+            let actorManager = 
+                appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>
+                    (Behavior.stateful 0 Behaviors.delayedState)
+            let actorRef = actorManager.Publish()
+            actorManager.Start()
+            actorRef 
+            <!- fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout / 4), Default.ReplyReceiveTimeout * 4)
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member self.``Post with reply operator with timeout on reply channel (property-set)``() = 
-        use appDomainManager = self.GetAppDomainManager()
-        let actorManager = 
-            appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>
-                (Behavior.stateful 0 Behaviors.delayedState)
-        let actorRef = actorManager.Publish()
-        actorManager.Start()
-        actorRef <!- fun ch -> 
-            ch.Timeout <- Default.ReplyReceiveTimeout / 4
-            TestSync(ch, Default.ReplyReceiveTimeout * 4)
-        |> Async.Ignore
-        |> Async.RunSynchronously
+        Assert.throws<TimeoutException>(fun () ->
+            use appDomainManager = self.GetAppDomainManager()
+            let actorManager = 
+                appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>
+                    (Behavior.stateful 0 Behaviors.delayedState)
+            let actorRef = actorManager.Publish()
+            actorManager.Start()
+            actorRef <!- fun ch -> 
+                ch.Timeout <- Default.ReplyReceiveTimeout / 4
+                TestSync(ch, Default.ReplyReceiveTimeout * 4)
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member self.``Post with reply method timeout (fluid) on reply channel overrides method timeout arg``() = 
-        use appDomainManager = self.GetAppDomainManager()
-        let actorManager = 
-            appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>
-                (Behavior.stateful 0 Behaviors.delayedState)
-        let actorRef = actorManager.Publish()
-        actorManager.Start()
-        actorRef <-- TestAsync 42
-        actorRef.PostWithReply
-            ((fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout / 4), Default.ReplyReceiveTimeout * 8)), 
-             Default.ReplyReceiveTimeout * 4)
-        |> Async.Ignore
-        |> Async.RunSynchronously
+        Assert.throws<TimeoutException>(fun () ->
+            use appDomainManager = self.GetAppDomainManager()
+            let actorManager = 
+                appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>
+                    (Behavior.stateful 0 Behaviors.delayedState)
+            let actorRef = actorManager.Publish()
+            actorManager.Start()
+            actorRef <-- TestAsync 42
+            actorRef.PostWithReply
+                ((fun ch -> TestSync(ch.WithTimeout(Default.ReplyReceiveTimeout / 4), Default.ReplyReceiveTimeout * 8)), 
+                 Default.ReplyReceiveTimeout * 4)
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
-    [<ExpectedException(typeof<TimeoutException>)>]
     member self.``Post with reply method timeout (property set) on reply channel overrides method timeout arg``() = 
-        use appDomainManager = self.GetAppDomainManager()
-        let actorManager = 
-            appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>
-                (Behavior.stateful 0 Behaviors.delayedState)
-        let actorRef = actorManager.Publish()
-        actorManager.Start()
-        actorRef <-- TestAsync 42
-        actorRef.PostWithReply((fun ch -> 
-                               ch.Timeout <- Default.ReplyReceiveTimeout / 4
-                               TestSync(ch, Default.ReplyReceiveTimeout * 8)), Default.ReplyReceiveTimeout * 4)
-        |> Async.Ignore
-        |> Async.RunSynchronously
+        Assert.throws<TimeoutException>(fun () ->
+            use appDomainManager = self.GetAppDomainManager()
+            let actorManager = 
+                appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>
+                    (Behavior.stateful 0 Behaviors.delayedState)
+            let actorRef = actorManager.Publish()
+            actorManager.Start()
+            actorRef <-- TestAsync 42
+            actorRef.PostWithReply((fun ch -> 
+                                   ch.Timeout <- Default.ReplyReceiveTimeout / 4
+                                   TestSync(ch, Default.ReplyReceiveTimeout * 8)), Default.ReplyReceiveTimeout * 4)
+            |> Async.Ignore
+            |> Async.RunSynchronously)
     
     [<Test>]
-    [<ExpectedException(typeof<UnknownRecipientException>)>]
     member self.``Post when stopped``() = 
-        use appDomainManager = self.GetAppDomainManager()
-        let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<unit, unit>>(PrimitiveBehaviors.nill)
-        let actorRef = actorManager.Publish()
-        actorRef <-- TestAsync()
+        Assert.throws<UnknownRecipientException>(fun () ->
+            use appDomainManager = self.GetAppDomainManager()
+            let actorManager = appDomainManager.Factory.CreateActorManager<TestMessage<unit, unit>>(PrimitiveBehaviors.nill)
+            let actorRef = actorManager.Publish()
+            actorRef <-- TestAsync())
     
     [<Test>]
-    [<ExpectedException(typeof<UnknownRecipientException>)>]
     member self.``Post when started, stop and post``() = 
-        use appDomainManager = self.GetAppDomainManager()
-        let actorManager = 
-            appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.state)
-        let actorRef = actorManager.Publish()
-        actorManager.Start()
-        actorRef <-- TestAsync 42
-        let r = actorRef <!= fun ch -> TestSync(ch, 43)
-        r |> should equal 42
-        actorManager.Stop()
-        actorRef <-- TestAsync 0
+        Assert.throws<UnknownRecipientException>(fun () ->
+            use appDomainManager = self.GetAppDomainManager()
+            let actorManager = 
+                appDomainManager.Factory.CreateActorManager<TestMessage<int, int>>(Behavior.stateful 0 Behaviors.state)
+            let actorRef = actorManager.Publish()
+            actorManager.Start()
+            actorRef <-- TestAsync 42
+            let r = actorRef <!= fun ch -> TestSync(ch, 43)
+            r |> should equal 42
+            actorManager.Stop()
+            actorRef <-- TestAsync 0)
     
     [<Test>]
-    member self.``Order of posts``() = 
+    member self.``Order of posts``() =
         use appDomainManager = self.GetAppDomainManager()
         let actorManager = 
             appDomainManager.Factory.CreateActorManager<TestList<int>>(Behavior.stateful [] Behaviors.list)
@@ -373,3 +375,5 @@ type ``AppDomain Tcp Communication``<'T when 'T :> ActorManagerFactory>() =
         let r = actorRef <!= fun ch -> TestSync(ch, 0)
         r |> should be (greaterThanOrEqualTo 1)
         r |> should be (lessThanOrEqualTo N)
+
+#endif

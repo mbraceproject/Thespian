@@ -7,6 +7,7 @@ open FsUnit
 
 open Nessos.Thespian
 open Nessos.Thespian.Utils.Async
+open Nessos.Thespian.Tests.TestDefinitions
 
 module ObservableTestUtils = 
     let receiver = 
@@ -29,10 +30,10 @@ type ``Observable Primary Protocol Tests``() =
     inherit PrimaryProtocolTests(new ObservableTestUtils.ProtocolFactory() :> IPrimaryProtocolFactory)
     
     [<Test>]
-    [<ExpectedException(typeof<ActorInactiveException>)>]
-    member __.``Receiver not started``() = 
-        use receiver = Receiver.create()
-        !receiver <-- 42
+    member __.``Receiver not started``() =
+        Assert.throws<ActorInactiveException>(fun () ->
+            use receiver = Receiver.create()
+            !receiver <-- 42)
     
     [<Test>]
     member __.``Post to receiver``() = 
@@ -57,12 +58,11 @@ type ``Observable Primary Protocol Tests``() =
         !receiver <-- 42
     
     [<Test>]
-    [<ExpectedException(typeof<ArgumentException>)>]
-    member __.``Receiver invalid name``() = new Receiver<int>("foo/bar") |> ignore
+    member __.``Receiver invalid name``() = Assert.throws<ArgumentException>(fun () -> new Receiver<int>("foo/bar") |> ignore)
     
     [<Test>]
-    [<ExpectedException(typeof<ArgumentException>)>]
     member __.``Receiver invalid rename``() = 
-        Receiver.create()
-        |> Receiver.rename "foo/bar"
-        |> ignore
+        Assert.throws<ArgumentException> (fun () ->
+            Receiver.create()
+            |> Receiver.rename "foo/bar"
+            |> ignore)

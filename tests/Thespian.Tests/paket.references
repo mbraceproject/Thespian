@@ -1,5 +1,6 @@
-FSharp.Core
-FsPickler
 group Test
+  FSharp.Core
   FsUnit
   NUnit
+  NUnit3TestAdapter
+  Microsoft.NET.Test.SDK
