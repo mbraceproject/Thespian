@@ -3,6 +3,7 @@
 open System
 open System.Runtime.Serialization
 open Nessos.Thespian
+open Nessos.Thespian.Tests.AssemblyLoadProxy
 
 type SerializeFailureControl =
     | NeverFail
@@ -220,51 +221,6 @@ module Remote =
     open System.Reflection
     open Nessos.Thespian.Remote
     
-    [<AbstractClass>]
-    type ActorManager() = 
-        inherit MarshalByRefObject()
-        abstract Init : unit -> unit
-        abstract Fini : unit -> unit
-        override __.Init() = ()
-        override __.Fini() = ()
-    
-    [<AbstractClass>]
-    type ActorManager<'T>(behavior : Actor<'T> -> Async<unit>, ?name : string) = 
-        inherit ActorManager()
-        
-        [<VolatileField>]
-        let mutable actor = 
-            Actor.bind behavior |> fun a -> 
-                if name.IsSome then Actor.rename name.Value a
-                else a
-        
-        abstract Actor : Actor<'T>
-        abstract SetActor : Actor<'T> -> unit
-        abstract Ref : ActorRef<'T>
-        abstract Publish : unit -> ActorRef<'T>
-        abstract Start : unit -> unit
-        abstract Stop : unit -> unit
-        override __.Actor = actor
-        override __.SetActor(actor' : Actor<'T>) = actor <- actor'
-        override __.Ref = actor.Ref
-        override __.Start() = actor.Start()
-        override __.Stop() = actor.Stop()
-        override __.Fini() = __.Stop()
-    
-    type UtcpActorManager<'T>(behavior : Actor<'T> -> Async<unit>, ?name : string) = 
-        inherit ActorManager<'T>(behavior, ?name = name)
-        override self.Publish() = 
-            let actor = self.Actor |> Actor.publish [ Protocols.utcp() ]
-            self.SetActor(actor)
-            actor.Ref
-    
-    type BtcpActorManager<'T>(behavior : Actor<'T> -> Async<unit>, ?name : string) = 
-        inherit ActorManager<'T>(behavior, ?name = name)
-        override self.Publish() = 
-            let actor = self.Actor |> Actor.publish [ Protocols.btcp() ]
-            self.SetActor(actor)
-            actor.Ref
-    
     type BehaviorValue<'T> = 
         | Behavior of byte []
         
@@ -276,72 +232,78 @@ module Remote =
             let (Behavior payload) = self
             let serializer = Serialization.defaultSerializer
             serializer.Deserialize<Actor<'T> -> Async<unit>>(payload)
-    
-    [<AbstractClass>]
-    type ActorManagerFactory() = 
-        inherit MarshalByRefObject()
-        abstract CreateActorManager : (Actor<'T> -> Async<unit>) * ?name:string -> ActorManager<'T>
-        abstract Fini : unit -> unit
-    
-    type UtcpActorManagerFactory() = 
-        inherit ActorManagerFactory()
-        let mutable managers = []
-        
-        override __.CreateActorManager(behavior : Actor<'T> -> Async<unit>, ?name : string) = 
-            let manager = new UtcpActorManager<'T>(behavior, ?name = name)
-            manager.Init()
-            managers <- (manager :> ActorManager) :: managers
-            manager :> ActorManager<'T>
-        
-        override __.Fini() = 
-            for manager in managers do
-                manager.Fini()
-    
-    type BtcpActorManagerFactory() = 
-        inherit ActorManagerFactory()
-        let mutable managers = []
-        
-        override __.CreateActorManager(behavior : Actor<'T> -> Async<unit>, ?name : string) = 
-            let manager = new BtcpActorManager<'T>(behavior, ?name = name)
-            manager.Init()
-            managers <- (manager :> ActorManager) :: managers
-            manager :> ActorManager<'T>
-        
-        override __.Fini() = 
-            for manager in managers do
-                manager.Fini()
-    
-    open System.Collections.Generic
-    
-#if !NETCOREAPP2_2
-    type AppDomainPool() = 
-        static let appDomains = new Dictionary<string, AppDomain>()
-        
-        static member CreateDomain(name : string) = 
-            //      printfn "Creating domain: %s" name
-            let currentDomain = AppDomain.CurrentDomain
-            let appDomainSetup = currentDomain.SetupInformation
-            let evidence = new Security.Policy.Evidence(currentDomain.Evidence)
-            let a = AppDomain.CreateDomain(name, evidence, appDomainSetup)
-            appDomains.Add(name, a)
-            a
-        
-        static member GetOrCreate(name : string) = 
-            let exists, appdomain = appDomains.TryGetValue(name)
-            if exists then appdomain
-            else AppDomainPool.CreateDomain(name)
-    
-    type AppDomainManager<'T when 'T :> ActorManagerFactory>(?appDomainName : string) = 
-        let appDomainName = defaultArg appDomainName "testDomain"
-        let appDomain = AppDomainPool.GetOrCreate(appDomainName)
-        let factory = 
-            appDomain.CreateInstance(Assembly.GetExecutingAssembly().FullName, typeof<'T>.FullName).Unwrap() 
-            |> unbox<'T>
-        member __.Factory = factory
-        interface IDisposable with
-            member __.Dispose() = factory.Fini()
-#endif
 
+    type ActorManager() =
+        let mutable disposers = []
+
+        member __.Create(behavior : Actor<'T> -> Async<unit>, protocolFactory, ?name : string) =
+            let actor = 
+                Actor.bind behavior 
+                |> fun a -> match name with Some n -> Actor.rename n a | None -> a
+                |> Actor.publish [ protocolFactory() ]
+
+            do actor.Start()
+
+            disposers <- actor :> IDisposable :: disposers
+            actor.Ref
+        
+        interface IDisposable with member __.Dispose() = for d in disposers do d.Dispose()
+    
+#if NETCOREAPP2_2
+
+    type ActorBuilder<'T>(body : Actor<'T> -> Async<unit>, protocolFactory, ?name : string) =
+        inherit FSharpFunc<ActorManager, ActorRef>()
+        override __.Invoke mgr = mgr.Create(body, protocolFactory, ?name = name) :> _
+
+    type ActorManagerProxy() =
+        inherit LoadContextProxy<ActorManager -> ActorRef, ActorRef>()
+        let manager = new ActorManager()
+        override __.SendAndReceive builder = async { return builder manager }
+        override __.Dispose() = (manager :> IDisposable).Dispose()
+
+    type RemoteActorManager(protocolFactory : unit -> IProtocolFactory) =
+        let loadContext = MirroredAssemblyLoadContext()
+        let managerProxy = loadContext.CreateProxy<ActorManagerProxy, _, _>()
+
+        member __.CreateActor(behaviour, ?name) =
+            let builder = new ActorBuilder<'T>(behaviour, protocolFactory, ?name = name) |> unbox
+            managerProxy.SendAndReceive(builder) |> Async.RunSynchronously :?> ActorRef<'T>
+
+        interface IDisposable with
+            member __.Dispose() = managerProxy.Dispose()
+
+    type RemoteUtcpActorManager() =
+        inherit RemoteActorManager(Protocols.utcp)
+
+    type RemoteBtcpActorManager() =
+        inherit RemoteActorManager(Protocols.btcp)
+#else
+    type ActorManagerProxy(protocolFactory) =
+        inherit MarshalByRefObject()
+
+        let manager = new ActorManager()
+
+        member __.CreateActor(behavior : Actor<'T> -> Async<unit>, ?name : string) = manager.Create(behavior, protocolFactory, ?name = name)
+        member __.Fini() = (manager :> IDisposable).Dispose()
+        override __.InitializeLifetimeService() = null
+
+    type BTcpManagerProxy() =
+        inherit ActorManagerProxy(Protocols.btcp)
+
+    type UTcpManagerProxy() =
+        inherit ActorManagerProxy(Protocols.utcp)
+
+    type RemoteActorManager(proxy : ActorManagerProxy) =
+        member __.CreateActor(behaviour, ?name) = proxy.CreateActor(behaviour, ?name = name)
+        interface IDisposable with member __.Dispose() = proxy.Fini()
+
+    type RemoteUtcpActorManager() =
+        inherit RemoteActorManager(AppDomain.CreateNew("utcpDomain").CreateInstance<UTcpManagerProxy>())
+
+    type RemoteBtcpActorManager() =
+        inherit RemoteActorManager(AppDomain.CreateNew("btcpDomain").CreateInstance<UTcpManagerProxy>())
+
+#endif
 
 module Assert =
     open NUnit.Framework

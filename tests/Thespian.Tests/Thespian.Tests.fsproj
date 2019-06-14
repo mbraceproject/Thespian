@@ -8,6 +8,7 @@
     <WarningsAsErrors />
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="AssemblyLoadProxy.fs" />
     <Compile Include="TestDefinitions.fs" />
     <Compile Include="BaseTests.fs" />
     <Compile Include="MailboxPrimaryProtocolTests.fs" />
