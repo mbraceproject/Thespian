@@ -2,11 +2,11 @@
 
 open System
 open System.Reflection
-open System.Runtime.Loader
 open System.Threading.Tasks
 open MBrace.FsPickler
 
 #if NETCOREAPP2_2
+open System.Runtime.Loader
 
 /// An assembly load context that mirrors assembly loading from the currently running context
 type MirroredAssemblyLoadContext() =
