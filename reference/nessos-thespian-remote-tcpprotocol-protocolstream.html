@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>ProtocolStream - Thespian</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content=""/>
+    <meta name="author" content="Jan Dzik (Nessos IT)"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/Thespian/content/style.css" />
+    <script type="text/javascript" src="/Thespian/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://nessos.github.io/">nessos</a></li>
+          <li><a href="http://github.com/nessos/Thespian">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/Thespian/index.html">Thespian</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+
+
+
+<h1>ProtocolStream</h1>
+<p>
+
+    <span>Namespace: Nessos.Thespian.Remote.TcpProtocol</span><br />
+    </p>
+<div class="xmldoc">
+</div>
+  <h3>Constructors</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Constructor</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '561', 561)" onmouseover="showTip(event, '561', 561)">
+            new(...)
+          </code>
+          <div class="tip" id="561">
+            <strong>Signature:</strong> (msgId:MsgId * stream:ProtocolNetworkStream * readTimeout:int option * writeTimeout:int option) -&gt; ProtocolStream<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L249-249" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>.ctor</code></p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>Instance members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Instance member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '562', 562)" onmouseover="showTip(event, '562', 562)">
+            x.Acquire()
+          </code>
+          <div class="tip" id="562">
+            <strong>Signature:</strong> unit -&gt; IDisposable<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L286-286" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '563', 563)" onmouseover="showTip(event, '563', 563)">
+            x.AsyncReadRequest()
+          </code>
+          <div class="tip" id="563">
+            <strong>Signature:</strong> unit -&gt; Async&lt;ProtocolRequest&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L267-267" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '564', 564)" onmouseover="showTip(event, '564', 564)">
+            x.AsyncReadResponse()
+          </code>
+          <div class="tip" id="564">
+            <strong>Signature:</strong> unit -&gt; Async&lt;ProtocolResponse&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L270-270" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '565', 565)" onmouseover="showTip(event, '565', 565)">
+            x.AsyncWriteRequest(protocolRequest)
+          </code>
+          <div class="tip" id="565">
+            <strong>Signature:</strong> protocolRequest:ProtocolRequest -&gt; Async&lt;unit&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L268-268" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '566', 566)" onmouseover="showTip(event, '566', 566)">
+            x.AsyncWriteResponse(protocolResponse)
+          </code>
+          <div class="tip" id="566">
+            <strong>Signature:</strong> protocolResponse:ProtocolResponse -&gt; Async&lt;unit&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L271-271" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '567', 567)" onmouseover="showTip(event, '567', 567)">
+            x.Dispose()
+          </code>
+          <div class="tip" id="567">
+            <strong>Signature:</strong> unit -&gt; unit<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L285-285" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '568', 568)" onmouseover="showTip(event, '568', 568)">
+            x.Id
+          </code>
+          <div class="tip" id="568">
+            <strong>Signature:</strong> MsgId<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L265-265" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>get_Id</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '569', 569)" onmouseover="showTip(event, '569', 569)">
+            x.NetworkStream
+          </code>
+          <div class="tip" id="569">
+            <strong>Signature:</strong> ProtocolNetworkStream<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L266-266" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>get_NetworkStream</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '570', 570)" onmouseover="showTip(event, '570', 570)">
+            x.Retain()
+          </code>
+          <div class="tip" id="570">
+            <strong>Signature:</strong> unit -&gt; bool<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L281-281" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>set_Retain</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '571', 571)" onmouseover="showTip(event, '571', 571)">
+            x.Retain()
+          </code>
+          <div class="tip" id="571">
+            <strong>Signature:</strong> unit -&gt; unit<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L281-281" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>get_Retain</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '572', 572)" onmouseover="showTip(event, '572', 572)">
+            x.TryAsyncReadRequest()
+          </code>
+          <div class="tip" id="572">
+            <strong>Signature:</strong> unit -&gt; Async&lt;ProtocolRequest option&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L273-273" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '573', 573)" onmouseover="showTip(event, '573', 573)">
+            x.TryAsyncReadResponse()
+          </code>
+          <div class="tip" id="573">
+            <strong>Signature:</strong> unit -&gt; Async&lt;ProtocolResponse option&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L276-276" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '574', 574)" onmouseover="showTip(event, '574', 574)">
+            x.TryAsyncWriteRequest(protocolRequest)
+          </code>
+          <div class="tip" id="574">
+            <strong>Signature:</strong> protocolRequest:ProtocolRequest -&gt; Async&lt;unit option&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L274-274" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '575', 575)" onmouseover="showTip(event, '575', 575)">
+            x.TryAsyncWriteResponse(...)
+          </code>
+          <div class="tip" id="575">
+            <strong>Signature:</strong> protocolResponse:ProtocolResponse -&gt; Async&lt;unit option&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L278-278" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>Static members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Static member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '576', 576)" onmouseover="showTip(event, '576', 576)">
+            ProtocolStream.AsyncCreateRead(...)
+          </code>
+          <div class="tip" id="576">
+            <strong>Signature:</strong> (tcpClient:TcpClient * readTimeout:int * writeTimeout:int * keepOpen:bool option) -&gt; Async&lt;(ProtocolRequest * ProtocolStream) option&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Message.fs#L255-255" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+        </div>
+        <div class="span3">
+          <a target="_blank" href="http://www.nessos.gr/">
+      <img src="/Thespian/img/nessos.png" alt="F# Project" style="width:150px;margin:10px" /> 
+      </a>
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">Thespian</li>
+            <li><a href="/Thespian/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://www.nuget.org/packages/Thespian">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/nessos/Thespian">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/nessos/Thespian/blob/master/License.md">License</a></li>
+            <li><a href="http://github.com/nessos/Thespian/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+
+            <li class="nav-header">Documentation</li>
+            <li><a href="/Thespian/tutorial.html">Tutorial</a></li>
+            <li><a href="/Thespian/reference/index.html">API Reference</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/nessos/Thespian"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>

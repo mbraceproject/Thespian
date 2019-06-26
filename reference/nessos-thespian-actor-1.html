@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Actor<'T> - Thespian</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content=""/>
+    <meta name="author" content="Jan Dzik (Nessos IT)"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/Thespian/content/style.css" />
+    <script type="text/javascript" src="/Thespian/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://nessos.github.io/">nessos</a></li>
+          <li><a href="http://github.com/nessos/Thespian">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/Thespian/index.html">Thespian</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+
+
+
+<h1>Actor<'T></h1>
+<p>
+
+    <span>Namespace: Nessos.Thespian</span><br />
+    </p>
+<div class="xmldoc">
+<p>Represents a typed locally executing actor instance.</p>
+
+</div>
+  <h3>Constructors</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Constructor</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '251', 251)" onmouseover="showTip(event, '251', 251)">
+            new(otherActor)
+          </code>
+          <div class="tip" id="251">
+            <strong>Signature:</strong> otherActor:Actor&lt;&#39;T&gt; -&gt; Actor&lt;&#39;T&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L91-91" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Clones an actor behaviour from a given instance.</p>
+
+
+              <p>CompiledName: <code>.ctor</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '252', 252)" onmouseover="showTip(event, '252', 252)">
+            new(...)
+          </code>
+          <div class="tip" id="252">
+            <strong>Signature:</strong> (behavior:(Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) * primaryProtocolFactory:IPrimaryProtocolFactory option * linkedActors:seq&lt;Actor&gt; option) -&gt; Actor&lt;&#39;T&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L85-85" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Creates a new typed actor instance.</p>
+
+
+              <p>CompiledName: <code>.ctor</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '253', 253)" onmouseover="showTip(event, '253', 253)">
+            new(...)
+          </code>
+          <div class="tip" id="253">
+            <strong>Signature:</strong> (name:string * behavior:(Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) * primaryProtocolFactory:IPrimaryProtocolFactory option * linkedActors:seq&lt;Actor&gt; option) -&gt; Actor&lt;&#39;T&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L75-75" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Creates a new typed actor instance.</p>
+
+
+              <p>CompiledName: <code>.ctor</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '254', 254)" onmouseover="showTip(event, '254', 254)">
+            new(...)
+          </code>
+          <div class="tip" id="254">
+            <strong>Signature:</strong> (name:string * protocols:IProtocolServer&lt;&#39;T&gt; [] * behavior:(Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;) * linkedActors:seq&lt;Actor&gt; option) -&gt; Actor&lt;&#39;T&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L35-35" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>.ctor</code></p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>Instance members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Instance member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '255', 255)" onmouseover="showTip(event, '255', 255)">
+            x.Name
+          </code>
+          <div class="tip" id="255">
+            <strong>Signature:</strong> string<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L101-101" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Actor name</p>
+
+
+              <p>CompiledName: <code>get_Name</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '256', 256)" onmouseover="showTip(event, '256', 256)">
+            x.PendingMessages
+          </code>
+          <div class="tip" id="256">
+            <strong>Signature:</strong> int<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L106-106" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Return the number of messages pending processing by actor instance.</p>
+
+
+              <p>CompiledName: <code>get_PendingMessages</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '257', 257)" onmouseover="showTip(event, '257', 257)">
+            x.Publish(protocolFactories)
+          </code>
+          <div class="tip" id="257">
+            <strong>Signature:</strong> protocolFactories:&#39;b -&gt; Actor&lt;&#39;T&gt;<br />
+              <strong>Modifiers:</strong> abstract<br />
+                          <strong>Type parameters:</strong> 'U                      </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L131-131" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Publishes given actor to collection of protocol factories.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '258', 258)" onmouseover="showTip(event, '258', 258)">
+            x.Publish(protocolServers)
+          </code>
+          <div class="tip" id="258">
+            <strong>Signature:</strong> (protocolServers:IProtocolServer&lt;&#39;T&gt; []) -&gt; Actor&lt;&#39;T&gt;<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L124-124" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Publishes given actor to collection of protocol server instances.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '259', 259)" onmouseover="showTip(event, '259', 259)">
+            x.ReBind(arg1)
+          </code>
+          <div class="tip" id="259">
+            <strong>Signature:</strong> ((Actor&lt;&#39;T&gt; -&gt; Async&lt;unit&gt;)) -&gt; unit<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L201-201" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '260', 260)" onmouseover="showTip(event, '260', 260)">
+            x.Receive(timeout)
+          </code>
+          <div class="tip" id="260">
+            <strong>Signature:</strong> (timeout:int option) -&gt; Async&lt;&#39;T&gt;<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L162-162" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Asynchronously dequeue a message from actor inbox.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '261', 261)" onmouseover="showTip(event, '261', 261)">
+            x.Ref
+          </code>
+          <div class="tip" id="261">
+            <strong>Signature:</strong> ActorRef&lt;&#39;T&gt;<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L155-155" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Gets a reference to given actor instance.</p>
+
+
+              <p>CompiledName: <code>get_Ref</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '262', 262)" onmouseover="showTip(event, '262', 262)">
+            x.Rename(newName)
+          </code>
+          <div class="tip" id="262">
+            <strong>Signature:</strong> newName:string -&gt; Actor&lt;&#39;T&gt;<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L139-139" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Creates a renamed copy of given actor.</p>
+
+
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '263', 263)" onmouseover="showTip(event, '263', 263)">
+            x.TryReceive(timeout)
+          </code>
+          <div class="tip" id="263">
+            <strong>Signature:</strong> (timeout:int option) -&gt; Async&lt;&#39;T option&gt;<br />
+              <strong>Modifiers:</strong> abstract<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Actor.fs#L169-169" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          <p>Asynchronously dequeue a message from actor inbox. Return 'None' on timeout.</p>
+
+
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+        </div>
+        <div class="span3">
+          <a target="_blank" href="http://www.nessos.gr/">
+      <img src="/Thespian/img/nessos.png" alt="F# Project" style="width:150px;margin:10px" /> 
+      </a>
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">Thespian</li>
+            <li><a href="/Thespian/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://www.nuget.org/packages/Thespian">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/nessos/Thespian">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/nessos/Thespian/blob/master/License.md">License</a></li>
+            <li><a href="http://github.com/nessos/Thespian/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+
+            <li class="nav-header">Documentation</li>
+            <li><a href="/Thespian/tutorial.html">Tutorial</a></li>
+            <li><a href="/Thespian/reference/index.html">API Reference</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/nessos/Thespian"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>

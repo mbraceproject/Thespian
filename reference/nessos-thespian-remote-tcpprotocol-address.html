@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Address - Thespian</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="description" content=""/>
+    <meta name="author" content="Jan Dzik (Nessos IT)"/>
+
+    <script src="https://code.jquery.com/jquery-1.8.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.8.23/jquery-ui.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/js/bootstrap.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap-combined.min.css" rel="stylesheet"/>
+
+    <link type="text/css" rel="stylesheet" href="/Thespian/content/style.css" />
+    <script type="text/javascript" src="/Thespian/content/tips.js"></script>
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="https://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <div class="masthead">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="http://nessos.github.io/">nessos</a></li>
+          <li><a href="http://github.com/nessos/Thespian">github page</a></li>
+        </ul>
+        <h3 class="muted"><a href="/Thespian/index.html">Thespian</a></h3>
+      </div>
+      <hr />
+      <div class="row">
+        <div class="span9" id="main">
+          
+
+
+
+<h1>Address</h1>
+<p>
+
+    <span>Namespace: Nessos.Thespian.Remote.TcpProtocol</span><br />
+    </p>
+<div class="xmldoc">
+</div>
+  <h3>Constructors</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Constructor</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '531', 531)" onmouseover="showTip(event, '531', 531)">
+            new(hostnameOrAddress, port)
+          </code>
+          <div class="tip" id="531">
+            <strong>Signature:</strong> (hostnameOrAddress:string * port:int option) -&gt; Address<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L53-53" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>.ctor</code></p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>Instance members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Instance member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '532', 532)" onmouseover="showTip(event, '532', 532)">
+            x.BinarySerialize(writer)
+          </code>
+          <div class="tip" id="532">
+            <strong>Signature:</strong> writer:BinaryWriter -&gt; unit<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L72-72" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '533', 533)" onmouseover="showTip(event, '533', 533)">
+            x.CompareTo(otherAddress)
+          </code>
+          <div class="tip" id="533">
+            <strong>Signature:</strong> otherAddress:Address -&gt; int<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L97-97" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '534', 534)" onmouseover="showTip(event, '534', 534)">
+            x.ForceToEndPointsAsync()
+          </code>
+          <div class="tip" id="534">
+            <strong>Signature:</strong> unit -&gt; Async&lt;IPEndPoint list&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L109-109" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '535', 535)" onmouseover="showTip(event, '535', 535)">
+            x.HostnameOrAddress
+          </code>
+          <div class="tip" id="535">
+            <strong>Signature:</strong> string<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L85-85" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>get_HostnameOrAddress</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '536', 536)" onmouseover="showTip(event, '536', 536)">
+            x.Port
+          </code>
+          <div class="tip" id="536">
+            <strong>Signature:</strong> int<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L86-86" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>get_Port</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '537', 537)" onmouseover="showTip(event, '537', 537)">
+            x.ToEndPoints()
+          </code>
+          <div class="tip" id="537">
+            <strong>Signature:</strong> unit -&gt; IPEndPoint list<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L102-102" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '538', 538)" onmouseover="showTip(event, '538', 538)">
+            x.ToEndPointsAsync()
+          </code>
+          <div class="tip" id="538">
+            <strong>Signature:</strong> unit -&gt; Async&lt;IPEndPoint list&gt;<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L111-111" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3>Static members</h3>
+  <table class="table table-bordered member-list">
+    <thead>
+      <tr><td>Static member</td><td>Description</td></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '539', 539)" onmouseover="showTip(event, '539', 539)">
+            Address.Any
+          </code>
+          <div class="tip" id="539">
+            <strong>Signature:</strong> Address<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L134-134" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>get_Any</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '540', 540)" onmouseover="showTip(event, '540', 540)">
+            Address.AnyHost(port)
+          </code>
+          <div class="tip" id="540">
+            <strong>Signature:</strong> port:int -&gt; Address<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L137-137" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '541', 541)" onmouseover="showTip(event, '541', 541)">
+            Address.AnyPort(hostnameOrAddress)
+          </code>
+          <div class="tip" id="541">
+            <strong>Signature:</strong> hostnameOrAddress:string -&gt; Address<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L136-136" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '542', 542)" onmouseover="showTip(event, '542', 542)">
+            Address.BinaryDeserialize(reader)
+          </code>
+          <div class="tip" id="542">
+            <strong>Signature:</strong> reader:BinaryReader -&gt; Address<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L78-78" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '543', 543)" onmouseover="showTip(event, '543', 543)">
+            Address.FromEndPoint(endPoint)
+          </code>
+          <div class="tip" id="543">
+            <strong>Signature:</strong> endPoint:IPEndPoint -&gt; Address<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L153-153" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '544', 544)" onmouseover="showTip(event, '544', 544)">
+            Address.LoopBack
+          </code>
+          <div class="tip" id="544">
+            <strong>Signature:</strong> Address<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L135-135" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+              <p>CompiledName: <code>get_LoopBack</code></p>
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '545', 545)" onmouseover="showTip(event, '545', 545)">
+            Address.Parse(addressString)
+          </code>
+          <div class="tip" id="545">
+            <strong>Signature:</strong> addressString:string -&gt; Address<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L147-147" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+      <tr>
+        <td class="member-name">
+
+          <code onmouseout="hideTip(event, '546', 546)" onmouseover="showTip(event, '546', 546)">
+            Address.TryParse(addressString)
+          </code>
+          <div class="tip" id="546">
+            <strong>Signature:</strong> addressString:string -&gt; Address option<br />
+                                  </div>
+        </td>
+        <td class="xmldoc">
+                      <a href="http://github.com/nessos/Thespian/tree/master/src/Thespian/Protocols/TCP/Address.fs#L139-139" class="github-link">
+              <img src="../content/img/github.png" class="normal" />
+              <img src="../content/img/github-blue.png" class="hover" />
+            </a>
+          
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+        </div>
+        <div class="span3">
+          <a target="_blank" href="http://www.nessos.gr/">
+      <img src="/Thespian/img/nessos.png" alt="F# Project" style="width:150px;margin:10px" /> 
+      </a>
+          <ul class="nav nav-list" id="menu" style="margin-top: 20px;">
+            <li class="nav-header">Thespian</li>
+            <li><a href="/Thespian/index.html">Home page</a></li>
+            <li class="divider"></li>
+            <li><a href="http://www.nuget.org/packages/Thespian">Get Library via NuGet</a></li>
+            <li><a href="http://github.com/nessos/Thespian">Source Code on GitHub</a></li>
+            <li><a href="http://github.com/nessos/Thespian/blob/master/License.md">License</a></li>
+            <li><a href="http://github.com/nessos/Thespian/blob/master/RELEASE_NOTES.md">Release Notes</a></li>
+
+            <li class="nav-header">Documentation</li>
+            <li><a href="/Thespian/tutorial.html">Tutorial</a></li>
+            <li><a href="/Thespian/reference/index.html">API Reference</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <a href="http://github.com/nessos/Thespian"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"/></a>
+  </body>
+  </html>
