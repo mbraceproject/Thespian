@@ -125,6 +125,18 @@ Target "NuGetPush" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Release Scripts
 
+Target "GenerateDocs" (fun _ ->
+    let path = __SOURCE_DIRECTORY__ @@ "packages/build/FSharp.Compiler.Tools/tools/fsi.exe"
+    let workingDir = "docs/tools"
+    let args = "--define:RELEASE generate.fsx"
+    let command, args = 
+        if EnvironmentHelper.isMono then "mono", sprintf "'%s' %s" path args 
+        else path, args
+
+    if Shell.Exec(command, args, workingDir) <> 0 then
+        failwith "failed to generate docs"
+)
+
 Target "ReleaseDocs" (fun _ ->
     let tempDocsDir = "temp/gh-pages"
     CleanDir tempDocsDir
@@ -195,9 +207,11 @@ Target "Bundle" DoNothing
 
 "Default"
   ==> "NuGet"
+  ==> "GenerateDocs"
   ==> "Bundle"
 
 "Bundle"
+  ==> "ReleaseDocs"
   ==> "NuGetPush"
   ==> "ReleaseGitHub"
   ==> "Release"

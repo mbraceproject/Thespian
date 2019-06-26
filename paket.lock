@@ -50,14 +50,30 @@ NUGET
 
 GROUP Build
 REDIRECTS: ON
-RESTRICTION: == net45
+RESTRICTION: == net461
 NUGET
   remote: https://www.nuget.org/api/v2
     FAKE (4.64.17)
+    FSharp.Compiler.Service (27.0.1)
+      FSharp.Core (>= 4.5.2)
+      System.Collections.Immutable (>= 1.5)
+      System.Reflection.Metadata (>= 1.6)
+      System.ValueTuple (>= 4.4)
+    FSharp.Compiler.Tools (10.2.3)
+    FSharp.Core (4.6.2)
+    FSharp.Formatting (3.1)
+      FSharp.Compiler.Service (>= 27.0.1 < 28.0)
+      Microsoft.AspNet.Razor (>= 3.2.7 < 4.0)
+      System.ValueTuple (>= 4.5 < 5.0)
+    Microsoft.AspNet.Razor (3.2.7)
     Octokit (0.32)
+    System.Collections.Immutable (1.5)
+    System.Reflection.Metadata (1.6)
+      System.Collections.Immutable (>= 1.5)
+    System.ValueTuple (4.5)
 GITHUB
   remote: fsharp/FAKE
-    modules/Octokit/Octokit.fsx (36b81bc99da42348451432dbfb2e25f18f1f93e2)
+    modules/Octokit/Octokit.fsx (61b83e7ccfe6e5072a243fa5a50042a7b743f4d2)
       Octokit (>= 0.20)
 GROUP Test
 REDIRECTS: OFF

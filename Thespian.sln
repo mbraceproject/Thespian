@@ -37,6 +37,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "img", "img", "{3B441F06-135
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9A8434F6-F6A4-403A-AEFB-0C39EBC32E98}"
 	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
 		.gitattributes = .gitattributes
 		.gitignore = .gitignore
 		.travis.yml = .travis.yml
