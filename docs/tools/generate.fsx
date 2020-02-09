@@ -23,7 +23,7 @@ let info =
 // --------------------------------------------------------------------------------------
 
 #I "../../packages/build/FSharp.Compiler.Service/lib/net45"
-#I "../../packages/build/FSharp.Formatting/lib/net472"
+#I "../../packages/build/FSharp.Formatting/lib/net461"
 #r "../../packages/build/FAKE/tools/FakeLib.dll"
 #r "RazorEngine.dll"
 #r "FSharp.Markdown.dll"
