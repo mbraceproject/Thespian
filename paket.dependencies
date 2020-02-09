@@ -1,5 +1,5 @@
-source https://www.nuget.org/api/v2/
-framework: net45, netstandard2.0
+source https://api.nuget.org/v3/index.json
+framework: netstandard2.0, net45
 redirects: off
 
 nuget FSharp.Core >= 4.1.0 lowest_matching:true
@@ -7,9 +7,9 @@ nuget FsPickler ~> 5.2
 nuget Unquote 4.0
 
 group Test
-  framework: net461, netcoreapp2.2
+  framework: netcoreapp3.1, net472
   redirects: off
-  source https://www.nuget.org/api/v2/
+  source https://api.nuget.org/v3/index.json
 
   nuget FSharp.Core ~> 4.6
   nuget FsUnit 3.4.0
@@ -18,9 +18,9 @@ group Test
   nuget Microsoft.NET.Test.SDK ~> 15.8.0
 
 group Build
-  framework: net461
+  framework: net472
   redirects: on
-  source https://www.nuget.org/api/v2/
+  source https://api.nuget.org/v3/index.json
 
   nuget FAKE ~> 4.0
   nuget FSharp.Formatting ~> 3.1

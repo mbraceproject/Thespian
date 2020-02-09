@@ -46,7 +46,7 @@ let gitHome = "https://github.com/" + gitOwner
 let gitName = "Thespian"
 
 let configuration = "Release"
-let netcoreappTarget = "netcoreapp2.2"
+let netcoreappTarget = "netcoreapp3.1"
 
 let artifactsDir = __SOURCE_DIRECTORY__ @@ "artifacts"
 

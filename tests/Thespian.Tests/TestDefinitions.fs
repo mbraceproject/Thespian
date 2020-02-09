@@ -249,7 +249,7 @@ module Remote =
         
         interface IDisposable with member __.Dispose() = for d in disposers do d.Dispose()
     
-#if NETCOREAPP2_2
+#if NETCOREAPP
 
     type ActorBuilder<'T>(body : Actor<'T> -> Async<unit>, protocolFactory, ?name : string) =
         inherit FSharpFunc<ActorManager, ActorRef>()

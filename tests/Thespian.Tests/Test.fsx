@@ -1,4 +1,4 @@
-﻿#I "bin/Debug/net461/"
+﻿#I "bin/Debug/net472/"
 #r "../../bin/FsPickler.dll"
 #r "../../bin/Thespian.dll"
 #r "../../bin/Thespian.Tests.dll"

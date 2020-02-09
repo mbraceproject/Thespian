@@ -183,3 +183,4 @@ temp/
 .vs/
 artifacts/
 .idea/
+.ionide/

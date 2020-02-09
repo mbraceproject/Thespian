@@ -32,7 +32,7 @@ type ``Collocated UTcp``() =
                  member __.Ref(a) = a.Ref.[BTCP]
                  member __.ToString() = "btcp foreign protocol" } |]
 
-#if !NETCOREAPP2_2
+#if !NETCOREAPP
 [<TestFixture>]
 type ``AppDomain UTcp``() = 
     inherit ``AppDomain Tcp Communication``<RemoteUtcpActorManager>()
