@@ -250,24 +250,13 @@ module Remote =
         interface IDisposable with member __.Dispose() = for d in disposers do d.Dispose()
     
 #if NETCOREAPP
-
-    type ActorBuilder<'T>(body : Actor<'T> -> Async<unit>, protocolFactory, ?name : string) =
-        inherit FSharpFunc<ActorManager, ActorRef>()
-        override __.Invoke mgr = mgr.Create(body, protocolFactory, ?name = name) :> _
-
-    type ActorManagerProxy() =
-        inherit LoadContextProxy<ActorManager -> ActorRef, ActorRef>()
-        let manager = new ActorManager()
-        override __.SendAndReceive builder = async { return builder manager }
-        override __.Dispose() = (manager :> IDisposable).Dispose()
-
     type RemoteActorManager(protocolFactory : unit -> IProtocolFactory) =
         let loadContext = MirroredAssemblyLoadContext()
-        let managerProxy = loadContext.CreateProxy<ActorManagerProxy, _, _>()
+        let managerProxy = loadContext.CreateProxy<ActorManager>()
 
         member __.CreateActor(behaviour, ?name) =
-            let builder = new ActorBuilder<'T>(behaviour, protocolFactory, ?name = name) |> unbox
-            managerProxy.SendAndReceive(builder) |> Async.RunSynchronously :?> ActorRef<'T>
+            managerProxy.Execute (fun mgr -> async { return mgr.Create(behaviour, protocolFactory, ?name = name)})
+            |> Async.RunSynchronously
 
         interface IDisposable with
             member __.Dispose() = managerProxy.Dispose()

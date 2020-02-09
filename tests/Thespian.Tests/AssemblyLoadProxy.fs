@@ -22,47 +22,54 @@ type MirroredAssemblyLoadContext() =
         match tryResolveFileName an with
         | None -> null
         | Some path -> this.LoadFromAssemblyPath path
-        
-[<AbstractClass>]
-type LoadContextProxy<'a, 'b>() =
-    abstract Dispose : unit -> unit
-    abstract SendAndReceive : 'a -> Async<'b>
-    interface IDisposable with member __.Dispose() = __.Dispose()
-        
-    member private this.SendAndReceiveMarshalled (requestBytes : byte[]) =
-        MarshallingHelper.SendAndReceiveMarshalled this requestBytes
-            
-and private MarshallingHelper private () =
-    static let serializer = FsPickler.CreateBinarySerializer()
-        
-    static member SendAndReceiveMarshalled (proxy : LoadContextProxy<'a,'b>) (requestBytes : byte[]) =
-        let body = async {
-            let request = serializer.UnPickle requestBytes
-            let! response = proxy.SendAndReceive request
-            return serializer.Pickle response
-        }
 
-        Async.StartAsTask body
-            
-    static member CreateLocalWrapper (remoteHandle : obj) =
-        let remoteMethod = remoteHandle.GetType().GetMethod("SendAndReceiveMarshalled", BindingFlags.NonPublic ||| BindingFlags.Instance)
-        { new LoadContextProxy<'a, 'b>() with
-            override __.Dispose() = (remoteHandle :?> IDisposable).Dispose()
-            override __.SendAndReceive (request : 'a) = async {
-                let requestBytes = serializer.Pickle request
-                let responseTask = remoteMethod.Invoke(remoteHandle, [|requestBytes|]) :?> Task<byte[]>
+type ILoadContextProxy<'T when 'T :> IDisposable> =
+    inherit IDisposable
+    abstract Execute : command:('T -> Async<'R>) -> Async<'R>
+
+type private LoadContextMarshaller<'T when 'T : (new : unit -> 'T) and 'T :> IDisposable> () =
+    let instance = new 'T()
+    static let pickler = FsPickler.CreateBinarySerializer()
+
+    interface IDisposable with member __.Dispose() = instance.Dispose()
+
+    member __.ExecuteMarshalled (bytes : byte[]) : Task<byte[]> = 
+        async {
+            let command = pickler.UnPickle<'T -> Async<obj>> bytes
+            let! result = command instance
+            return pickler.Pickle<obj> result
+        } |> Async.StartAsTask
+
+    static member CreateProxyFromMarshallerHandle (remoteHandle : obj) =
+        let remoteMethod = remoteHandle.GetType().GetMethod("ExecuteMarshalled", BindingFlags.NonPublic ||| BindingFlags.Instance)
+        { new ILoadContextProxy<'T> with
+            member __.Dispose() = (remoteHandle :?> IDisposable).Dispose()
+            member __.Execute (command : 'T -> Async<'R>) = async {
+                let boxedCommand instance = async { let! result = command instance in return box result }
+                let commandBytes = pickler.Pickle<'T -> Async<obj>> boxedCommand
+                let responseTask = remoteMethod.Invoke(remoteHandle, [|commandBytes|]) :?> Task<byte[]>
                 let! responseBytes = Async.AwaitTask responseTask
-                return serializer.UnPickle<'b> responseBytes
+                return pickler.UnPickle<obj> responseBytes :?> 'R
             }
         }
 
+
 type AssemblyLoadContext with
-    member ctx.CreateProxy<'Proxy, 'a, 'b when 'Proxy : (new : unit -> 'Proxy) and 'Proxy :> LoadContextProxy<'a,'b>>() : LoadContextProxy<'a, 'b> =
-        let _ = ctx.LoadFromAssemblyPath(typeof<MarshallingHelper>.Assembly.Location)
-        let asm = ctx.LoadFromAssemblyPath(typeof<'Proxy>.Assembly.Location)
-        let remoteContextType = asm.GetType typeof<'Proxy>.FullName
-        let remoteInstance = Activator.CreateInstance(remoteContextType)
-        MarshallingHelper.CreateLocalWrapper remoteInstance
+    member ctx.CreateProxy<'T when 'T : (new : unit -> 'T) and 'T :> IDisposable>() : ILoadContextProxy<'T> =
+        let getRemoteType (t : Type) =
+            let remoteAssembly = ctx.LoadFromAssemblyPath t.Assembly.Location
+            remoteAssembly.GetType t.FullName
+
+        // Construct the type of LoadContextMarshaller<'TProxy>, but using assemblies loaded in the remote context
+        let remoteProxyType = getRemoteType typeof<'T>
+        let remoteMarshallerType = getRemoteType (typeof<LoadContextMarshaller<'T>>.GetGenericTypeDefinition())
+        let remoteInstanceType = remoteMarshallerType.MakeGenericType remoteProxyType
+
+        // instantiate proxy in remote context
+        let remoteInstanceCtor = remoteInstanceType.GetConstructor(BindingFlags.NonPublic ||| BindingFlags.Public, null, [||], null)
+        let remoteInstance = remoteInstanceCtor.Invoke [||]
+        LoadContextMarshaller<'T>.CreateProxyFromMarshallerHandle remoteInstance
+        
 
 #else
 
