@@ -3,7 +3,7 @@ framework: netstandard2.0, net45
 redirects: off
 
 nuget FSharp.Core >= 4.1.0 lowest_matching:true
-nuget FsPickler ~> 5.2
+nuget FsPickler ~> 5.3
 nuget Unquote 4.0
 
 group Test
@@ -15,7 +15,7 @@ group Test
   nuget FsUnit 3.4.0
   nuget NUnit ~> 3.12.0
   nuget NUnit3TestAdapter ~> 3.12.0
-  nuget Microsoft.NET.Test.SDK ~> 15.8.0
+  nuget Microsoft.NET.Test.SDK ~> 16.0
 
 group Build
   framework: net472

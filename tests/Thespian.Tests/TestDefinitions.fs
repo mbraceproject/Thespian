@@ -250,16 +250,18 @@ module Remote =
         interface IDisposable with member __.Dispose() = for d in disposers do d.Dispose()
     
 #if NETCOREAPP
+    [<AutoSerializable(false)>]
     type RemoteActorManager(protocolFactory : unit -> IProtocolFactory) =
-        let loadContext = MirroredAssemblyLoadContext()
+        let loadContext = new MirroredAssemblyLoadContext()
         let managerProxy = loadContext.CreateProxy<ActorManager>()
 
         member __.CreateActor(behaviour, ?name) =
-            managerProxy.Execute (fun mgr -> async { return mgr.Create(behaviour, protocolFactory, ?name = name)})
+            let factory = protocolFactory
+            managerProxy.Execute (fun mgr -> async { return mgr.Create(behaviour, factory, ?name = name)})
             |> Async.RunSynchronously
 
         interface IDisposable with
-            member __.Dispose() = managerProxy.Dispose()
+            member __.Dispose() = managerProxy.Dispose() ; (loadContext :> IDisposable).Dispose()
 
     type RemoteUtcpActorManager() =
         inherit RemoteActorManager(Protocols.utcp)

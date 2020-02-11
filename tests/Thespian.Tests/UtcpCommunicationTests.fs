@@ -32,15 +32,12 @@ type ``Collocated UTcp``() =
                  member __.Ref(a) = a.Ref.[BTCP]
                  member __.ToString() = "btcp foreign protocol" } |]
 
-#if !NETCOREAPP
 [<TestFixture>]
 type ``AppDomain UTcp``() = 
     inherit ``AppDomain Tcp Communication``<RemoteUtcpActorManager>()
-
     override __.ParallelPostsNum = 30
     override __.ParallelAsyncPostsNum = 30
     override __.ParallelPostsWithReplyNum = 100
     override __.ParallelPostsWithDeserializedNum = 10
     override __.PublishActorPrimary(actor : Actor<'T>) = actor |> Actor.publish [ Protocols.utcp() ]
     override __.RefPrimary(actor : Actor<'T>) = actor.Ref.[UTCP]
-#endif
